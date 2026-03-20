@@ -1,0 +1,14 @@
+{
+  "name": "@servicienta/validators",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "echo 'validators build pending'",
+    "lint": "echo 'validators lint pending'",
+    "check-types": "echo 'validators typecheck pending'",
+    "format": "echo 'validators format pending'"
+  }
+}

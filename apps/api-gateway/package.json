@@ -1,0 +1,27 @@
+{
+  "name": "@servicienta/api-gateway",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo 'api-gateway lint pending'",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "format": "echo 'api-gateway format pending'"
+  },
+  "dependencies": {
+    "@servicienta/types": "workspace:^",
+    "@supabase/supabase-js": "^2.99.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

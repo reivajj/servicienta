@@ -1,0 +1,12 @@
+{
+  "name": "@servicienta/landing",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "echo 'landing scaffold pending'",
+    "build": "echo 'landing scaffold pending'",
+    "lint": "echo 'landing lint pending'",
+    "check-types": "echo 'landing typecheck pending'",
+    "format": "echo 'landing format pending'"
+  }
+}

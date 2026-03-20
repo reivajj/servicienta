@@ -1,0 +1,25 @@
+{
+  "name": "@servicienta/query-hooks",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx"
+  },
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo 'query-hooks lint pending'",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "format": "echo 'query-hooks format pending'"
+  },
+  "dependencies": {
+    "@servicienta/api-client": "workspace:^",
+    "@tanstack/react-query": "^5.90.21",
+    "react": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14"
+  }
+}

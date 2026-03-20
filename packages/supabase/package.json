@@ -1,0 +1,20 @@
+{
+  "name": "@servicienta/supabase",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "echo 'supabase build pending'",
+    "lint": "echo 'supabase lint pending'",
+    "check-types": "echo 'supabase typecheck pending'",
+    "format": "echo 'supabase format pending'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.1"
+  }
+}
