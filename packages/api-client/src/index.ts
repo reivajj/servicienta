@@ -1,4 +1,11 @@
-import type { ApiErrorResponse } from '@servicienta/types'
+import type {
+  ApiErrorResponse,
+  GetMeResponse,
+  UpdateMeInput,
+  UpdateMeResponse,
+} from '@servicienta/types'
+
+export type { UpdateMeInput } from '@servicienta/types'
 
 export interface ApiClientConfig {
   baseUrl: string
@@ -27,18 +34,27 @@ export class ApiClientError extends Error {
   }
 }
 
-export interface ApiClient {}
+export interface ApiClient {
+  me: {
+    get: () => Promise<GetMeResponse>
+    update: (input: UpdateMeInput) => Promise<UpdateMeResponse>
+  }
+}
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
   const baseUrl = normalizeBaseUrl(config.baseUrl)
   const fetchImplementation = config.fetch ?? fetch
 
-  async function apiFetch<T>(path: string): Promise<T> {
+  async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     const accessToken = await config.getAccessToken?.()
     const response = await fetchImplementation(`${baseUrl}${path}`, {
+      method: init?.method,
+      body: init?.body,
       headers: {
         Accept: 'application/json',
+        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...init?.headers,
       },
     })
 
@@ -54,7 +70,16 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     return payload as T
   }
 
-  return {}
+  return {
+    me: {
+      get: () => apiFetch<GetMeResponse>('/api/me'),
+      update: (input) =>
+        apiFetch<UpdateMeResponse>('/api/me', {
+          method: 'PATCH',
+          body: JSON.stringify(input),
+        }),
+    },
+  }
 }
 
 function normalizeBaseUrl(baseUrl: string): string {

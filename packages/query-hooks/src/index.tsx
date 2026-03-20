@@ -3,7 +3,12 @@ import {
   useContext,
   type PropsWithChildren,
 } from 'react'
-import type { ApiClient } from '@servicienta/api-client'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import type { ApiClient, UpdateMeInput } from '@servicienta/api-client'
 
 const ApiClientContext = createContext<ApiClient | null>(null)
 
@@ -16,6 +21,35 @@ export function ApiClientProvider({
       {children}
     </ApiClientContext.Provider>
   )
+}
+
+export const meKeys = {
+  all: ['me'] as const,
+  current: () => [...meKeys.all, 'current'] as const,
+}
+
+export function useMe() {
+  const apiClient = useApiClient()
+
+  return useQuery({
+    queryKey: meKeys.current(),
+    queryFn: async () => {
+      const response = await apiClient.me.get()
+      return response.data
+    },
+  })
+}
+
+export function useUpdateMe() {
+  const apiClient = useApiClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (input: UpdateMeInput) => apiClient.me.update(input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(meKeys.current(), response.data)
+    },
+  })
 }
 
 function useApiClient() {

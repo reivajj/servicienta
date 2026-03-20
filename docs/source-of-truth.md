@@ -81,7 +81,8 @@ Campos base esperados:
 | `id` | `uuid` | PK |
 | `email` | `string` | identidad principal |
 | `name` | `string` | nombre visible |
-| `role` | `enum` | `admin \| technician \| client` |
+| `surname` | `string` | apellido visible |
+| `role` | `text` | con `check`, valores actuales `admin \| technician \| client` |
 | `created_at` | `timestamp` | auditoría |
 
 ### 2. Perfiles separados por rol
@@ -113,7 +114,8 @@ Entidad base de identidad y autenticación.
 | `id` | `uuid` | PK |
 | `email` | `string` | |
 | `name` | `string` | |
-| `role` | `enum` | `admin \| technician \| client` |
+| `surname` | `string` | |
+| `role` | `text` | con `check`, valores actuales `admin \| technician \| client` |
 | `created_at` | `timestamp` | |
 
 ### TechnicianProfile

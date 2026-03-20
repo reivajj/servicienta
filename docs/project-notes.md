@@ -26,7 +26,8 @@ Tabla base de identidad y auth (Supabase Auth).
 | id | uuid | PK — compartido con perfiles |
 | email | string | |
 | name | string | |
-| role | enum | `admin · technician · client` |
+| surname | string | |
+| role | text | con `check`, valores `admin · technician · client` |
 | created_at | timestamp | |
 
 ### TechnicianProfile _(a definir)_

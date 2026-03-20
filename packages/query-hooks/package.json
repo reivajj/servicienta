@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@servicienta/api-client": "workspace:^",
+    "@servicienta/types": "workspace:^",
     "@tanstack/react-query": "^5.90.21",
     "react": "^19.2.4"
   },
