@@ -4,15 +4,9 @@ import type {
 } from '@servicienta/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { UnauthorizedError } from '../core/errors.js'
-import type {
-  AuthenticatedUser,
-  UserRow,
-} from './types.js'
+import type { AuthenticatedUser } from './types.js'
 import { mapUserRow } from './mapper.js'
-import {
-  isUserRole,
-  validateUpdateMeInput,
-} from './validators.js'
+import { validateUpdateMeInput } from './validators.js'
 
 export async function authenticateUser(
   supabase: SupabaseClient,

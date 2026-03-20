@@ -10,8 +10,10 @@ export function errorHandler(
   error: unknown,
   request: RequestWithId,
   response: Response,
-  _next: NextFunction,
+  next: NextFunction,
 ) {
+  void next
+
   if (error instanceof AppError) {
     errorResponse(response, request, error.message, error.statusCode)
     return

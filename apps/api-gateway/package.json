@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "lint": "echo 'api-gateway lint pending'",
+    "lint": "eslint .",
     "check-types": "tsc -p tsconfig.json --noEmit",
     "format": "echo 'api-gateway format pending'"
   },
