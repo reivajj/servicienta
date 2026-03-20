@@ -28,9 +28,6 @@ export function AppShell() {
           <Link to="/dashboard" className="app-shell__link">
             Dashboard
           </Link>
-          <Link to="/technicians" className="app-shell__link">
-            Tecnicos
-          </Link>
           <Link to="/login" className="app-shell__link">
             Login
           </Link>

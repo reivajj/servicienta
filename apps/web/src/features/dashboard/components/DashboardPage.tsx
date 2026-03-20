@@ -27,9 +27,6 @@ export function DashboardPage() {
         <Link to="/dev/supabase" className="dashboard-card__link">
           Ir al diagnostico tecnico
         </Link>
-        <Link to="/technicians" className="dashboard-card__link">
-          Ver tecnicos
-        </Link>
       </section>
     </main>
   )

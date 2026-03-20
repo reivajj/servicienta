@@ -1,7 +1,4 @@
-import type {
-  ApiErrorResponse,
-  ListTechniciansResponse,
-} from '@servicienta/types'
+import type { ApiErrorResponse } from '@servicienta/types'
 
 export interface ApiClientConfig {
   baseUrl: string
@@ -30,11 +27,7 @@ export class ApiClientError extends Error {
   }
 }
 
-export interface ApiClient {
-  technicians: {
-    list: () => Promise<ListTechniciansResponse>
-  }
-}
+export interface ApiClient {}
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
   const baseUrl = normalizeBaseUrl(config.baseUrl)
@@ -61,11 +54,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     return payload as T
   }
 
-  return {
-    technicians: {
-      list: () => apiFetch<ListTechniciansResponse>('/api/technicians'),
-    },
-  }
+  return {}
 }
 
 function normalizeBaseUrl(baseUrl: string): string {

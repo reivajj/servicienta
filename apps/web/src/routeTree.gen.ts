@@ -9,17 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TechniciansRouteImport } from './routes/technicians'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DevSupabaseRouteImport } from './routes/dev.supabase'
 
-const TechniciansRoute = TechniciansRouteImport.update({
-  id: '/technicians',
-  path: '/technicians',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -45,14 +39,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/technicians': typeof TechniciansRoute
   '/dev/supabase': typeof DevSupabaseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/technicians': typeof TechniciansRoute
   '/dev/supabase': typeof DevSupabaseRoute
 }
 export interface FileRoutesById {
@@ -60,40 +52,25 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/technicians': typeof TechniciansRoute
   '/dev/supabase': typeof DevSupabaseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/technicians' | '/dev/supabase'
+  fullPaths: '/' | '/dashboard' | '/login' | '/dev/supabase'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/technicians' | '/dev/supabase'
-  id:
-    | '__root__'
-    | '/'
-    | '/dashboard'
-    | '/login'
-    | '/technicians'
-    | '/dev/supabase'
+  to: '/' | '/dashboard' | '/login' | '/dev/supabase'
+  id: '__root__' | '/' | '/dashboard' | '/login' | '/dev/supabase'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  TechniciansRoute: typeof TechniciansRoute
   DevSupabaseRoute: typeof DevSupabaseRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/technicians': {
-      id: '/technicians'
-      path: '/technicians'
-      fullPath: '/technicians'
-      preLoaderRoute: typeof TechniciansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -129,7 +106,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  TechniciansRoute: TechniciansRoute,
   DevSupabaseRoute: DevSupabaseRoute,
 }
 export const routeTree = rootRouteImport

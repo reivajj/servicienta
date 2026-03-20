@@ -1,159 +1,112 @@
-# Turborepo starter
+# Servicienta
 
-This Turborepo starter is maintained by the Turborepo core team.
+Monorepo del proyecto Servicienta.
 
-## Using this example
+Este repo usa `Turborepo` + `pnpm workspaces` para organizar apps deployables y paquetes compartidos.
 
-Run the following command:
+## Estado actual
 
-```sh
-npx create-turbo@latest
+El codebase está en etapa de prototipo.
+
+Hoy ya existe una base técnica funcional para:
+
+- `apps/web`: SPA en React + Vite
+- `apps/api-gateway`: API Gateway en Node/Express
+- `packages/api-client`: cliente HTTP tipado
+- `packages/query-hooks`: hooks sobre TanStack Query
+- `packages/supabase`: cliente y helpers compartidos de Supabase
+- `packages/types`: contratos compartidos
+
+Todavía hay partes incompletas, placeholders y decisiones abiertas.
+
+## Fuente de verdad provisional
+
+La referencia principal del proyecto está en:
+
+- [docs/source-of-truth.md](./docs/source-of-truth.md)
+
+Ese documento explica:
+
+- modelo de entidades provisional
+- arquitectura objetivo
+- diferencias entre visión y código actual
+- qué partes son prototipo y cuáles son dirección real del proyecto
+
+Importante:
+
+- el experimento `technicians` fue removido para evitar confusión
+- la dirección real del modelo apunta a `TechnicianProfile`
+- todo el schema actual sigue siendo discutible
+
+## Estructura del repo
+
+```txt
+apps/
+  api-gateway/   API Gateway Express
+  landing/       Landing SSR (placeholder)
+  web/           Frontend SPA React + Vite
+
+packages/
+  api-client/    Cliente HTTP tipado
+  config/        Configuración compartida
+  query-hooks/   Hooks de TanStack Query
+  supabase/      Cliente y helpers compartidos
+  types/         Tipos y contratos
+  validators/    Validaciones compartidas (pendiente)
+
+docs/            Documentación de trabajo
+supabase/        Migraciones y assets de Supabase
 ```
 
-## What's inside?
+## Comandos
 
-This Turborepo includes the following packages/apps:
+Desde la raíz:
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm lint
+pnpm check-types
 ```
 
-Without global `turbo`, use your package manager:
+También podés usar filtros con `turbo`:
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+pnpm turbo dev --filter=web
+pnpm turbo dev --filter=@servicienta/api-gateway
+pnpm turbo build --filter=web...
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Variables de entorno
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Archivos actuales:
 
-```sh
-turbo build --filter=docs
-```
+- `apps/web/.env.example`
+- `apps/api-gateway/.env.example`
 
-Without global `turbo`:
+Variables principales:
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+### `apps/web`
 
-### Develop
+- `VITE_API_URL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-To develop all apps and packages, run the following command:
+### `apps/api-gateway`
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+- `PORT`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-```sh
-cd my-turborepo
-turbo dev
-```
+## Supabase
 
-Without global `turbo`, use your package manager:
+La carpeta `supabase/` contiene las migraciones del proyecto.
 
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+Hoy no hay un schema definitivo implementado para el modelo real del negocio.
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Otras notas
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- El `README` raíz anterior venía del starter de Turborepo y ya no describía este repo correctamente.
+- Parte de la documentación en `docs/` es exploratoria; usar `docs/source-of-truth.md` como referencia principal de trabajo.
+- `apps/landing`, `packages/validators` y otras piezas todavía están en etapa temprana o placeholder.

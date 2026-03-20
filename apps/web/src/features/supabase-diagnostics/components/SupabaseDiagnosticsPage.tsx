@@ -4,7 +4,7 @@ import { getSupabaseBrowserClient } from '../../../lib/supabase'
 export function SupabaseDiagnosticsPage() {
   const supabase = getSupabaseBrowserClient()
   const [email, setEmail] = useState('')
-  const [tableName, setTableName] = useState('technichians')
+  const [tableName, setTableName] = useState('')
   const [sessionResult, setSessionResult] = useState<string>('')
   const [otpResult, setOtpResult] = useState<string>('')
   const [queryResult, setQueryResult] = useState<string>('')
@@ -104,7 +104,7 @@ export function SupabaseDiagnosticsPage() {
           <h2>Consulta a tabla</h2>
           <input
             type="text"
-            placeholder="technichians"
+            placeholder="nombre_de_tabla"
             value={tableName}
             onChange={(event) => setTableName(event.target.value)}
           />
