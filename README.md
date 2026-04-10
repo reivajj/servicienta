@@ -58,6 +58,41 @@ docs/            Documentación de trabajo
 supabase/        Migraciones y assets de Supabase
 ```
 
+## Convencion de packages compartidos
+
+En los packages compartidos estamos usando esta regla general:
+
+- `src/index.ts` o `src/index.tsx` funciona como barrel publico del package
+- `src/core/` contiene infraestructura compartida que no pertenece a una feature concreta
+- cada feature vive en su propia carpeta dentro de `src/`
+
+Ejemplos actuales:
+
+- `packages/types`
+  - `src/users/domain.ts`
+  - `src/users/contracts.ts`
+- `packages/api-client`
+  - `src/core/http.ts`
+  - `src/core/client.ts`
+  - `src/users/client.ts`
+- `packages/query-hooks`
+  - `src/core/api-client-context.tsx`
+  - `src/users/hooks.ts`
+  - `src/users/keys.ts`
+
+La idea es evitar:
+
+- un `index.ts` gigante con todo mezclado
+- infraestructura compartida metida dentro de una feature
+- features de dominio mezcladas entre si
+- exports publicos desordenados
+
+Regla practica:
+
+- si una pieza representa contratos, hooks o cliente de una feature, vive dentro de esa feature
+- si una pieza es transversal al package, tiende a vivir en `core/`
+- el root del package solo expone la API publica
+
 ## Comandos
 
 Desde la raíz:

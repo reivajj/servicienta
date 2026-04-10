@@ -6,7 +6,7 @@ import { errorHandler } from './middleware/error-handler.js'
 import { notFound } from './middleware/not-found.js'
 import { requestId } from './middleware/request-id.js'
 import { requestLogger } from './middleware/request-logger.js'
-import { healthRouter } from './routes/health.js'
+import { healthRouter } from './system/health.js'
 import { usersRouter } from './users/router.js'
 
 export function createApp(env: ApiGatewayEnv) {

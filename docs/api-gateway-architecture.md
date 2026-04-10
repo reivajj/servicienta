@@ -16,7 +16,7 @@ Separar claramente:
 - composición de la app Express
 - infraestructura compartida
 - middleware transversal
-- rutas globales
+- endpoints transversales del servicio
 - módulos de feature
 
 La idea es evitar:
@@ -45,7 +45,7 @@ apps/api-gateway/src/
     not-found.ts
     request-id.ts
     request-logger.ts
-  routes/
+  system/
     health.ts
   users/
     mapper.ts
@@ -200,16 +200,16 @@ Objetivo:
 Regla general:
 si el comportamiento se aplica como pipeline de Express, debe vivir en `middleware/`.
 
-## `routes/`
+## `system/`
 
-Rutas globales o no ligadas a una feature de negocio específica.
+Endpoints transversales no ligados a una feature de negocio específica.
 
 Hoy incluye:
 
 - `health.ts`
 
 Regla:
-si una ruta no pertenece claramente a un módulo de dominio, puede vivir en `routes/`.
+si un endpoint no pertenece claramente a un módulo de dominio, puede vivir en `system/`.
 
 Ejemplos típicos:
 
@@ -393,7 +393,7 @@ Si estás dudando dónde poner algo:
 - ¿Es configuración/env? → `env.ts`
 - ¿Es infraestructura compartida del gateway? → `core/`
 - ¿Es pipeline transversal de Express? → `middleware/`
-- ¿Es una ruta global? → `routes/`
+- ¿Es un endpoint transversal del servicio? → `system/`
 - ¿Es lógica de una feature concreta? → carpeta de feature
 - ¿Es contrato compartido con frontend? → `packages/types`
 - ¿Es tipo interno de backend? → `src/<feature>/types.ts` o `src/core/`

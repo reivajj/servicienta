@@ -1,18 +1,18 @@
 import type {
   NextFunction,
-  Request,
   Response,
 } from 'express'
+import type { RequestWithId } from '../core/http.js'
 
 type AsyncRequestHandler = (
-  request: Request,
+  request: RequestWithId,
   response: Response,
   next: NextFunction,
 ) => Promise<unknown>
 
 export function asyncHandler(handler: AsyncRequestHandler) {
   return function wrappedAsyncHandler(
-    request: Request,
+    request: RequestWithId,
     response: Response,
     next: NextFunction,
   ) {

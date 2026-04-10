@@ -35,6 +35,35 @@ La idea es tener una base común para trabajar, no congelar el diseño.
 - `packages/supabase`: cliente y helpers compartidos de Supabase
 - Supabase como auth, base de datos y potencial capa realtime
 
+### Convencion actual para packages compartidos
+
+Ademas del criterio por app, hoy estamos siguiendo una convencion interna para
+los packages compartidos del monorepo.
+
+La estructura preferida es:
+
+- `src/index.ts` o `src/index.tsx` como barrel publico
+- `src/core/` para infraestructura compartida del package
+- `src/<feature>/` para codigo agrupado por feature de dominio
+
+Esto aplica hoy a:
+
+- `packages/types`
+- `packages/api-client`
+- `packages/query-hooks`
+
+La intencion es mantener la misma idea en todas esas capas:
+
+- `types` define dominio y contratos compartidos por feature
+- `api-client` expone slices del cliente HTTP por feature
+- `query-hooks` expone hooks y query keys por feature
+
+Regla de ubicacion:
+
+- si algo pertenece a una feature concreta, debe vivir dentro de esa feature
+- si algo es transversal al package, debe vivir en `core/`
+- el root del package no deberia acumular implementacion, solo exports publicos
+
 ### Estado del codebase hoy
 
 Hoy el repo implementa solo una porción mínima de esta visión.
@@ -83,6 +112,8 @@ Campos base esperados:
 | `name` | `string` | nombre visible |
 | `surname` | `string` | apellido visible |
 | `role` | `text` | con `check`, valores actuales `admin \| technician \| client` |
+| `status` | `text` | valores actuales `ACTIVE \| DELETED` |
+| `deleted_at` | `timestamp` | soft delete, nullable |
 | `created_at` | `timestamp` | auditoría |
 
 ### 2. Perfiles separados por rol
@@ -116,6 +147,8 @@ Entidad base de identidad y autenticación.
 | `name` | `string` | |
 | `surname` | `string` | |
 | `role` | `text` | con `check`, valores actuales `admin \| technician \| client` |
+| `status` | `text` | valores actuales `ACTIVE \| DELETED` |
+| `deleted_at` | `timestamp` | soft delete, nullable |
 | `created_at` | `timestamp` | |
 
 ### TechnicianProfile

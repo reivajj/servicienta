@@ -1,34 +1,37 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { useMe, useUpdateMe } from '@servicienta/query-hooks'
+import {
+  useCurrentUser,
+  useUpdateCurrentUser,
+} from '@servicienta/query-hooks'
 import type { UserRole } from '@servicienta/types'
 import { useAuth } from '../../auth/components/AuthProvider'
 
 export function DashboardPage() {
   const { user } = useAuth()
-  const { data: me, error, isLoading } = useMe()
-  const updateMe = useUpdateMe()
+  const { data: currentUser, error, isLoading } = useCurrentUser()
+  const updateCurrentUser = useUpdateCurrentUser()
   const [name, setName] = useState('')
   const [surname, setSurname] = useState('')
   const [role, setRole] = useState<UserRole>('client')
 
   useEffect(() => {
-    if (!me) {
+    if (!currentUser) {
       return
     }
 
-    setName(me.name ?? '')
-    setSurname(me.surname ?? '')
-    setRole(me.role)
-  }, [me])
+    setName(currentUser.name ?? '')
+    setSurname(currentUser.surname ?? '')
+    setRole(currentUser.role)
+  }, [currentUser])
 
   const errorMessage = error instanceof Error ? error.message : ''
   const mutationError =
-    updateMe.error instanceof Error ? updateMe.error.message : ''
+    updateCurrentUser.error instanceof Error ? updateCurrentUser.error.message : ''
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    await updateMe.mutateAsync({ name, surname, role })
+    await updateCurrentUser.mutateAsync({ name, surname, role })
   }
 
   return (
@@ -54,15 +57,15 @@ export function DashboardPage() {
             <dd>
               {isLoading
                 ? 'Cargando perfil...'
-                : me
-                  ? `${me.name ?? 'Sin nombre'} ${me.surname ?? ''}`.trim() ||
+                : currentUser
+                  ? `${currentUser.name ?? 'Sin nombre'} ${currentUser.surname ?? ''}`.trim() ||
                     'Sin datos'
                   : 'Sin perfil'}
             </dd>
           </div>
           <div>
             <dt>Rol</dt>
-            <dd>{me?.role ?? 'No disponible'}</dd>
+            <dd>{currentUser?.role ?? 'No disponible'}</dd>
           </div>
         </dl>
 
@@ -101,15 +104,15 @@ export function DashboardPage() {
             </select>
           </label>
 
-          <button type="submit" disabled={updateMe.isPending}>
-            {updateMe.isPending ? 'Guardando...' : 'Guardar perfil'}
+          <button type="submit" disabled={updateCurrentUser.isPending}>
+            {updateCurrentUser.isPending ? 'Guardando...' : 'Guardar perfil'}
           </button>
         </form>
 
         <p className="auth-card__message">
           {mutationError
             ? mutationError
-            : updateMe.isSuccess
+            : updateCurrentUser.isSuccess
               ? 'Perfil actualizado'
               : ' '}
         </p>

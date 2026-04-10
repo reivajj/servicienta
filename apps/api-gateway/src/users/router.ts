@@ -1,11 +1,16 @@
 import { Router } from 'express'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { extractBearerToken } from '../core/auth.js'
+import { ValidationError } from '../core/errors.js'
 import { ok } from '../core/http-response.js'
 import { asyncHandler } from '../middleware/async-handler.js'
+import { requireAdmin } from '../middleware/require-admin.js'
+import { requireAuth } from '../middleware/require-auth.js'
 import {
-  authenticateUser,
-  getCurrentUser,
+  deleteUserById,
+  getUserById,
+  listUsers,
+  restoreUserById,
+  updateUserById,
   updateCurrentUser,
 } from './service.js'
 
@@ -17,28 +22,20 @@ export function usersRouter(options: UsersRouterOptions) {
   const router = Router()
 
   router.get(
-    '/api/me',
-    asyncHandler(async (request, response) => {
-      const authenticatedUser = await authenticateUser(
-        options.supabase,
-        extractBearerToken(request),
-      )
-      const user = await getCurrentUser(options.supabase, authenticatedUser)
-
-      ok(response, user)
+    '/api/users/current',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (_request, response) => {
+      ok(response, _request.auth)
     }),
   )
 
   router.patch(
-    '/api/me',
+    '/api/users/current',
+    requireAuth({ supabase: options.supabase }),
     asyncHandler(async (request, response) => {
-      const authenticatedUser = await authenticateUser(
-        options.supabase,
-        extractBearerToken(request),
-      )
       const user = await updateCurrentUser(
         options.supabase,
-        authenticatedUser,
+        request.auth!,
         request.body,
       )
 
@@ -46,5 +43,76 @@ export function usersRouter(options: UsersRouterOptions) {
     }),
   )
 
+  router.get(
+    '/api/users',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const users = await listUsers(options.supabase)
+
+      ok(response, users)
+    }),
+  )
+
+  router.get(
+    '/api/users/:userId',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const user = await getUserById(
+        options.supabase,
+        readUserIdParam(request.params.userId),
+      )
+
+      ok(response, user)
+    }),
+  )
+
+  router.patch(
+    '/api/users/:userId',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const user = await updateUserById(
+        options.supabase,
+        readUserIdParam(request.params.userId),
+        request.body,
+      )
+
+      ok(response, user)
+    }),
+  )
+
+  router.delete(
+    '/api/users/:userId',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const user = await deleteUserById(
+        options.supabase,
+        readUserIdParam(request.params.userId),
+      )
+
+      ok(response, user)
+    }),
+  )
+
+  router.patch(
+    '/api/users/:userId/restore',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const user = await restoreUserById(
+        options.supabase,
+        readUserIdParam(request.params.userId),
+      )
+
+      ok(response, user)
+    }),
+  )
+
   return router
+}
+
+function readUserIdParam(value: string | string[] | undefined): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new ValidationError('Invalid user id')
+  }
+
+  return value
 }

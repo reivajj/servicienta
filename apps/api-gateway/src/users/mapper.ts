@@ -1,6 +1,9 @@
 import type { User } from '@servicienta/types'
 import type { UserRow } from './types.js'
-import { isUserRole } from './validators.js'
+import {
+  isUserRole,
+  isUserStatus,
+} from './validators.js'
 
 export function mapUserRow(row: UserRow): User {
   return {
@@ -9,6 +12,8 @@ export function mapUserRow(row: UserRow): User {
     name: row.name,
     surname: row.surname,
     role: isUserRole(row.role) ? row.role : 'client',
+    status: isUserStatus(row.status) ? row.status : 'ACTIVE',
+    deleted_at: row.deleted_at,
     created_at: row.created_at,
   }
 }
