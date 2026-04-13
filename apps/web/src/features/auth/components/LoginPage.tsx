@@ -7,6 +7,7 @@ export function LoginPage() {
   const supabase = getSupabaseBrowserClient()
   const { isLoading, session } = useAuth()
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -22,16 +23,19 @@ export function LoginPage() {
       return
     }
 
+    if (!password.trim()) {
+      setMessage('Ingresa una password valida')
+      return
+    }
+
     setIsSubmitting(true)
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
+      password,
     })
 
-    setMessage(error ? `Error: ${error.message}` : 'Revisa tu email para entrar')
+    setMessage(error ? `Error: ${error.message}` : 'Login exitoso')
     setIsSubmitting(false)
   }
 
@@ -41,7 +45,7 @@ export function LoginPage() {
         <p className="auth-card__eyebrow">Acceso</p>
         <h1>Ingresar</h1>
         <p className="auth-card__copy">
-          Envia un magic link a tu correo para entrar a la plataforma.
+          Ingresá con email y password para probar usuarios creados en Supabase Auth.
         </p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -55,8 +59,18 @@ export function LoginPage() {
             />
           </label>
 
+          <label className="auth-form__field">
+            <span>Password</span>
+            <input
+              type="password"
+              placeholder="Tu password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </label>
+
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Enviando...' : 'Enviar magic link'}
+            {isSubmitting ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>
 

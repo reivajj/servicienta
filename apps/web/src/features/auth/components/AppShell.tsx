@@ -28,6 +28,9 @@ export function AppShell() {
           <Link to="/dashboard" className="app-shell__link">
             Dashboard
           </Link>
+          <Link to="/users" className="app-shell__link">
+            Users
+          </Link>
           <Link to="/login" className="app-shell__link">
             Login
           </Link>

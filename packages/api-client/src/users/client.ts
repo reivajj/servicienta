@@ -2,6 +2,7 @@ import type {
   DeleteUserResponse,
   GetUserResponse,
   GetCurrentUserResponse,
+  ListUsersInput,
   ListUsersResponse,
   RestoreUserResponse,
   UpdateCurrentUserInput,
@@ -20,12 +21,33 @@ export interface UsersApiClient {
       get: () => Promise<GetCurrentUserResponse>
       update: (input: UpdateCurrentUserInput) => Promise<UpdateCurrentUserResponse>
     }
-    list: () => Promise<ListUsersResponse>
+    list: (input: ListUsersInput) => Promise<ListUsersResponse>
     getById: (userId: string) => Promise<GetUserResponse>
     updateById: (userId: string, input: UpdateUserInput) => Promise<UpdateUserResponse>
     remove: (userId: string) => Promise<DeleteUserResponse>
     restore: (userId: string) => Promise<RestoreUserResponse>
   }
+}
+
+function buildUsersListQuery(input: ListUsersInput) {
+  const searchParams = new URLSearchParams({
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  })
+
+  if (input.status) {
+    searchParams.set('status', input.status)
+  }
+
+  if (input.role) {
+    searchParams.set('role', input.role)
+  }
+
+  if (input.search) {
+    searchParams.set('search', input.search)
+  }
+
+  return searchParams.toString()
 }
 
 export function createUsersApiClient({
@@ -41,7 +63,8 @@ export function createUsersApiClient({
             body: JSON.stringify(input),
           }),
       },
-      list: () => apiFetch<ListUsersResponse>('/api/users'),
+      list: (input) =>
+        apiFetch<ListUsersResponse>(`/api/users?${buildUsersListQuery(input)}`),
       getById: (userId) => apiFetch<GetUserResponse>(`/api/users/${userId}`),
       updateById: (userId, input) =>
         apiFetch<UpdateUserResponse>(`/api/users/${userId}`, {

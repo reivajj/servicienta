@@ -24,4 +24,10 @@ export default defineConfig([
       },
     },
   },
+  {
+    files: ['src/routes/**/*.tsx', 'src/features/auth/components/AuthProvider.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

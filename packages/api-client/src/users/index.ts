@@ -4,6 +4,7 @@ export type {
   DeleteUserResponse,
   GetUserResponse,
   GetCurrentUserResponse,
+  ListUsersInput,
   ListUsersResponse,
   RestoreUserResponse,
   UpdateCurrentUserInput,

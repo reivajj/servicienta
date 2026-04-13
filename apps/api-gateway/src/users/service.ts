@@ -1,9 +1,30 @@
-import type { UpdateCurrentUserInput, UpdateUserInput, User } from "@servicienta/types";
+import type { ListUsersInput, PaginatedUsers, UpdateCurrentUserInput, UpdateUserInput, User } from "@servicienta/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from "../core/errors.js";
 import type { AuthenticatedUser, AuthorizedUser } from "./types.js";
 import { mapUserRow } from "./mapper.js";
 import { isUserRole, isUserStatus, validateUpdateCurrentUserInput, validateUpdateUserInput } from "./validators.js";
+
+function applyListUsersFilters(query: any, input: ListUsersInput) {
+  let nextQuery = query
+
+  if (input.status) {
+    nextQuery = nextQuery.eq("status", input.status)
+  }
+
+  if (input.role) {
+    nextQuery = nextQuery.eq("role", input.role)
+  }
+
+  if (input.search) {
+    const escapedSearch = input.search.replace(/[%]/g, "")
+    nextQuery = nextQuery.or(
+      `email.ilike.%${escapedSearch}%,name.ilike.%${escapedSearch}%,surname.ilike.%${escapedSearch}%`,
+    )
+  }
+
+  return nextQuery
+}
 
 export async function authenticateUser(
   supabase: SupabaseClient,
@@ -55,15 +76,84 @@ export async function updateCurrentUser(
   return mapUserRow(data);
 }
 
-export async function listUsers(supabase: SupabaseClient): Promise<User[]> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, email, name, surname, role, status, deleted_at, created_at")
-    .order("created_at", { ascending: false });
+export async function listUsers(
+  supabase: SupabaseClient,
+  input: ListUsersInput,
+): Promise<PaginatedUsers> {
+  const from = (input.page - 1) * input.pageSize
+  const to = from + input.pageSize - 1
 
-  if (error) throw new Error(error.message);
+  const usersQuery = applyListUsersFilters(
+    supabase
+      .from("users")
+      .select("id, email, name, surname, role, status, deleted_at, created_at", {
+        count: "exact",
+      })
+      .order("created_at", { ascending: false })
+      .range(from, to),
+    input,
+  )
 
-  return data.map(mapUserRow);
+  const totalQuery = applyListUsersFilters(
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true }),
+    input,
+  )
+  const activeCountQuery = applyListUsersFilters(
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "ACTIVE"),
+    {
+      ...input,
+      status: undefined,
+    },
+  )
+  const deletedCountQuery = applyListUsersFilters(
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "DELETED"),
+    {
+      ...input,
+      status: undefined,
+    },
+  )
+
+  const [
+    usersResult,
+    totalResult,
+    activeCountResult,
+    deletedCountResult,
+  ] = await Promise.all([
+    usersQuery,
+    totalQuery,
+    activeCountQuery,
+    deletedCountQuery,
+  ])
+
+  if (usersResult.error) throw new Error(usersResult.error.message)
+  if (totalResult.error) throw new Error(totalResult.error.message)
+  if (activeCountResult.error) throw new Error(activeCountResult.error.message)
+  if (deletedCountResult.error) throw new Error(deletedCountResult.error.message)
+
+  const total = totalResult.count ?? usersResult.count ?? 0
+
+  return {
+    items: (usersResult.data ?? []).map(mapUserRow),
+    pagination: {
+      page: input.page,
+      pageSize: input.pageSize,
+      total,
+      totalPages: total === 0 ? 1 : Math.ceil(total / input.pageSize),
+    },
+    summary: {
+      totalUsers: total,
+      activeUsers: activeCountResult.count ?? 0,
+      deletedUsers: deletedCountResult.count ?? 0,
+    },
+  }
 }
 
 export async function getUserById(supabase: SupabaseClient, userId: string): Promise<User> {
@@ -103,7 +193,15 @@ export async function updateUserById(supabase: SupabaseClient, userId: string, i
   return mapUserRow(data);
 }
 
-export async function deleteUserById(supabase: SupabaseClient, userId: string): Promise<User> {
+export async function deleteUserById(
+  supabase: SupabaseClient,
+  userId: string,
+  actorUserId?: string,
+): Promise<User> {
+  if (actorUserId && actorUserId === userId) {
+    throw new ValidationError("You cannot delete your own active admin user");
+  }
+
   const existingUser = await getUserById(supabase, userId);
 
   if (existingUser.status === "DELETED") return existingUser;

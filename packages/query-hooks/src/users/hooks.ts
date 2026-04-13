@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import type {
+  ListUsersInput,
   UpdateCurrentUserInput,
   UpdateUserInput,
 } from '@servicienta/api-client'
@@ -22,13 +23,13 @@ export function useCurrentUser() {
   })
 }
 
-export function useUsers() {
+export function useUsers(input: ListUsersInput) {
   const apiClient = useApiClient()
 
   return useQuery({
-    queryKey: userKeys.list(),
+    queryKey: userKeys.list(input),
     queryFn: async () => {
-      const response = await apiClient.users.list()
+      const response = await apiClient.users.list(input)
       return response.data
     },
   })
@@ -74,7 +75,7 @@ export function useUpdateUser() {
     }) => apiClient.users.updateById(userId, input),
     onSuccess: (response) => {
       queryClient.setQueryData(userKeys.detail(response.data.id), response.data)
-      void queryClient.invalidateQueries({ queryKey: userKeys.all })
+      void queryClient.invalidateQueries({ queryKey: userKeys.lists() })
     },
   })
 }
@@ -87,7 +88,7 @@ export function useDeleteUser() {
     mutationFn: (userId: string) => apiClient.users.remove(userId),
     onSuccess: (response) => {
       queryClient.setQueryData(userKeys.detail(response.data.id), response.data)
-      void queryClient.invalidateQueries({ queryKey: userKeys.all })
+      void queryClient.invalidateQueries({ queryKey: userKeys.lists() })
     },
   })
 }
@@ -100,7 +101,7 @@ export function useRestoreUser() {
     mutationFn: (userId: string) => apiClient.users.restore(userId),
     onSuccess: (response) => {
       queryClient.setQueryData(userKeys.detail(response.data.id), response.data)
-      void queryClient.invalidateQueries({ queryKey: userKeys.all })
+      void queryClient.invalidateQueries({ queryKey: userKeys.lists() })
     },
   })
 }

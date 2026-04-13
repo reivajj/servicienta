@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
 import {
   useCurrentUser,
   useUpdateCurrentUser,
@@ -11,26 +10,20 @@ export function DashboardPage() {
   const { user } = useAuth()
   const { data: currentUser, error, isLoading } = useCurrentUser()
   const updateCurrentUser = useUpdateCurrentUser()
-  const [name, setName] = useState('')
-  const [surname, setSurname] = useState('')
-  const [role, setRole] = useState<UserRole>('client')
-
-  useEffect(() => {
-    if (!currentUser) {
-      return
-    }
-
-    setName(currentUser.name ?? '')
-    setSurname(currentUser.surname ?? '')
-    setRole(currentUser.role)
-  }, [currentUser])
-
   const errorMessage = error instanceof Error ? error.message : ''
   const mutationError =
     updateCurrentUser.error instanceof Error ? updateCurrentUser.error.message : ''
+  const formKey = currentUser
+    ? `${currentUser.id}:${currentUser.name ?? ''}:${currentUser.surname ?? ''}:${currentUser.role}`
+    : 'current-user-form'
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const name = String(formData.get('name') ?? '')
+    const surname = String(formData.get('surname') ?? '')
+    const role = (formData.get('role') as UserRole | null) ?? 'client'
+
     await updateCurrentUser.mutateAsync({ name, surname, role })
   }
 
@@ -40,7 +33,8 @@ export function DashboardPage() {
         <p className="dashboard-card__eyebrow">Dashboard</p>
         <h1>Sesion activa</h1>
         <p className="dashboard-card__copy">
-          Entraste correctamente con Supabase.
+          Entraste correctamente con Supabase. Desde aca podes validar tu
+          sesion y saltar a la feature `users` para probar endpoints admin.
         </p>
 
         <dl className="dashboard-card__meta">
@@ -73,31 +67,28 @@ export function DashboardPage() {
           <p className="auth-card__message">{errorMessage}</p>
         ) : null}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form key={formKey} className="auth-form" onSubmit={handleSubmit}>
           <label className="auth-form__field">
             <span>Nombre</span>
             <input
+              name="name"
               type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
+              defaultValue={currentUser?.name ?? ''}
             />
           </label>
 
           <label className="auth-form__field">
             <span>Apellido</span>
             <input
+              name="surname"
               type="text"
-              value={surname}
-              onChange={(event) => setSurname(event.target.value)}
+              defaultValue={currentUser?.surname ?? ''}
             />
           </label>
 
           <label className="auth-form__field">
             <span>Rol</span>
-            <select
-              value={role}
-              onChange={(event) => setRole(event.target.value as UserRole)}
-            >
+            <select name="role" defaultValue={currentUser?.role ?? 'client'}>
               <option value="client">Client</option>
               <option value="technician">Technician</option>
               <option value="admin">Admin</option>
@@ -119,6 +110,9 @@ export function DashboardPage() {
 
         <Link to="/dev/supabase" className="dashboard-card__link">
           Ir al diagnostico tecnico
+        </Link>
+        <Link to="/users" className="dashboard-card__link dashboard-card__link--secondary">
+          Ir al tester de users
         </Link>
       </section>
     </main>

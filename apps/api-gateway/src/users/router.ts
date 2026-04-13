@@ -13,6 +13,7 @@ import {
   updateUserById,
   updateCurrentUser,
 } from './service.js'
+import { validateListUsersInput } from './validators.js'
 
 interface UsersRouterOptions {
   supabase: SupabaseClient
@@ -47,7 +48,16 @@ export function usersRouter(options: UsersRouterOptions) {
     '/api/users',
     requireAdmin({ supabase: options.supabase }),
     asyncHandler(async (request, response) => {
-      const users = await listUsers(options.supabase)
+      const users = await listUsers(
+        options.supabase,
+        validateListUsersInput({
+          page: readQueryParam(request.query.page),
+          pageSize: readQueryParam(request.query.pageSize),
+          status: readQueryParam(request.query.status),
+          role: readQueryParam(request.query.role),
+          search: readQueryParam(request.query.search),
+        }),
+      )
 
       ok(response, users)
     }),
@@ -87,6 +97,7 @@ export function usersRouter(options: UsersRouterOptions) {
       const user = await deleteUserById(
         options.supabase,
         readUserIdParam(request.params.userId),
+        request.auth?.id,
       )
 
       ok(response, user)
@@ -115,4 +126,16 @@ function readUserIdParam(value: string | string[] | undefined): string {
   }
 
   return value
+}
+
+function readQueryParam(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0]
+  }
+
+  return undefined
 }
