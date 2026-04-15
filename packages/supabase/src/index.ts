@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from './database.js'
+
 export type { Session, User } from '@supabase/supabase-js'
+export type { Database } from './database.js'
 
 export interface BrowserSupabaseEnv {
   VITE_SUPABASE_URL?: string
@@ -9,10 +13,10 @@ export interface BrowserSupabaseEnv {
 export interface BrowserSupabaseConfig {
   url: string
   anonKey: string
-  options?: Parameters<typeof createClient>[2]
+  options?: Parameters<typeof createClient<Database>>[2]
 }
 
-export type BrowserSupabaseClient = ReturnType<typeof createClient>
+export type BrowserSupabaseClient = SupabaseClient<Database>
 
 let browserClient: BrowserSupabaseClient | undefined
 
@@ -34,7 +38,7 @@ export function readSupabaseBrowserEnv(
 export function createBrowserSupabaseClient(
   config: BrowserSupabaseConfig,
 ): BrowserSupabaseClient {
-  return createClient(config.url, config.anonKey, {
+  return createClient<Database>(config.url, config.anonKey, {
     ...config.options,
     auth: {
       autoRefreshToken: true,

@@ -24,6 +24,7 @@ Todavía hay partes incompletas, placeholders y decisiones abiertas.
 La referencia principal del proyecto está en:
 
 - [docs/source-of-truth.md](./docs/source-of-truth.md)
+- [docs/supabase-rpcs.md](./docs/supabase-rpcs.md)
 
 Ese documento explica:
 
@@ -31,6 +32,10 @@ Ese documento explica:
 - arquitectura objetivo
 - diferencias entre visión y código actual
 - qué partes son prototipo y cuáles son dirección real del proyecto
+
+Y además:
+
+- `docs/supabase-rpcs.md` registra las funciones SQL expuestas vía RPC cuando pasan a ser contratos relevantes del sistema
 
 Importante:
 

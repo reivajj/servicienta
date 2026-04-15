@@ -6,9 +6,14 @@ import {
   parseResponsePayload,
 } from './http.js'
 import { createUsersApiClient, type UsersApiClient } from '../users/client.js'
+import {
+  createTechnicianProfilesApiClient,
+  type TechnicianProfilesApiClient,
+} from '../technician-profiles/client.js'
 
 export interface ApiClient {
   users: UsersApiClient['users']
+  technicianProfiles: TechnicianProfilesApiClient['technicianProfiles']
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -42,5 +47,6 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 
   return {
     ...createUsersApiClient({ apiFetch }),
+    ...createTechnicianProfilesApiClient({ apiFetch }),
   }
 }

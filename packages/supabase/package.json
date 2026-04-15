@@ -11,10 +11,11 @@
   "scripts": {
     "build": "echo 'supabase build pending'",
     "lint": "echo 'supabase lint pending'",
-    "check-types": "echo 'supabase typecheck pending'",
+    "check-types": "tsc -p tsconfig.json --noEmit",
     "format": "echo 'supabase format pending'"
   },
   "dependencies": {
+    "@servicienta/types": "workspace:^",
     "@supabase/supabase-js": "^2.99.1"
   }
 }

@@ -7,6 +7,7 @@ import { notFound } from './middleware/not-found.js'
 import { requestId } from './middleware/request-id.js'
 import { requestLogger } from './middleware/request-logger.js'
 import { healthRouter } from './system/health.js'
+import { technicianProfilesRouter } from './technician-profiles/router.js'
 import { usersRouter } from './users/router.js'
 
 export function createApp(env: ApiGatewayEnv) {
@@ -19,6 +20,7 @@ export function createApp(env: ApiGatewayEnv) {
   app.use(requestLogger)
 
   app.use(healthRouter)
+  app.use(technicianProfilesRouter({ supabase }))
   app.use(usersRouter({ supabase }))
   app.use(notFound)
   app.use(errorHandler)

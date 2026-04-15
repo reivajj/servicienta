@@ -281,6 +281,44 @@ p {
   font: inherit;
 }
 
+.auth-form__password {
+  position: relative;
+}
+
+.auth-form__password input {
+  padding-right: 52px;
+}
+
+.auth-form__toggle {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.auth-form__toggle:hover {
+  background: rgba(33, 28, 24, 0.06);
+  color: var(--text);
+}
+
+.auth-form__toggle-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .auth-form select {
   width: 100%;
   padding: 14px 16px;
@@ -291,7 +329,7 @@ p {
   font: inherit;
 }
 
-.auth-form button,
+.auth-form > button,
 .dashboard-card__link {
   display: inline-flex;
   align-items: center;
@@ -314,7 +352,7 @@ p {
   border: 1px solid rgba(214, 98, 43, 0.28);
 }
 
-.auth-form button:disabled {
+.auth-form > button:disabled {
   opacity: 0.7;
   cursor: wait;
 }
@@ -322,6 +360,17 @@ p {
 .auth-card__message {
   min-height: 24px;
   margin-top: 12px;
+}
+
+.auth-card__secondary-action {
+  margin-top: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
 }
 
 .dashboard-card__meta {

@@ -159,17 +159,175 @@ Es la dirección real que reemplaza al experimento `technicians`.
 | campo | tipo | notas |
 |---|---|---|
 | `id` | `uuid` | PK = FK → `User.id` |
-| `specialty` | `string` | rubro / especialidad |
+| `public_slug` | `string` | identificador público estable para búsqueda, detalle o URLs |
 | `bio` | `string` | descripción pública |
-| `rating` | `decimal` | calculado o derivado |
+| `rating` | `decimal` | promedio calculado o derivado |
+| `rating_count` | `integer` | cantidad de reviews que componen el promedio |
 | `available` | `boolean` | visibilidad / disponibilidad |
-| `...` | | a definir |
+| `base_address_text` | `string` | dirección base del técnico |
+| `base_lat` | `decimal` | coordenada base para cálculos de distancia |
+| `base_lng` | `decimal` | coordenada base para cálculos de distancia |
+| `service_radius_km` | `decimal` | radio operativo aproximado |
+| `verified_at` | `timestamp` | nullable, marca de verificación |
+| `created_at` | `timestamp` | |
+| `updated_at` | `timestamp` | |
 
 Notas:
 
-- puede sumar zonas de cobertura, documentación, pricing, verificación y reputación
-- es probable que esta entidad crezca bastante
+- representa el perfil operativo y público del técnico, no toda su información documental
+- el técnico tiene una sola dirección base persistida en su perfil
+- la ubicación actual del técnico podría inferirse o reportarse luego como dato temporal, pero no vive por ahora como campo estable del perfil
+- la ubicación exacta del técnico debe tratarse como privada; puede usarse internamente para matching y distancia
+- `id` sigue siendo interno; para referencias públicas debe usarse `public_slug`
+- lo público para potenciales clientes incluye al menos `public_slug`, `bio`, `rating`, `rating_count`, `available`, `verified_at`, `created_at`, zonas de cobertura, especialidades y documentos/cv públicos
 - el schema actual todavía no la implementa como tal
+
+#### PublicTechnicianProfile
+
+Proyección pública mínima para búsqueda o landing, visible incluso para usuarios anónimos.
+
+No debe exponer:
+
+- `id`
+- `base_address_text`
+- `base_lat`
+- `base_lng`
+- `service_radius_km`
+- ningún dato privado interno o administrativo
+
+Debe exponer al menos:
+
+| campo | tipo | notas |
+|---|---|---|
+| `public_slug` | `string` | identificador público estable del técnico |
+| `bio` | `string` | descripción pública |
+| `rating` | `decimal` | promedio visible |
+| `rating_count` | `integer` | cantidad de reviews visibles que componen el promedio |
+| `available` | `boolean` | estado operativo visible |
+| `verified_at` | `timestamp` | nullable, marca de verificación visible |
+| `created_at` | `timestamp` | antigüedad del perfil |
+
+Notas:
+
+- búsquedas públicas por zona, electrodoméstico u otros filtros se resuelven en backend
+- el resultado público debe identificar cada técnico con `public_slug`, no con `id`
+
+### ApplianceType
+
+Catálogo de tipos de electrodomésticos o equipos sobre los que un técnico puede trabajar.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `name` | `string` | nombre visible |
+| `slug` | `string` | identificador estable |
+
+### Brand
+
+Catálogo de marcas.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `name` | `string` | nombre visible |
+| `slug` | `string` | identificador estable |
+
+### TechnicianApplianceSpecialty
+
+Especialidades estructuradas y libres de un técnico.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `technician_id` | `uuid` | FK → `TechnicianProfile` |
+| `appliance_type_id` | `uuid` | FK → `ApplianceType`, nullable si es texto libre |
+| `supports_all_brands` | `boolean` | si aplica a cualquier marca para esa especialidad |
+| `free_text` | `string` | texto libre opcional para especialidades no catalogadas o aclaraciones |
+
+Notas:
+
+- la dirección preferida es soportar tanto catálogo como texto libre
+- `supports_all_brands = true` evita tener que enumerar marcas por default
+
+### TechnicianBrandSpecialty
+
+Restricción o explicitación de marcas para una especialidad técnica.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `technician_id` | `uuid` | FK → `TechnicianProfile` |
+| `appliance_type_id` | `uuid` | FK → `ApplianceType` |
+| `brand_id` | `uuid` | FK → `Brand` |
+
+### Zone
+
+Zona administrativa o comercial reusable. 
+Deberia poner sus medidas de longitud, latitud para marcarlas en el mapa?
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `name` | `string` | nombre visible |
+| `slug` | `string` | identificador estable |
+
+### TechnicianCoverageZone
+
+Zonas declaradas de cobertura del técnico.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `technician_id` | `uuid` | FK → `TechnicianProfile` |
+| `zone_id` | `uuid` | FK → `Zone` |
+
+Notas:
+
+- la dirección preferida es usar catálogo de zonas, no arrays de strings sueltos
+- el técnico debería vincular zonas por id, no por nombre
+
+### TechnicianReview
+
+Review y comentario recibido por un técnico.
+agregaria raitings particulares de: 
+.Seguridad
+.Puntualidad
+.etc...
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `technician_id` | `uuid` | FK → `TechnicianProfile` |
+| `order_id` | `uuid` | FK → `Order` |
+| `client_id` | `uuid` | FK → `User` |
+| `rating` | `integer` | por ahora puede pensarse como escala simple, ej. 1..5 |
+| `comment` | `string` | comentario visible |
+| `created_at` | `timestamp` | |
+
+Notas:
+
+- las reviews cuelgan de `Order`, no de `Operation`
+- `TechnicianProfile.rating` y `TechnicianProfile.rating_count` se derivan de esta entidad
+
+### TechnicianDocument
+
+Documento o material público/privado asociado al técnico.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `technician_id` | `uuid` | FK → `TechnicianProfile` |
+| `document_type` | `string` | cv, certificación, matrícula, seguro, etc. |
+| `storage_key` | `string` | referencia al archivo en storage |
+| `title` | `string` | título visible |
+| `description` | `string` | texto libre asociado al documento |
+| `is_public` | `boolean` | si se muestra o no a potenciales clientes |
+| `uploaded_at` | `timestamp` | |
+
+Notas:
+
+- la dirección preferida es una entidad genérica de documentos, no una tabla exclusiva para cv
+- el cv puede ser un `document_type` dentro de esta entidad
 
 ### ClientProfile
 
@@ -276,8 +434,18 @@ User          1 → N    Order
 User          1 → 0..1 Subscription
 User          1 → 0..1 TechnicianProfile
 User          1 → 0..1 ClientProfile
+TechnicianProfile 1 → N TechnicianApplianceSpecialty
+TechnicianProfile 1 → N TechnicianBrandSpecialty
+TechnicianProfile 1 → N TechnicianCoverageZone
+TechnicianProfile 1 → N TechnicianReview
+TechnicianProfile 1 → N TechnicianDocument
+ApplianceType  1 → N    TechnicianApplianceSpecialty
+ApplianceType  1 → N    TechnicianBrandSpecialty
+Brand          1 → N    TechnicianBrandSpecialty
+Zone           1 → N    TechnicianCoverageZone
 Order         1 → N    Operation
 User (tech)   1 → N    Operation
+Order         1 → N    TechnicianReview
 Order         1 → N    Payment
 Subscription  1 → N    Payment
 Payment       1 → 0..1 Payout
@@ -395,17 +563,18 @@ salvo que en una conversación futura decidamos otra cosa.
 - definir campos completos de `TechnicianProfile`
 - definir campos completos de `ClientProfile`
 - definir mejor `address`
-- decidir si ratings viven en `Operation` o en una entidad aparte
 - tipar eventos válidos de `ActivityEvent`
 - definir duración de garantía
+- decidir si además del radio y zonas habrá otros mecanismos de cobertura
+- definir si la ubicación temporal del técnico se modela luego como entidad/evento aparte
 
 ### Autorización
 
 - qué puede ver un `client`
 - qué puede ver un `technician`
 - qué puede ver un `admin`
-- qué parte del perfil técnico es pública
 - RLS por tabla y por rol
+- qué documentos del técnico son públicos por default y cuáles requieren validación
 
 ### API y lógica de negocio
 
