@@ -1,19 +1,19 @@
-import { Link, Outlet } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useAuth } from './AuthProvider'
+import { Link, Outlet } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useAuth } from './AuthProvider';
 
 export function AppShell() {
-  const { isLoading, user, signOut } = useAuth()
-  const [signOutMessage, setSignOutMessage] = useState('')
+  const { isLoading, user, signOut } = useAuth();
+  const [signOutMessage, setSignOutMessage] = useState('');
 
   async function handleSignOut() {
     try {
-      await signOut()
-      setSignOutMessage('')
+      await signOut();
+      setSignOutMessage('');
     } catch (error) {
       setSignOutMessage(
         error instanceof Error ? error.message : 'No se pudo cerrar sesion',
-      )
+      );
     }
   }
 
@@ -30,6 +30,12 @@ export function AppShell() {
           </Link>
           <Link to="/users" className="app-shell__link">
             Users
+          </Link>
+          <Link to="/technician-search" className="app-shell__link">
+            Technician Search
+          </Link>
+          <Link to="/technician-catalogs" className="app-shell__link">
+            Technician Catalogs
           </Link>
           <Link to="/login" className="app-shell__link">
             Login
@@ -63,5 +69,5 @@ export function AppShell() {
 
       <Outlet />
     </div>
-  )
+  );
 }

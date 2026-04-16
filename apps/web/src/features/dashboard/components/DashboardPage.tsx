@@ -1,30 +1,29 @@
-import { Link } from '@tanstack/react-router'
-import {
-  useCurrentUser,
-  useUpdateCurrentUser,
-} from '@servicienta/query-hooks'
-import type { UserRole } from '@servicienta/types'
-import { useAuth } from '../../auth/components/AuthProvider'
+import { Link } from '@tanstack/react-router';
+import { useCurrentUser, useUpdateCurrentUser } from '@servicienta/query-hooks';
+import type { UserRole } from '@servicienta/types';
+import { useAuth } from '../../auth/components/AuthProvider';
 
 export function DashboardPage() {
-  const { user } = useAuth()
-  const { data: currentUser, error, isLoading } = useCurrentUser()
-  const updateCurrentUser = useUpdateCurrentUser()
-  const errorMessage = error instanceof Error ? error.message : ''
+  const { user } = useAuth();
+  const { data: currentUser, error, isLoading } = useCurrentUser();
+  const updateCurrentUser = useUpdateCurrentUser();
+  const errorMessage = error instanceof Error ? error.message : '';
   const mutationError =
-    updateCurrentUser.error instanceof Error ? updateCurrentUser.error.message : ''
+    updateCurrentUser.error instanceof Error
+      ? updateCurrentUser.error.message
+      : '';
   const formKey = currentUser
     ? `${currentUser.id}:${currentUser.name ?? ''}:${currentUser.surname ?? ''}:${currentUser.role}`
-    : 'current-user-form'
+    : 'current-user-form';
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    const name = String(formData.get('name') ?? '')
-    const surname = String(formData.get('surname') ?? '')
-    const role = (formData.get('role') as UserRole | null) ?? 'client'
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get('name') ?? '');
+    const surname = String(formData.get('surname') ?? '');
+    const role = (formData.get('role') as UserRole | null) ?? 'client';
 
-    await updateCurrentUser.mutateAsync({ name, surname, role })
+    await updateCurrentUser.mutateAsync({ name, surname, role });
   }
 
   return (
@@ -33,8 +32,8 @@ export function DashboardPage() {
         <p className="dashboard-card__eyebrow">Dashboard</p>
         <h1>Sesion activa</h1>
         <p className="dashboard-card__copy">
-          Entraste correctamente con Supabase. Desde aca podes validar tu
-          sesion y saltar a la feature `users` para probar endpoints admin.
+          Entraste correctamente con Supabase. Desde aca podes validar tu sesion
+          y saltar a la feature `users` para probar endpoints admin.
         </p>
 
         <dl className="dashboard-card__meta">
@@ -111,10 +110,27 @@ export function DashboardPage() {
         <Link to="/dev/supabase" className="dashboard-card__link">
           Ir al diagnostico tecnico
         </Link>
-        <Link to="/users" className="dashboard-card__link dashboard-card__link--secondary">
+        <Link
+          to="/users"
+          className="dashboard-card__link dashboard-card__link--secondary"
+        >
           Ir al tester de users
+        </Link>
+        {currentUser?.role === 'admin' ? (
+          <Link
+            to="/technician-search"
+            className="dashboard-card__link dashboard-card__link--secondary"
+          >
+            Ir al buscador técnico
+          </Link>
+        ) : null}
+        <Link
+          to="/technician-catalogs"
+          className="dashboard-card__link dashboard-card__link--secondary"
+        >
+          Ir al tester de catálogos técnicos
         </Link>
       </section>
     </main>
-  )
+  );
 }

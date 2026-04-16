@@ -1,91 +1,91 @@
 export interface ParsedCliArgs {
-  flags: Map<string, string | boolean>
-  positionals: string[]
+  flags: Map<string, string | boolean>;
+  positionals: string[];
 }
 
 export function parseCliArgs(argv: string[]): ParsedCliArgs {
-  const flags = new Map<string, string | boolean>()
-  const positionals: string[] = []
+  const flags = new Map<string, string | boolean>();
+  const positionals: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index]
+    const token = argv[index];
 
     if (token === '--') {
-      continue
+      continue;
     }
 
     if (!token.startsWith('--')) {
-      positionals.push(token)
-      continue
+      positionals.push(token);
+      continue;
     }
 
-    const trimmed = token.slice(2)
-    const [key, inlineValue] = trimmed.split('=', 2)
+    const trimmed = token.slice(2);
+    const [key, inlineValue] = trimmed.split('=', 2);
 
     if (!key) {
-      throw new Error(`Invalid CLI option: ${token}`)
+      throw new Error(`Invalid CLI option: ${token}`);
     }
 
     if (inlineValue !== undefined) {
-      flags.set(key, inlineValue)
-      continue
+      flags.set(key, inlineValue);
+      continue;
     }
 
-    const nextToken = argv[index + 1]
+    const nextToken = argv[index + 1];
 
     if (!nextToken || nextToken.startsWith('--')) {
-      flags.set(key, true)
-      continue
+      flags.set(key, true);
+      continue;
     }
 
-    flags.set(key, nextToken)
-    index += 1
+    flags.set(key, nextToken);
+    index += 1;
   }
 
-  return { flags, positionals }
+  return { flags, positionals };
 }
 
 export function readStringFlag(
   args: ParsedCliArgs,
   key: string,
 ): string | undefined {
-  const value = args.flags.get(key)
+  const value = args.flags.get(key);
 
   if (typeof value === 'string') {
-    return value
+    return value;
   }
 
-  return undefined
+  return undefined;
 }
 
 export function readRequiredStringFlag(
   args: ParsedCliArgs,
   key: string,
 ): string {
-  const value = readStringFlag(args, key)
+  const value = readStringFlag(args, key);
 
   if (!value) {
-    throw new Error(`Missing required flag --${key}`)
+    throw new Error(`Missing required flag --${key}`);
   }
 
-  return value
+  return value;
 }
 
 export function readNumberFlag(
   args: ParsedCliArgs,
   key: string,
 ): number | undefined {
-  const value = readStringFlag(args, key)
+  const value = readStringFlag(args, key);
 
   if (value === undefined) {
-    return undefined
+    return undefined;
   }
 
-  const parsed = Number(value)
+  const parsed = Number(value);
 
   if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new Error(`Flag --${key} must be a non-negative integer`)
+    throw new Error(`Flag --${key} must be a non-negative integer`);
   }
 
-  return parsed
+  return parsed;
 }

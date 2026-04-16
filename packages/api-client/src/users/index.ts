@@ -1,5 +1,5 @@
-export type { UsersApiClient } from './client.js'
-export { createUsersApiClient } from './client.js'
+export type { UsersApiClient } from './client.js';
+export { createUsersApiClient } from './client.js';
 export type {
   DeleteUserResponse,
   GetUserResponse,
@@ -11,4 +11,4 @@ export type {
   UpdateCurrentUserResponse,
   UpdateUserInput,
   UpdateUserResponse,
-} from '@servicienta/types'
+} from '@servicienta/types';

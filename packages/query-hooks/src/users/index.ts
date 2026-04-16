@@ -6,5 +6,5 @@ export {
   useUpdateUser,
   useUser,
   useUsers,
-} from './hooks.js'
-export { userKeys } from './keys.js'
+} from './hooks.js';
+export { userKeys } from './keys.js';

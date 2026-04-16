@@ -1,17 +1,19 @@
-import { ADMIN_BASIC_SCENARIO } from './admin-basic.js'
+import { ADMIN_BASIC_SCENARIO } from './admin-basic.js';
+import { TECHNICIAN_SEARCH_BASIC_SCENARIO } from './technician-search-basic.js';
 
 export const SCENARIOS = {
   'admin-basic': ADMIN_BASIC_SCENARIO,
-}
+  'technician-search-basic': TECHNICIAN_SEARCH_BASIC_SCENARIO,
+};
 
-export type ScenarioName = keyof typeof SCENARIOS
+export type ScenarioName = keyof typeof SCENARIOS;
 
 export function getScenario(name: string) {
-  const scenario = SCENARIOS[name as ScenarioName]
+  const scenario = SCENARIOS[name as ScenarioName];
 
   if (!scenario) {
-    throw new Error(`Unknown scenario "${name}"`)
+    throw new Error(`Unknown scenario "${name}"`);
   }
 
-  return scenario
+  return scenario;
 }

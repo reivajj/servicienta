@@ -1,14 +1,11 @@
-import type {
-  NextFunction,
-  Response,
-} from 'express'
-import type { RequestWithId } from '../core/http.js'
+import type { NextFunction, Response } from 'express';
+import type { RequestWithId } from '../core/http.js';
 
 type AsyncRequestHandler = (
   request: RequestWithId,
   response: Response,
   next: NextFunction,
-) => Promise<unknown>
+) => Promise<unknown>;
 
 export function asyncHandler(handler: AsyncRequestHandler) {
   return function wrappedAsyncHandler(
@@ -16,6 +13,6 @@ export function asyncHandler(handler: AsyncRequestHandler) {
     response: Response,
     next: NextFunction,
   ) {
-    void Promise.resolve(handler(request, response, next)).catch(next)
-  }
+    void Promise.resolve(handler(request, response, next)).catch(next);
+  };
 }

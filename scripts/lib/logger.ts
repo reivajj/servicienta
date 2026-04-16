@@ -1,15 +1,19 @@
-import type { SeedLogger } from './types.js'
+import type { SeedLogger } from './types.js';
 
 function formatDetails(details?: unknown) {
   if (details === undefined) {
-    return ''
+    return '';
   }
 
-  if (typeof details === 'object' && details !== null && Object.keys(details).length === 0) {
-    return ''
+  if (
+    typeof details === 'object' &&
+    details !== null &&
+    Object.keys(details).length === 0
+  ) {
+    return '';
   }
 
-  return ` ${JSON.stringify(details)}`
+  return ` ${JSON.stringify(details)}`;
 }
 
 export function createLogger(scope: string): SeedLogger {
@@ -18,20 +22,20 @@ export function createLogger(scope: string): SeedLogger {
     message: string,
     details?: unknown,
   ) {
-    const timestamp = new Date().toISOString()
-    const line = `[${timestamp}] [${scope}] [${level}] ${message}${formatDetails(details)}`
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] [${scope}] [${level}] ${message}${formatDetails(details)}`;
 
     if (level === 'ERROR') {
-      console.error(line)
-      return
+      console.error(line);
+      return;
     }
 
-    console.log(line)
+    console.log(line);
   }
 
   return {
     info: (message, details) => write('INFO', message, details),
     warn: (message, details) => write('WARN', message, details),
     error: (message, details) => write('ERROR', message, details),
-  }
+  };
 }

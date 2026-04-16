@@ -1,8 +1,8 @@
 import {
   getBrowserSupabaseClient,
   readSupabaseBrowserEnv,
-} from '@servicienta/supabase'
+} from '@servicienta/supabase';
 
 export function getSupabaseBrowserClient() {
-  return getBrowserSupabaseClient(readSupabaseBrowserEnv(import.meta.env))
+  return getBrowserSupabaseClient(readSupabaseBrowserEnv(import.meta.env));
 }

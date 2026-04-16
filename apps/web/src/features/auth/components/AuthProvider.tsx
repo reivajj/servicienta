@@ -1,55 +1,61 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Session, User } from '@servicienta/supabase'
-import { getSupabaseBrowserClient } from '../../../lib/supabase'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
+import type { Session, User } from '@servicienta/supabase';
+import { getSupabaseBrowserClient } from '../../../lib/supabase';
 
 interface AuthContextValue {
-  isLoading: boolean
-  session: Session | null
-  user: User | null
-  signOut: () => Promise<void>
+  isLoading: boolean;
+  session: Session | null;
+  user: User | null;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null)
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const supabase = getSupabaseBrowserClient()
-  const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const supabase = getSupabaseBrowserClient();
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     supabase.auth.getSession().then(({ data }) => {
       if (!isMounted) {
-        return
+        return;
       }
 
-      setSession(data.session)
-      setIsLoading(false)
-    })
+      setSession(data.session);
+      setIsLoading(false);
+    });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!isMounted) {
-        return
+        return;
       }
 
-      setSession(nextSession)
-      setIsLoading(false)
-    })
+      setSession(nextSession);
+      setIsLoading(false);
+    });
 
     return () => {
-      isMounted = false
-      subscription.unsubscribe()
-    }
-  }, [supabase])
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   async function signOut() {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
-      throw error
+      throw error;
     }
   }
 
@@ -64,15 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
+    throw new Error('useAuth must be used within AuthProvider');
   }
 
-  return context
+  return context;
 }

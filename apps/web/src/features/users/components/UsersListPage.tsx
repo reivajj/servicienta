@@ -20,7 +20,11 @@ export function UsersListPage() {
   const deferredSearch = useDeferredValue(search.trim());
   const searchFilter =
     deferredSearch.length >= MIN_SEARCH_LENGTH ? deferredSearch : undefined;
-  const { data: users, error, isLoading } = useUsers({
+  const {
+    data: users,
+    error,
+    isLoading,
+  } = useUsers({
     page,
     pageSize,
     status: status === 'all' ? undefined : status,
@@ -28,16 +32,22 @@ export function UsersListPage() {
     search: searchFilter,
   });
   const errorMessage =
-    error instanceof Error ? error.message : 'No se pudieron cargar los usuarios';
+    error instanceof Error
+      ? error.message
+      : 'No se pudieron cargar los usuarios';
   const items = users?.items ?? [];
   const summary = users?.summary;
   const pagination = users?.pagination;
-  const start = pagination?.total ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
-  const end = pagination?.total
-    ? start + items.length - 1
+  const start = pagination?.total
+    ? (pagination.page - 1) * pagination.pageSize + 1
     : 0;
+  const end = pagination?.total ? start + items.length - 1 : 0;
   const hasActiveFilters =
-    search.length > 0 || status !== 'all' || role !== 'all' || pageSize !== 25 || page !== 1;
+    search.length > 0 ||
+    status !== 'all' ||
+    role !== 'all' ||
+    pageSize !== 25 ||
+    page !== 1;
 
   function handleStatusChange(nextStatus: UserStatus | 'all') {
     setStatus(nextStatus);
@@ -104,7 +114,8 @@ export function UsersListPage() {
               onChange={(event) => handleSearchChange(event.target.value)}
             />
             <small className="users-toolbar__hint">
-              {search.trim().length > 0 && search.trim().length < MIN_SEARCH_LENGTH
+              {search.trim().length > 0 &&
+              search.trim().length < MIN_SEARCH_LENGTH
                 ? 'Escribi al menos 3 caracteres para buscar'
                 : ' '}
             </small>
@@ -115,7 +126,8 @@ export function UsersListPage() {
             <select
               value={status}
               onChange={(event) =>
-                handleStatusChange(event.target.value as UserStatus | 'all')}
+                handleStatusChange(event.target.value as UserStatus | 'all')
+              }
             >
               <option value="all">Todos</option>
               <option value="ACTIVE">Activos</option>
@@ -128,7 +140,8 @@ export function UsersListPage() {
             <select
               value={role}
               onChange={(event) =>
-                handleRoleChange(event.target.value as UserRole | 'all')}
+                handleRoleChange(event.target.value as UserRole | 'all')
+              }
             >
               <option value="all">Todos</option>
               <option value="admin">Admin</option>
@@ -143,7 +156,10 @@ export function UsersListPage() {
               <select
                 value={String(pageSize)}
                 onChange={(event) =>
-                  handlePageSizeChange(Number(event.target.value) as UsersPageSize)}
+                  handlePageSizeChange(
+                    Number(event.target.value) as UsersPageSize,
+                  )
+                }
               >
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -165,10 +181,35 @@ export function UsersListPage() {
                   aria-hidden="true"
                   className="users-toolbar__clear-icon"
                 >
-                  <circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-                  <path d="M15 15l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M8.6 8.6l3.8 3.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  <path d="M12.4 8.6l-3.8 3.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <circle
+                    cx="10.5"
+                    cy="10.5"
+                    r="5.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="M15 15l4.5 4.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M8.6 8.6l3.8 3.8"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M12.4 8.6l-3.8 3.8"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -246,7 +287,9 @@ export function UsersListPage() {
               type="button"
               className="users-pagination__button"
               disabled={isLoading || page <= 1}
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
             >
               Anterior
             </button>

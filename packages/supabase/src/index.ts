@@ -1,38 +1,38 @@
-import { createClient } from '@supabase/supabase-js'
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from './database.js'
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.js';
 
-export type { Session, User } from '@supabase/supabase-js'
-export type { Database } from './database.js'
+export type { Session, User } from '@supabase/supabase-js';
+export type { Database } from './database.js';
 
 export interface BrowserSupabaseEnv {
-  VITE_SUPABASE_URL?: string
-  VITE_SUPABASE_ANON_KEY?: string
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
 }
 
 export interface BrowserSupabaseConfig {
-  url: string
-  anonKey: string
-  options?: Parameters<typeof createClient<Database>>[2]
+  url: string;
+  anonKey: string;
+  options?: Parameters<typeof createClient<Database>>[2];
 }
 
-export type BrowserSupabaseClient = SupabaseClient<Database>
+export type BrowserSupabaseClient = SupabaseClient<Database>;
 
-let browserClient: BrowserSupabaseClient | undefined
+let browserClient: BrowserSupabaseClient | undefined;
 
 export function readSupabaseBrowserEnv(
   env: BrowserSupabaseEnv,
 ): BrowserSupabaseConfig {
-  const url = env.VITE_SUPABASE_URL?.trim()
-  const anonKey = env.VITE_SUPABASE_ANON_KEY?.trim()
+  const url = env.VITE_SUPABASE_URL?.trim();
+  const anonKey = env.VITE_SUPABASE_ANON_KEY?.trim();
 
   if (!url || !anonKey) {
     throw new Error(
       'Missing Supabase env vars: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY',
-    )
+    );
   }
 
-  return { url, anonKey }
+  return { url, anonKey };
 }
 
 export function createBrowserSupabaseClient(
@@ -46,15 +46,15 @@ export function createBrowserSupabaseClient(
       detectSessionInUrl: true,
       ...config.options?.auth,
     },
-  })
+  });
 }
 
 export function getBrowserSupabaseClient(
   config: BrowserSupabaseConfig,
 ): BrowserSupabaseClient {
   if (!browserClient) {
-    browserClient = createBrowserSupabaseClient(config)
+    browserClient = createBrowserSupabaseClient(config);
   }
 
-  return browserClient
+  return browserClient;
 }

@@ -10,7 +10,8 @@ export function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
+    useState(false);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -49,7 +50,9 @@ export function ResetPasswordPage() {
 
     await supabase.auth.signOut();
     setIsSuccess(true);
-    setMessage('Password actualizada. Volve a ingresar con la nueva credencial.');
+    setMessage(
+      'Password actualizada. Volve a ingresar con la nueva credencial.',
+    );
     setIsSubmitting(false);
   }
 
@@ -63,10 +66,7 @@ export function ResetPasswordPage() {
             Ya podes ingresar otra vez con tu email y la nueva password.
           </p>
           <p className="auth-card__message">{message}</p>
-          <button
-            type="button"
-            onClick={() => void navigate({ to: '/login' })}
-          >
+          <button type="button" onClick={() => void navigate({ to: '/login' })}>
             Ir al login
           </button>
         </section>
@@ -97,10 +97,18 @@ export function ResetPasswordPage() {
                 type="button"
                 className="auth-form__toggle"
                 onClick={() => setIsPasswordVisible((visible) => !visible)}
-                aria-label={isPasswordVisible ? 'Ocultar password' : 'Mostrar password'}
-                title={isPasswordVisible ? 'Ocultar password' : 'Mostrar password'}
+                aria-label={
+                  isPasswordVisible ? 'Ocultar password' : 'Mostrar password'
+                }
+                title={
+                  isPasswordVisible ? 'Ocultar password' : 'Mostrar password'
+                }
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="auth-form__toggle-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="auth-form__toggle-icon"
+                >
                   <path
                     d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"
                     fill="none"
@@ -142,11 +150,25 @@ export function ResetPasswordPage() {
               <button
                 type="button"
                 className="auth-form__toggle"
-                onClick={() => setIsConfirmPasswordVisible((visible) => !visible)}
-                aria-label={isConfirmPasswordVisible ? 'Ocultar password repetida' : 'Mostrar password repetida'}
-                title={isConfirmPasswordVisible ? 'Ocultar password repetida' : 'Mostrar password repetida'}
+                onClick={() =>
+                  setIsConfirmPasswordVisible((visible) => !visible)
+                }
+                aria-label={
+                  isConfirmPasswordVisible
+                    ? 'Ocultar password repetida'
+                    : 'Mostrar password repetida'
+                }
+                title={
+                  isConfirmPasswordVisible
+                    ? 'Ocultar password repetida'
+                    : 'Mostrar password repetida'
+                }
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="auth-form__toggle-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="auth-form__toggle-icon"
+                >
                   <path
                     d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"
                     fill="none"

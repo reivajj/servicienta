@@ -1,13 +1,13 @@
 // apps/web/src/routes/index.tsx
-import { createFileRoute, Navigate } from '@tanstack/react-router'
-import { useAuth } from '../features/auth/components/AuthProvider'
+import { createFileRoute, Navigate } from '@tanstack/react-router';
+import { useAuth } from '../features/auth/components/AuthProvider';
 
 export const Route = createFileRoute('/')({
   component: IndexRedirect,
-})
+});
 
 function IndexRedirect() {
-  const { isLoading, session } = useAuth()
+  const { isLoading, session } = useAuth();
 
   if (isLoading) {
     return (
@@ -17,8 +17,8 @@ function IndexRedirect() {
           <p>Estamos verificando tu sesion actual.</p>
         </section>
       </main>
-    )
+    );
   }
 
-  return <Navigate to={session ? '/dashboard' : '/login'} />
+  return <Navigate to={session ? '/dashboard' : '/login'} />;
 }

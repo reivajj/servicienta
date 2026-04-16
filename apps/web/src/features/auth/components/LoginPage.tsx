@@ -1,64 +1,64 @@
-import { Navigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { getSupabaseBrowserClient } from '../../../lib/supabase'
-import { useAuth } from './AuthProvider'
+import { Navigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { getSupabaseBrowserClient } from '../../../lib/supabase';
+import { useAuth } from './AuthProvider';
 
 export function LoginPage() {
-  const supabase = getSupabaseBrowserClient()
-  const { isLoading, session } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-  const [message, setMessage] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isResetSubmitting, setIsResetSubmitting] = useState(false)
+  const supabase = getSupabaseBrowserClient();
+  const { isLoading, session } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
 
   if (!isLoading && session) {
-    return <Navigate to="/dashboard" />
+    return <Navigate to="/dashboard" />;
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!email.trim()) {
-      setMessage('Ingresa un email valido')
-      return
+      setMessage('Ingresa un email valido');
+      return;
     }
 
     if (!password.trim()) {
-      setMessage('Ingresa una password valida')
-      return
+      setMessage('Ingresa una password valida');
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
-    })
+    });
 
-    setMessage(error ? `Error: ${error.message}` : 'Login exitoso')
-    setIsSubmitting(false)
+    setMessage(error ? `Error: ${error.message}` : 'Login exitoso');
+    setIsSubmitting(false);
   }
 
   async function handleForgotPassword() {
     if (!email.trim()) {
-      setMessage('Ingresa tu email para enviarte el link de recuperacion')
-      return
+      setMessage('Ingresa tu email para enviarte el link de recuperacion');
+      return;
     }
 
-    setIsResetSubmitting(true)
+    setIsResetSubmitting(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/reset-password`,
-    })
+    });
 
     setMessage(
       error
         ? `Error: ${error.message}`
         : 'Te enviamos un email para restablecer tu password',
-    )
-    setIsResetSubmitting(false)
+    );
+    setIsResetSubmitting(false);
   }
 
   return (
@@ -67,7 +67,8 @@ export function LoginPage() {
         <p className="auth-card__eyebrow">Acceso</p>
         <h1>Ingresar</h1>
         <p className="auth-card__copy">
-          Ingresá con email y password para probar usuarios creados en Supabase Auth.
+          Ingresá con email y password para probar usuarios creados en Supabase
+          Auth.
         </p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -94,10 +95,18 @@ export function LoginPage() {
                 type="button"
                 className="auth-form__toggle"
                 onClick={() => setIsPasswordVisible((visible) => !visible)}
-                aria-label={isPasswordVisible ? 'Ocultar password' : 'Mostrar password'}
-                title={isPasswordVisible ? 'Ocultar password' : 'Mostrar password'}
+                aria-label={
+                  isPasswordVisible ? 'Ocultar password' : 'Mostrar password'
+                }
+                title={
+                  isPasswordVisible ? 'Ocultar password' : 'Mostrar password'
+                }
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="auth-form__toggle-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="auth-form__toggle-icon"
+                >
                   <path
                     d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"
                     fill="none"
@@ -144,5 +153,5 @@ export function LoginPage() {
         <p className="auth-card__message">{message || ' '}</p>
       </section>
     </main>
-  )
+  );
 }

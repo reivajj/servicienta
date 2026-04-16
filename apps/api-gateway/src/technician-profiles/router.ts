@@ -1,24 +1,67 @@
-import { Router } from 'express'
-import type { SupabaseClient } from '@supabase/supabase-js'
-import { ok } from '../core/http-response.js'
-import { asyncHandler } from '../middleware/async-handler.js'
+import { Router } from 'express';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { requireAdmin } from '../middleware/require-admin.js';
+import { ok } from '../core/http-response.js';
+import { asyncHandler } from '../middleware/async-handler.js';
+import { readQueryParam } from './helpers/http.js';
 import {
   getPublicTechnicianProfileBySlug,
+  listAdminTechnicianCatalogs,
+  listAdminTechniciansByCatalogItem,
+  listPublicTechnicianProfileCatalogs,
   listPublicTechnicianProfiles,
-} from './service.js'
+} from './service.js';
 import {
+  validateAdminTechniciansByCatalogItemInput,
   validateListPublicTechnicianProfilesInput,
   validatePublicTechnicianSlug,
-} from './validators.js'
+} from './validators.js';
 
 interface TechnicianProfilesRouterOptions {
-  supabase: SupabaseClient
+  supabase: SupabaseClient;
 }
 
 export function technicianProfilesRouter(
   options: TechnicianProfilesRouterOptions,
 ) {
-  const router = Router()
+  const router = Router();
+
+  router.get(
+    '/api/admin/technician-profiles/catalogs',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (_request, response) => {
+      const catalogs = await listAdminTechnicianCatalogs(options.supabase);
+
+      ok(response, catalogs);
+    }),
+  );
+
+  router.get(
+    '/api/admin/technician-profiles/catalogs/:kind/:slug/technicians',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const result = await listAdminTechniciansByCatalogItem(
+        options.supabase,
+        validateAdminTechniciansByCatalogItemInput({
+          kind: request.params.kind,
+          slug: request.params.slug,
+        }),
+      );
+
+      ok(response, result);
+    }),
+  );
+
+  router.get(
+    '/api/public/technician-profiles/catalogs',
+    asyncHandler(async (_request, response) => {
+      const catalogs = await listPublicTechnicianProfileCatalogs(
+        options.supabase,
+      );
+
+      ok(response, catalogs);
+    }),
+  );
 
   router.get(
     '/api/public/technician-profiles',
@@ -30,11 +73,11 @@ export function technicianProfilesRouter(
           applianceTypeSlug: readQueryParam(request.query.applianceTypeSlug),
           available: readQueryParam(request.query.available),
         }),
-      )
+      );
 
-      ok(response, profiles)
+      ok(response, profiles);
     }),
-  )
+  );
 
   router.get(
     '/api/public/technician-profiles/:publicSlug',
@@ -42,23 +85,11 @@ export function technicianProfilesRouter(
       const profile = await getPublicTechnicianProfileBySlug(
         options.supabase,
         validatePublicTechnicianSlug(request.params.publicSlug),
-      )
+      );
 
-      ok(response, profile)
+      ok(response, profile);
     }),
-  )
+  );
 
-  return router
-}
-
-function readQueryParam(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    return value
-  }
-
-  if (Array.isArray(value) && typeof value[0] === 'string') {
-    return value[0]
-  }
-
-  return undefined
+  return router;
 }

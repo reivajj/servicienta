@@ -1,6 +1,6 @@
 # API Gateway — Estructura actual
 
-_Última actualización: 2026-03-20_
+_Última actualización: 2026-04-16_
 
 ## Propósito
 
@@ -47,6 +47,16 @@ apps/api-gateway/src/
     request-logger.ts
   system/
     health.ts
+  technician-profiles/
+    helpers/
+      catalog.ts
+      relations.ts
+      utils.ts
+    mapper.ts
+    router.ts
+    service.ts
+    types.ts
+    validators.ts
   users/
     mapper.ts
     router.ts
@@ -246,12 +256,13 @@ No debería:
 
 #### `service.ts`
 
-Contiene lógica de negocio y acceso a datos de la feature.
+Contiene la API pública interna del módulo.
 
 Responsabilidad:
 
 - orquestar casos de uso
-- hablar con Supabase
+- coordinar helpers y mappers del módulo
+- hablar con Supabase directamente solo cuando la consulta es parte del caso de uso y no justifica extracción
 - decidir qué hacer con inputs ya validados
 
 No debería:
@@ -259,6 +270,12 @@ No debería:
 - serializar HTTP
 - definir rutas
 - acumular validación y mapping si ya existen archivos dedicados
+- acumular helpers internos reutilizables del módulo
+
+Regla práctica:
+
+- si una función representa un caso de uso que otros archivos del módulo consumen como entry point, puede vivir exportada en `service.ts`
+- si una función es soporte interno de implementación, no debería vivir en `service.ts`
 
 #### `validators.ts`
 
@@ -289,6 +306,38 @@ Ejemplos:
 
 - formas crudas de DB
 - tipos internos de auth del backend
+
+#### `helpers/`
+
+Contiene lógica interna del módulo que no forma parte de su API pública.
+
+Responsabilidad:
+
+- extraer consultas o pasos reutilizables que ensuciarían `service.ts`
+- agrupar lógica interna por responsabilidad
+- mantener `service.ts` enfocado en casos de uso
+
+Reglas:
+
+- `helpers/` vive dentro de la feature, no en `core/`
+- los archivos dentro de `helpers/` deben tener nombres semánticos, no crecer como un cajón de sastre
+- usar `helpers.ts` como archivo único genérico no es la convención preferida
+- crear solo los archivos que la complejidad necesite
+
+Nombres típicos:
+
+- `helpers/queries.ts` para lecturas o escrituras a Supabase con identidad propia
+- `helpers/relations.ts` para resolución de asociaciones o joins manuales
+- `helpers/catalog.ts` para lógica interna sobre catálogos de la feature
+- `helpers/utils.ts` para utilidades técnicas puras del módulo
+
+Ejemplo real:
+
+en `technician-profiles/`, `service.ts` expone los casos de uso y delega a:
+
+- `helpers/catalog.ts`
+- `helpers/relations.ts`
+- `helpers/utils.ts`
 
 ## Qué tipos van en `packages/types` y cuáles no
 
@@ -355,12 +404,36 @@ Y crecer a:
 <feature>/
   router.ts
   service.ts
+  helpers/
   validators.ts
   mapper.ts
   types.ts
 ```
 
 solo si la complejidad lo justifica.
+
+Si la feature todavía es chica, puede arrancar con:
+
+```txt
+<feature>/
+  router.ts
+  service.ts
+```
+
+Si crece, la expansión preferida es:
+
+```txt
+<feature>/
+  router.ts
+  service.ts
+  mapper.ts
+  validators.ts
+  types.ts
+  helpers/
+    <responsibility>.ts
+```
+
+La intención es que el top-level de la feature contenga piezas de primer nivel, y que la lógica interna reusable quede debajo de `helpers/`.
 
 ## Reglas prácticas
 
@@ -372,14 +445,22 @@ solo si la complejidad lo justifica.
 - Los routers deben permanecer delgados.
 - La validación no debería quedar pegada al router si la feature ya tiene `validators.ts`.
 - El mapping no debería quedar pegado al service si la feature ya tiene `mapper.ts`.
+- `service.ts` debería exponer casos de uso, no helpers internos.
+- Si una función no representa la API interna del módulo, debe vivir fuera de `service.ts`.
+- Preferir `helpers/<responsibility>.ts` antes que seguir creciendo un `service.ts` monolítico.
+- Evitar usar `helpers/` como carpeta comodín sin criterio; los nombres deben reflejar responsabilidad.
 
 ## Convención de estilo adoptada en el gateway
 
-- En guards cortos de una sola línea, preferir:
-  - `if (!value) throw ...`
-  - `if (!value) return ...`
+- En guards de una sola línea, preferir la versión sin braces cuando la condición y la acción sean cortas y sigan siendo fáciles de escanear.
+- En el gateway usamos semicolons de forma consistente.
+- Ejemplos preferidos:
+  - `if (error) throw new Error(error.message);`
+  - `if (!data) return null;`
+  - `if (!value) throw new ValidationError('...');`
 - Mantener braces cuando:
   - hay más de una instrucción
+  - la línea empieza a quedar demasiado larga
   - mejora claramente la legibilidad
   - evita ambigüedad
 

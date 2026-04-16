@@ -1,8 +1,4 @@
-export type {
-  User,
-  UserRole,
-  UserStatus,
-} from './domain.js'
+export type { User, UserRole, UserStatus } from './domain.js';
 export type {
   DeleteUserResponse,
   GetUserResponse,
@@ -18,8 +14,8 @@ export type {
   UpdateUserInput,
   UpdateUserResponse,
   UsersPageSize,
-} from './contracts.js'
+} from './contracts.js';
 
 export interface ApiErrorResponse {
-  error: string
+  error: string;
 }

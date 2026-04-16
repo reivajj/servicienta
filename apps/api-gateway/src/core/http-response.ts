@@ -1,8 +1,8 @@
-import type { Response } from 'express'
-import type { RequestWithId } from './http.js'
+import type { Response } from 'express';
+import type { RequestWithId } from './http.js';
 
 export function ok<T>(response: Response, data: T, statusCode = 200) {
-  response.status(statusCode).json({ data })
+  response.status(statusCode).json({ data });
 }
 
 export function errorResponse(
@@ -14,5 +14,5 @@ export function errorResponse(
   response.status(statusCode).json({
     error: message,
     requestId: request.requestId ?? null,
-  })
+  });
 }

@@ -1,12 +1,12 @@
-import type { User } from '@supabase/supabase-js'
-import { buildSeedUserSpecs } from '../../data/users.js'
-import { buildSeedUserMetadata } from '../../lib/seed-tag.js'
-import { listAllAuthUsers } from '../../lib/supabase-admin.js'
-import type { SeedContext, SeededUserSpec } from '../../lib/types.js'
-import type { SeedUsersExecutionInput, UsersSeedResult } from './types.js'
+import type { User } from '@supabase/supabase-js';
+import { buildSeedUserSpecs } from '../../data/users.js';
+import { buildSeedUserMetadata } from '../../lib/seed-tag.js';
+import { listAllAuthUsers } from '../../lib/supabase-admin.js';
+import type { SeedContext, SeededUserSpec } from '../../lib/types.js';
+import type { SeedUsersExecutionInput, UsersSeedResult } from './types.js';
 
 interface PublicUserRow {
-  id: string
+  id: string;
 }
 
 async function ensureAuthUser(
@@ -14,7 +14,7 @@ async function ensureAuthUser(
   existingUser: User | undefined,
   spec: SeededUserSpec,
 ) {
-  const userMetadata = buildSeedUserMetadata(spec, context.env.seedTag)
+  const userMetadata = buildSeedUserMetadata(spec, context.env.seedTag);
 
   if (existingUser) {
     const { data, error } = await context.supabase.auth.admin.updateUserById(
@@ -25,13 +25,15 @@ async function ensureAuthUser(
         user_metadata: userMetadata,
         app_metadata: userMetadata,
       },
-    )
+    );
 
     if (error || !data.user) {
-      throw new Error(`Could not update auth user ${spec.email}: ${error?.message ?? 'Unknown error'}`)
+      throw new Error(
+        `Could not update auth user ${spec.email}: ${error?.message ?? 'Unknown error'}`,
+      );
     }
 
-    return { user: data.user, created: false }
+    return { user: data.user, created: false };
   }
 
   const { data, error } = await context.supabase.auth.admin.createUser({
@@ -40,13 +42,15 @@ async function ensureAuthUser(
     email_confirm: true,
     user_metadata: userMetadata,
     app_metadata: userMetadata,
-  })
+  });
 
   if (error || !data.user) {
-    throw new Error(`Could not create auth user ${spec.email}: ${error?.message ?? 'Unknown error'}`)
+    throw new Error(
+      `Could not create auth user ${spec.email}: ${error?.message ?? 'Unknown error'}`,
+    );
   }
 
-  return { user: data.user, created: true }
+  return { user: data.user, created: true };
 }
 
 async function ensurePublicUserRow(
@@ -69,10 +73,12 @@ async function ensurePublicUserRow(
       { onConflict: 'id' },
     )
     .select('id')
-    .single<PublicUserRow>()
+    .single<PublicUserRow>();
 
   if (error) {
-    throw new Error(`Could not reconcile public.users for ${spec.email}: ${error.message}`)
+    throw new Error(
+      `Could not reconcile public.users for ${spec.email}: ${error.message}`,
+    );
   }
 }
 
@@ -82,29 +88,29 @@ export async function seedUsers({
   resolvedRoleCounts,
   scenario,
 }: SeedUsersExecutionInput): Promise<UsersSeedResult> {
-  const authUsers = await listAllAuthUsers(context.supabase)
-  const authUsersByEmail = new Map(authUsers.map((user) => [user.email, user]))
+  const authUsers = await listAllAuthUsers(context.supabase);
+  const authUsersByEmail = new Map(authUsers.map((user) => [user.email, user]));
   const specs = buildSeedUserSpecs({
     count,
     roleCounts: resolvedRoleCounts,
     seedTag: context.env.seedTag,
     scenario,
-  })
+  });
 
-  let created = 0
-  let updated = 0
+  let created = 0;
+  let updated = 0;
 
   for (const spec of specs) {
-    const existingUser = authUsersByEmail.get(spec.email ?? '')
-    const ensured = await ensureAuthUser(context, existingUser, spec)
+    const existingUser = authUsersByEmail.get(spec.email ?? '');
+    const ensured = await ensureAuthUser(context, existingUser, spec);
 
-    await ensurePublicUserRow(context, ensured.user.id, spec)
+    await ensurePublicUserRow(context, ensured.user.id, spec);
 
     if (ensured.created) {
-      created += 1
-      authUsersByEmail.set(spec.email, ensured.user)
+      created += 1;
+      authUsersByEmail.set(spec.email, ensured.user);
     } else {
-      updated += 1
+      updated += 1;
     }
   }
 
@@ -114,7 +120,7 @@ export async function seedUsers({
     updated,
     seedTag: context.env.seedTag,
     scenario,
-  })
+  });
 
   return {
     entity: 'users',
@@ -123,5 +129,5 @@ export async function seedUsers({
     deleted: 0,
     skipped: 0,
     byRole: resolvedRoleCounts,
-  }
+  };
 }

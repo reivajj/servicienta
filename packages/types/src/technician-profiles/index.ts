@@ -1,7 +1,13 @@
 export type {
+  AdminAssociatedTechnician,
+  AdminTechnicianCatalogItem,
+  AdminTechnicianCatalogs,
   ApplianceType,
   Brand,
+  PublicTechnicianCatalogItem,
+  PublicTechnicianProfileCatalogs,
   PublicTechnicianProfile,
+  TechnicianCatalogKind,
   TechnicianApplianceSpecialty,
   TechnicianBrandSpecialty,
   TechnicianCoverageZone,
@@ -9,9 +15,14 @@ export type {
   TechnicianProfile,
   TechnicianReview,
   Zone,
-} from './domain.js'
+} from './domain.js';
 export type {
+  AdminTechniciansByCatalogItem,
   GetPublicTechnicianProfileResponse,
+  ListAdminTechnicianCatalogsResponse,
+  ListAdminTechniciansByCatalogItemInput,
+  ListAdminTechniciansByCatalogItemResponse,
+  ListPublicTechnicianProfileCatalogsResponse,
   ListPublicTechnicianProfilesInput,
   ListPublicTechnicianProfilesResponse,
-} from './contracts.js'
+} from './contracts.js';

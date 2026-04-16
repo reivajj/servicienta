@@ -1,11 +1,16 @@
-import { useDeleteUser, useRestoreUser, useUpdateUser, useUser } from "@servicienta/query-hooks";
-import type { UserRole, UserStatus } from "@servicienta/types";
-import { useAuth } from "../../auth/components/AuthProvider";
+import {
+  useDeleteUser,
+  useRestoreUser,
+  useUpdateUser,
+  useUser,
+} from '@servicienta/query-hooks';
+import type { UserRole, UserStatus } from '@servicienta/types';
+import { useAuth } from '../../auth/components/AuthProvider';
 
 function formatUserName(name: string | null, surname: string | null) {
-  const fullName = `${name ?? ""} ${surname ?? ""}`.trim();
+  const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
 
-  return fullName || "Sin nombre";
+  return fullName || 'Sin nombre';
 }
 
 export function UserDetailDialog({
@@ -16,7 +21,7 @@ export function UserDetailDialog({
 }: {
   userId: string;
   onClose: () => void;
-  currentStatusFilter: UserStatus | "all";
+  currentStatusFilter: UserStatus | 'all';
   onUserRemovedFromFilteredPage: () => void;
 }) {
   const { user: authUser } = useAuth();
@@ -25,29 +30,33 @@ export function UserDetailDialog({
   const deleteUser = useDeleteUser();
   const restoreUser = useRestoreUser();
 
-  const errorMessage = error instanceof Error ? error.message : "No se pudo cargar el usuario";
-  const updateMessage = updateUser.error instanceof Error ? updateUser.error.message : "";
-  const deleteMessage = deleteUser.error instanceof Error ? deleteUser.error.message : "";
-  const restoreMessage = restoreUser.error instanceof Error ? restoreUser.error.message : "";
+  const errorMessage =
+    error instanceof Error ? error.message : 'No se pudo cargar el usuario';
+  const updateMessage =
+    updateUser.error instanceof Error ? updateUser.error.message : '';
+  const deleteMessage =
+    deleteUser.error instanceof Error ? deleteUser.error.message : '';
+  const restoreMessage =
+    restoreUser.error instanceof Error ? restoreUser.error.message : '';
   const feedbackMessage =
     updateMessage ||
     deleteMessage ||
     restoreMessage ||
     (updateUser.isSuccess
-      ? "Usuario actualizado"
+      ? 'Usuario actualizado'
       : deleteUser.isSuccess
-        ? "Usuario marcado como eliminado"
+        ? 'Usuario marcado como eliminado'
         : restoreUser.isSuccess
-          ? "Usuario restaurado"
-          : "");
+          ? 'Usuario restaurado'
+          : '');
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const name = String(formData.get("name") ?? "");
-    const surname = String(formData.get("surname") ?? "");
-    const role = (formData.get("role") as UserRole | null) ?? "client";
+    const name = String(formData.get('name') ?? '');
+    const surname = String(formData.get('surname') ?? '');
+    const role = (formData.get('role') as UserRole | null) ?? 'client';
 
     await updateUser.mutateAsync({
       userId,
@@ -58,7 +67,7 @@ export function UserDetailDialog({
   async function handleDelete() {
     await deleteUser.mutateAsync(userId);
 
-    if (currentStatusFilter === "ACTIVE") {
+    if (currentStatusFilter === 'ACTIVE') {
       onUserRemovedFromFilteredPage();
     }
   }
@@ -66,24 +75,39 @@ export function UserDetailDialog({
   async function handleRestore() {
     await restoreUser.mutateAsync(userId);
 
-    if (currentStatusFilter === "DELETED") {
+    if (currentStatusFilter === 'DELETED') {
       onUserRemovedFromFilteredPage();
     }
   }
 
-  const isMutating = updateUser.isPending || deleteUser.isPending || restoreUser.isPending;
+  const isMutating =
+    updateUser.isPending || deleteUser.isPending || restoreUser.isPending;
   const isCurrentAuthenticatedUser = authUser?.id === userId;
 
   return (
-    <div className="users-modal" role="dialog" aria-modal="true" aria-labelledby="user-detail-title" onClick={onClose}>
-      <section className="users-modal__panel" onClick={event => event.stopPropagation()}>
+    <div
+      className="users-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="user-detail-title"
+      onClick={onClose}
+    >
+      <section
+        className="users-modal__panel"
+        onClick={(event) => event.stopPropagation()}
+      >
         <header className="users-modal__header">
           <div>
             <p className="users-hero__eyebrow">User Detail</p>
             <h2 id="user-detail-title">Ver y editar user</h2>
           </div>
 
-          <button type="button" className="users-modal__close" onClick={onClose} aria-label="Cerrar detalle de user">
+          <button
+            type="button"
+            className="users-modal__close"
+            onClick={onClose}
+            aria-label="Cerrar detalle de user"
+          >
             Cerrar
           </button>
         </header>
@@ -107,8 +131,11 @@ export function UserDetailDialog({
 
                 <span
                   className={
-                    user.status === "ACTIVE" ? "user-badge user-badge--active" : "user-badge user-badge--deleted"
-                  }>
+                    user.status === 'ACTIVE'
+                      ? 'user-badge user-badge--active'
+                      : 'user-badge user-badge--deleted'
+                  }
+                >
                   {user.status}
                 </span>
               </div>
@@ -132,7 +159,11 @@ export function UserDetailDialog({
                 </div>
                 <div>
                   <dt>Deleted at</dt>
-                  <dd>{user.deleted_at ? new Date(user.deleted_at).toLocaleString() : "No"}</dd>
+                  <dd>
+                    {user.deleted_at
+                      ? new Date(user.deleted_at).toLocaleString()
+                      : 'No'}
+                  </dd>
                 </div>
               </dl>
 
@@ -141,16 +172,22 @@ export function UserDetailDialog({
                   type="button"
                   className="user-actions__button user-actions__button--danger"
                   onClick={handleDelete}
-                  disabled={user.status === "DELETED" || isMutating || isCurrentAuthenticatedUser}>
-                  {deleteUser.isPending ? "Eliminando..." : "Eliminar"}
+                  disabled={
+                    user.status === 'DELETED' ||
+                    isMutating ||
+                    isCurrentAuthenticatedUser
+                  }
+                >
+                  {deleteUser.isPending ? 'Eliminando...' : 'Eliminar'}
                 </button>
 
                 <button
                   type="button"
                   className="user-actions__button user-actions__button--secondary"
                   onClick={handleRestore}
-                  disabled={user.status === "ACTIVE" || isMutating}>
-                  {restoreUser.isPending ? "Restaurando..." : "Restaurar"}
+                  disabled={user.status === 'ACTIVE' || isMutating}
+                >
+                  {restoreUser.isPending ? 'Restaurando...' : 'Restaurar'}
                 </button>
               </div>
             </article>
@@ -160,17 +197,26 @@ export function UserDetailDialog({
               <h3>Patch admin</h3>
 
               <form
-                key={`${user.id}:${user.name ?? ""}:${user.surname ?? ""}:${user.role}:${user.status}`}
+                key={`${user.id}:${user.name ?? ''}:${user.surname ?? ''}:${user.role}:${user.status}`}
                 className="auth-form"
-                onSubmit={handleSubmit}>
+                onSubmit={handleSubmit}
+              >
                 <label className="auth-form__field">
                   <span>Nombre</span>
-                  <input name="name" type="text" defaultValue={user.name ?? ""} />
+                  <input
+                    name="name"
+                    type="text"
+                    defaultValue={user.name ?? ''}
+                  />
                 </label>
 
                 <label className="auth-form__field">
                   <span>Apellido</span>
-                  <input name="surname" type="text" defaultValue={user.surname ?? ""} />
+                  <input
+                    name="surname"
+                    type="text"
+                    defaultValue={user.surname ?? ''}
+                  />
                 </label>
 
                 <label className="auth-form__field">
@@ -182,8 +228,11 @@ export function UserDetailDialog({
                   </select>
                 </label>
 
-                <button type="submit" disabled={user.status === "DELETED" || isMutating}>
-                  {updateUser.isPending ? "Guardando..." : "Guardar cambios"}
+                <button
+                  type="submit"
+                  disabled={user.status === 'DELETED' || isMutating}
+                >
+                  {updateUser.isPending ? 'Guardando...' : 'Guardar cambios'}
                 </button>
               </form>
 
@@ -191,16 +240,18 @@ export function UserDetailDialog({
                 className={
                   feedbackMessage
                     ? updateMessage || deleteMessage || restoreMessage
-                      ? "users-message users-message--error"
-                      : "users-message users-message--success"
-                    : "users-message"
-                }>
-                {feedbackMessage || " "}
+                      ? 'users-message users-message--error'
+                      : 'users-message users-message--success'
+                    : 'users-message'
+                }
+              >
+                {feedbackMessage || ' '}
               </p>
 
               {isCurrentAuthenticatedUser ? (
                 <p className="users-message">
-                  No podés eliminar el usuario autenticado actual porque perderías acceso admin.
+                  No podés eliminar el usuario autenticado actual porque
+                  perderías acceso admin.
                 </p>
               ) : null}
             </article>

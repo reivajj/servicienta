@@ -31,7 +31,9 @@ Desde la raíz del repo:
 ```bash
 pnpm seed:users -- --count 100
 pnpm seed:users -- --count 100 --admins 10 --technicians 45 --clients 45
+pnpm seed:technician-profiles -- --technicians 10
 pnpm seed:scenario -- --scenario admin-basic
+pnpm seed:scenario -- --scenario technician-search-basic
 pnpm seed:cleanup -- --tag local-seed
 ```
 
@@ -39,6 +41,30 @@ También podés ejecutar los entrypoints directamente:
 
 ```bash
 TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-users.ts --count 100
+TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-technician-profiles.ts --technicians 10
+```
+
+## Seed de technician-profiles
+
+`seed-technician-profiles` toma hasta `--technicians N` usuarios con rol `technician`
+ya existentes y les completa un dataset de búsqueda pública:
+
+- 10 `appliance_types`
+- 10 `brands`
+- 10 `zones` de Buenos Aires
+- `technician_profiles` con bio, `public_slug`, dirección base, lat/lng, radio y verificación
+- `technician_appliance_specialties`
+- `technician_brand_specialties`
+- `technician_coverage_zones`
+- `technician_documents`
+- `technician_reviews`
+
+Además asegura 6 clientes seeded para poder crear reviews de prueba.
+
+Escenario recomendado para probar la búsqueda end-to-end:
+
+```bash
+pnpm seed:scenario -- --scenario technician-search-basic
 ```
 
 ## Convenciones actuales

@@ -1,10 +1,7 @@
-import type {
-  NextFunction,
-  Response,
-} from 'express'
-import { AppError } from '../core/errors.js'
-import { errorResponse } from '../core/http-response.js'
-import type { RequestWithId } from '../core/http.js'
+import type { NextFunction, Response } from 'express';
+import { AppError } from '../core/errors.js';
+import { errorResponse } from '../core/http-response.js';
+import type { RequestWithId } from '../core/http.js';
 
 export function errorHandler(
   error: unknown,
@@ -12,11 +9,11 @@ export function errorHandler(
   response: Response,
   next: NextFunction,
 ) {
-  void next
+  void next;
 
   if (error instanceof AppError) {
-    errorResponse(response, request, error.message, error.statusCode)
-    return
+    errorResponse(response, request, error.message, error.statusCode);
+    return;
   }
 
   errorResponse(
@@ -24,5 +21,5 @@ export function errorHandler(
     request,
     error instanceof Error ? error.message : 'Internal server error',
     500,
-  )
+  );
 }

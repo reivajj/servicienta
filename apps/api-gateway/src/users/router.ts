@@ -1,10 +1,10 @@
-import { Router } from 'express'
-import type { SupabaseClient } from '@supabase/supabase-js'
-import { ValidationError } from '../core/errors.js'
-import { ok } from '../core/http-response.js'
-import { asyncHandler } from '../middleware/async-handler.js'
-import { requireAdmin } from '../middleware/require-admin.js'
-import { requireAuth } from '../middleware/require-auth.js'
+import { Router } from 'express';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { ValidationError } from '../core/errors.js';
+import { ok } from '../core/http-response.js';
+import { asyncHandler } from '../middleware/async-handler.js';
+import { requireAdmin } from '../middleware/require-admin.js';
+import { requireAuth } from '../middleware/require-auth.js';
 import {
   deleteUserById,
   getUserById,
@@ -12,23 +12,23 @@ import {
   restoreUserById,
   updateUserById,
   updateCurrentUser,
-} from './service.js'
-import { validateListUsersInput } from './validators.js'
+} from './service.js';
+import { validateListUsersInput } from './validators.js';
 
 interface UsersRouterOptions {
-  supabase: SupabaseClient
+  supabase: SupabaseClient;
 }
 
 export function usersRouter(options: UsersRouterOptions) {
-  const router = Router()
+  const router = Router();
 
   router.get(
     '/api/users/current',
     requireAuth({ supabase: options.supabase }),
     asyncHandler(async (_request, response) => {
-      ok(response, _request.auth)
+      ok(response, _request.auth);
     }),
-  )
+  );
 
   router.patch(
     '/api/users/current',
@@ -38,11 +38,11 @@ export function usersRouter(options: UsersRouterOptions) {
         options.supabase,
         request.auth!,
         request.body,
-      )
+      );
 
-      ok(response, user)
+      ok(response, user);
     }),
-  )
+  );
 
   router.get(
     '/api/users',
@@ -57,11 +57,11 @@ export function usersRouter(options: UsersRouterOptions) {
           role: readQueryParam(request.query.role),
           search: readQueryParam(request.query.search),
         }),
-      )
+      );
 
-      ok(response, users)
+      ok(response, users);
     }),
-  )
+  );
 
   router.get(
     '/api/users/:userId',
@@ -70,11 +70,11 @@ export function usersRouter(options: UsersRouterOptions) {
       const user = await getUserById(
         options.supabase,
         readUserIdParam(request.params.userId),
-      )
+      );
 
-      ok(response, user)
+      ok(response, user);
     }),
-  )
+  );
 
   router.patch(
     '/api/users/:userId',
@@ -84,11 +84,11 @@ export function usersRouter(options: UsersRouterOptions) {
         options.supabase,
         readUserIdParam(request.params.userId),
         request.body,
-      )
+      );
 
-      ok(response, user)
+      ok(response, user);
     }),
-  )
+  );
 
   router.delete(
     '/api/users/:userId',
@@ -98,11 +98,11 @@ export function usersRouter(options: UsersRouterOptions) {
         options.supabase,
         readUserIdParam(request.params.userId),
         request.auth?.id,
-      )
+      );
 
-      ok(response, user)
+      ok(response, user);
     }),
-  )
+  );
 
   router.patch(
     '/api/users/:userId/restore',
@@ -111,31 +111,31 @@ export function usersRouter(options: UsersRouterOptions) {
       const user = await restoreUserById(
         options.supabase,
         readUserIdParam(request.params.userId),
-      )
+      );
 
-      ok(response, user)
+      ok(response, user);
     }),
-  )
+  );
 
-  return router
+  return router;
 }
 
 function readUserIdParam(value: string | string[] | undefined): string {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError('Invalid user id')
+    throw new ValidationError('Invalid user id');
   }
 
-  return value
+  return value;
 }
 
 function readQueryParam(value: unknown): string | undefined {
   if (typeof value === 'string') {
-    return value
+    return value;
   }
 
   if (Array.isArray(value) && typeof value[0] === 'string') {
-    return value[0]
+    return value[0];
   }
 
-  return undefined
+  return undefined;
 }

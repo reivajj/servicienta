@@ -1,4 +1,4 @@
-import type { ListUsersInput } from '@servicienta/types'
+import type { ListUsersInput } from '@servicienta/types';
 
 export const userKeys = {
   all: ['users'] as const,
@@ -6,4 +6,4 @@ export const userKeys = {
   lists: () => [...userKeys.all, 'list'] as const,
   list: (input: ListUsersInput) => [...userKeys.lists(), input] as const,
   detail: (userId: string) => [...userKeys.all, 'detail', userId] as const,
-}
+};

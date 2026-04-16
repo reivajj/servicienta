@@ -1,4 +1,7 @@
 export {
+  useAdminTechnicianCatalogs,
+  useAdminTechniciansByCatalogItem,
+  usePublicTechnicianProfileCatalogs,
   usePublicTechnicianProfile,
   usePublicTechnicianProfiles,
 } from './hooks.js';

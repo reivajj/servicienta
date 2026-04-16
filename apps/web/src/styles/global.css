@@ -12,8 +12,16 @@
 
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(214, 98, 43, 0.16), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(91, 140, 90, 0.14), transparent 28%),
+    radial-gradient(
+      circle at top left,
+      rgba(214, 98, 43, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(91, 140, 90, 0.14),
+      transparent 28%
+    ),
     var(--bg);
   font-family: var(--font-sans);
   font-synthesis: none;
@@ -85,7 +93,6 @@ p {
 }
 
 .app-shell__link:hover,
-.dashboard-card__link:hover,
 .app-shell__brand:hover {
   color: var(--accent);
 }
@@ -352,6 +359,16 @@ p {
   border: 1px solid rgba(214, 98, 43, 0.28);
 }
 
+.dashboard-card__link:hover {
+  opacity: 0.92;
+}
+
+.dashboard-card__link--secondary:hover {
+  opacity: 1;
+  color: var(--accent);
+  background: rgba(214, 98, 43, 0.08);
+}
+
 .auth-form > button:disabled {
   opacity: 0.7;
   cursor: wait;
@@ -527,7 +544,10 @@ p {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .users-toolbar__clear:hover:not(:disabled) {
@@ -621,7 +641,8 @@ p {
 }
 
 .users-table-wrapper {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--border);
   border-radius: 24px;
   background: var(--surface);
@@ -709,6 +730,144 @@ p {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+.technician-catalog-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.technician-catalog-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.technician-catalog-card__header,
+.technician-catalog-dialog__meta-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.technician-catalog-card__header h2 {
+  margin-top: 6px;
+}
+
+.technician-catalog-card__copy {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.technician-catalog-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.9);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.technician-catalog-card__table {
+  margin-top: auto;
+  max-height: 430px;
+  overflow-y: auto;
+}
+
+.technician-catalog-card__table .users-table {
+  min-width: 100%;
+}
+
+.technician-search-page .users-layout {
+  display: grid;
+  gap: 24px;
+}
+
+.technician-search-panel,
+.technician-search-results {
+  display: grid;
+  gap: 16px;
+}
+
+.technician-search-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  margin-bottom: 0;
+}
+
+.technician-search-form__actions {
+  display: flex;
+  align-items: end;
+}
+
+.technician-search-form__actions .dashboard-card__link {
+  margin-top: 0;
+}
+
+.technician-search-form__hint {
+  min-height: 0;
+  margin-top: 0;
+}
+
+.technician-search-results__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.technician-result-card {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(255, 250, 242, 0.92);
+}
+
+.technician-result-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.technician-result-card__header h2 {
+  font-size: 1.2rem;
+}
+
+.technician-result-card__meta {
+  display: grid;
+  gap: 10px;
+}
+
+.technician-result-card__meta dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.technician-result-card__meta dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
+.technician-result-card__bio {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.technician-result-card__created-at {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.technician-catalog-dialog__meta {
+  margin-bottom: 18px;
 }
 
 .user-actions {
@@ -835,6 +994,22 @@ p {
 
   .users-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .technician-catalog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .technician-search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .technician-search-form__actions {
+    align-items: stretch;
+  }
+
+  .technician-search-form__actions .dashboard-card__link {
+    width: 100%;
   }
 
   .users-table-wrapper {

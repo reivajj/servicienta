@@ -9,45 +9,50 @@ import type {
   UpdateCurrentUserResponse,
   UpdateUserInput,
   UpdateUserResponse,
-} from '@servicienta/types'
+} from '@servicienta/types';
 
 interface UsersApiClientDependencies {
-  apiFetch: <T>(path: string, init?: RequestInit) => Promise<T>
+  apiFetch: <T>(path: string, init?: RequestInit) => Promise<T>;
 }
 
 export interface UsersApiClient {
   users: {
     current: {
-      get: () => Promise<GetCurrentUserResponse>
-      update: (input: UpdateCurrentUserInput) => Promise<UpdateCurrentUserResponse>
-    }
-    list: (input: ListUsersInput) => Promise<ListUsersResponse>
-    getById: (userId: string) => Promise<GetUserResponse>
-    updateById: (userId: string, input: UpdateUserInput) => Promise<UpdateUserResponse>
-    remove: (userId: string) => Promise<DeleteUserResponse>
-    restore: (userId: string) => Promise<RestoreUserResponse>
-  }
+      get: () => Promise<GetCurrentUserResponse>;
+      update: (
+        input: UpdateCurrentUserInput,
+      ) => Promise<UpdateCurrentUserResponse>;
+    };
+    list: (input: ListUsersInput) => Promise<ListUsersResponse>;
+    getById: (userId: string) => Promise<GetUserResponse>;
+    updateById: (
+      userId: string,
+      input: UpdateUserInput,
+    ) => Promise<UpdateUserResponse>;
+    remove: (userId: string) => Promise<DeleteUserResponse>;
+    restore: (userId: string) => Promise<RestoreUserResponse>;
+  };
 }
 
 function buildUsersListQuery(input: ListUsersInput) {
   const searchParams = new URLSearchParams({
     page: String(input.page),
     pageSize: String(input.pageSize),
-  })
+  });
 
   if (input.status) {
-    searchParams.set('status', input.status)
+    searchParams.set('status', input.status);
   }
 
   if (input.role) {
-    searchParams.set('role', input.role)
+    searchParams.set('role', input.role);
   }
 
   if (input.search) {
-    searchParams.set('search', input.search)
+    searchParams.set('search', input.search);
   }
 
-  return searchParams.toString()
+  return searchParams.toString();
 }
 
 export function createUsersApiClient({
@@ -80,5 +85,5 @@ export function createUsersApiClient({
           method: 'PATCH',
         }),
     },
-  }
+  };
 }

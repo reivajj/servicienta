@@ -1,59 +1,59 @@
-import { useState } from 'react'
-import { getSupabaseBrowserClient } from '../../../lib/supabase'
+import { useState } from 'react';
+import { getSupabaseBrowserClient } from '../../../lib/supabase';
 
 export function SupabaseDiagnosticsPage() {
-  const supabase = getSupabaseBrowserClient()
-  const [email, setEmail] = useState('')
-  const [tableName, setTableName] = useState('')
-  const [sessionResult, setSessionResult] = useState<string>('')
-  const [otpResult, setOtpResult] = useState<string>('')
-  const [queryResult, setQueryResult] = useState<string>('')
+  const supabase = getSupabaseBrowserClient();
+  const [email, setEmail] = useState('');
+  const [tableName, setTableName] = useState('');
+  const [sessionResult, setSessionResult] = useState<string>('');
+  const [otpResult, setOtpResult] = useState<string>('');
+  const [queryResult, setQueryResult] = useState<string>('');
 
   async function handleGetSession() {
-    const { data, error } = await supabase.auth.getSession()
+    const { data, error } = await supabase.auth.getSession();
 
     if (error) {
-      setSessionResult(`Error: ${error.message}`)
-      return
+      setSessionResult(`Error: ${error.message}`);
+      return;
     }
 
     setSessionResult(
       data.session
         ? `OK: hay una sesion activa para ${data.session.user.email ?? 'usuario sin email'}`
         : 'OK: no hay sesion activa',
-    )
+    );
   }
 
   async function handleSendOtp() {
     if (!email.trim()) {
-      setOtpResult('Error: ingresa un email para probar OTP')
-      return
+      setOtpResult('Error: ingresa un email para probar OTP');
+      return;
     }
 
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-    })
+    });
 
-    setOtpResult(error ? `Error: ${error.message}` : 'OK: revisa tu email')
+    setOtpResult(error ? `Error: ${error.message}` : 'OK: revisa tu email');
   }
 
   async function handleSelectTable() {
     if (!tableName.trim()) {
-      setQueryResult('Error: ingresa un nombre de tabla')
-      return
+      setQueryResult('Error: ingresa un nombre de tabla');
+      return;
     }
 
     const { data, error } = await supabase
       .from(tableName.trim())
       .select('*')
-      .limit(5)
+      .limit(5);
 
     if (error) {
-      setQueryResult(`Error: ${error.message}`)
-      return
+      setQueryResult(`Error: ${error.message}`);
+      return;
     }
 
-    setQueryResult(`OK: ${JSON.stringify(data, null, 2)}`)
+    setQueryResult(`OK: ${JSON.stringify(data, null, 2)}`);
   }
 
   return (
@@ -74,7 +74,9 @@ export function SupabaseDiagnosticsPage() {
           </p>
           <p>
             ANON KEY:{' '}
-            <code>{import.meta.env.VITE_SUPABASE_ANON_KEY.slice(0, 12)}...</code>
+            <code>
+              {import.meta.env.VITE_SUPABASE_ANON_KEY.slice(0, 12)}...
+            </code>
           </p>
         </section>
 
@@ -115,5 +117,5 @@ export function SupabaseDiagnosticsPage() {
         </section>
       </div>
     </main>
-  )
+  );
 }

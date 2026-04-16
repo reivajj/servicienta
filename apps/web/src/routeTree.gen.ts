@@ -14,6 +14,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users.index'
+import { Route as TechnicianSearchIndexRouteImport } from './routes/technician-search.index'
+import { Route as TechnicianCatalogsIndexRouteImport } from './routes/technician-catalogs.index'
 import { Route as DevSupabaseRouteImport } from './routes/dev.supabase'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -41,6 +43,16 @@ const UsersIndexRoute = UsersIndexRouteImport.update({
   path: '/users/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TechnicianSearchIndexRoute = TechnicianSearchIndexRouteImport.update({
+  id: '/technician-search/',
+  path: '/technician-search/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TechnicianCatalogsIndexRoute = TechnicianCatalogsIndexRouteImport.update({
+  id: '/technician-catalogs/',
+  path: '/technician-catalogs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevSupabaseRoute = DevSupabaseRouteImport.update({
   id: '/dev/supabase',
   path: '/dev/supabase',
@@ -53,6 +65,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/technician-catalogs/': typeof TechnicianCatalogsIndexRoute
+  '/technician-search/': typeof TechnicianSearchIndexRoute
   '/users/': typeof UsersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +75,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/technician-catalogs': typeof TechnicianCatalogsIndexRoute
+  '/technician-search': typeof TechnicianSearchIndexRoute
   '/users': typeof UsersIndexRoute
 }
 export interface FileRoutesById {
@@ -70,6 +86,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/technician-catalogs/': typeof TechnicianCatalogsIndexRoute
+  '/technician-search/': typeof TechnicianSearchIndexRoute
   '/users/': typeof UsersIndexRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +98,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/technician-catalogs/'
+    | '/technician-search/'
     | '/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +108,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/technician-catalogs'
+    | '/technician-search'
     | '/users'
   id:
     | '__root__'
@@ -96,6 +118,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/technician-catalogs/'
+    | '/technician-search/'
     | '/users/'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +129,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   DevSupabaseRoute: typeof DevSupabaseRoute
+  TechnicianCatalogsIndexRoute: typeof TechnicianCatalogsIndexRoute
+  TechnicianSearchIndexRoute: typeof TechnicianSearchIndexRoute
   UsersIndexRoute: typeof UsersIndexRoute
 }
 
@@ -145,6 +171,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/technician-search/': {
+      id: '/technician-search/'
+      path: '/technician-search'
+      fullPath: '/technician-search/'
+      preLoaderRoute: typeof TechnicianSearchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/technician-catalogs/': {
+      id: '/technician-catalogs/'
+      path: '/technician-catalogs'
+      fullPath: '/technician-catalogs/'
+      preLoaderRoute: typeof TechnicianCatalogsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/supabase': {
       id: '/dev/supabase'
       path: '/dev/supabase'
@@ -161,6 +201,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   DevSupabaseRoute: DevSupabaseRoute,
+  TechnicianCatalogsIndexRoute: TechnicianCatalogsIndexRoute,
+  TechnicianSearchIndexRoute: TechnicianSearchIndexRoute,
   UsersIndexRoute: UsersIndexRoute,
 }
 export const routeTree = rootRouteImport

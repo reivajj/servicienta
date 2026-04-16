@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import type { ApiGatewayEnv } from '../env.js'
+import { createClient } from '@supabase/supabase-js';
+import type { ApiGatewayEnv } from '../env.js';
 
 export function createServiceSupabaseClient(env: ApiGatewayEnv) {
   return createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
@@ -7,5 +7,5 @@ export function createServiceSupabaseClient(env: ApiGatewayEnv) {
       autoRefreshToken: false,
       persistSession: false,
     },
-  })
+  });
 }

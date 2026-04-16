@@ -5,10 +5,11 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,md}\"",
     "check-types": "turbo run check-types",
     "check-types:scripts": "tsc -p tsconfig.scripts.json --noEmit",
     "seed:users": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-users.ts",
+    "seed:technician-profiles": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-technician-profiles.ts",
     "seed:scenario": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-scenario.ts",
     "seed:cleanup": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/cleanup-seeded-data.ts"
   },
