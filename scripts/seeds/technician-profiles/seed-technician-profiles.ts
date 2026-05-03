@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   TECHNICIAN_SEARCH_APPLIANCE_TYPES,
@@ -6,8 +5,6 @@ import {
   TECHNICIAN_SEARCH_FIXTURES,
   TECHNICIAN_SEARCH_ZONES,
 } from '../../data/technician-profiles.js';
-import { buildSeedEmail } from '../../lib/seed-tag.js';
-import { seedUsers } from '../users/seed-users.js';
 import type { SeedContext, SeederResult } from '../../lib/types.js';
 
 interface UserRow {
@@ -33,9 +30,6 @@ interface SeedLookupData {
   brandIdsBySlug: Map<string, string>;
   zoneIdsBySlug: Map<string, string>;
 }
-
-const REVIEW_SCENARIO = 'technician-search-fixtures';
-const REVIEW_CLIENT_COUNT = 6;
 
 async function ensureCatalog(
   supabase: SupabaseClient,
@@ -63,43 +57,6 @@ async function ensureCatalog(
   }
 
   return new Map((data ?? []).map((row) => [row.slug, row.id]));
-}
-
-async function ensureReviewClients(context: SeedContext) {
-  await seedUsers({
-    context,
-    count: REVIEW_CLIENT_COUNT,
-    resolvedRoleCounts: {
-      admins: 0,
-      technicians: 0,
-      clients: REVIEW_CLIENT_COUNT,
-    },
-    scenario: REVIEW_SCENARIO,
-  });
-
-  const emails = Array.from(
-    { length: REVIEW_CLIENT_COUNT },
-    (_, index) =>
-      `seed-${context.env.seedTag}-client-${String(index + 1).padStart(3, '0')}@servicienta.local`,
-  );
-
-  const { data, error } = await context.supabase
-    .from('users')
-    .select('id, email, name, surname')
-    .in('email', emails)
-    .order('email', { ascending: true });
-
-  if (error) {
-    throw new Error(`Could not load review clients: ${error.message}`);
-  }
-
-  if ((data ?? []).length !== REVIEW_CLIENT_COUNT) {
-    throw new Error(
-      'Review clients seed did not create the expected amount of users',
-    );
-  }
-
-  return data as UserRow[];
 }
 
 async function loadTargetTechnicians(
@@ -221,20 +178,6 @@ async function resetTechnicianRelations(
   }
 }
 
-async function resetSeededReviews(
-  context: SeedContext,
-  reviewClientIds: string[],
-) {
-  const { error } = await context.supabase
-    .from('technician_reviews')
-    .delete()
-    .in('client_id', reviewClientIds);
-
-  if (error) {
-    throw new Error(`Could not reset seeded reviews: ${error.message}`);
-  }
-}
-
 function requireLookupId(
   catalogName: string,
   slug: string,
@@ -262,16 +205,11 @@ export async function seedTechnicianProfiles({
     targetCount,
     targetEmails,
   );
-  const reviewClients = await ensureReviewClients(context);
   const lookupData = await ensureLookupData(context);
   const technicianIds = technicians.map((technician) => technician.id);
   const profilesById = await loadTechnicianProfiles(context, technicianIds);
 
   await resetTechnicianRelations(context, technicianIds);
-  await resetSeededReviews(
-    context,
-    reviewClients.map((client) => client.id),
-  );
 
   let createdProfiles = 0;
   let updatedProfiles = 0;
@@ -365,20 +303,11 @@ export async function seedTechnicianProfiles({
       is_public: document.isPublic,
     }));
 
-    const reviewRows = fixture.reviewRatings.map((rating, reviewIndex) => ({
-      technician_id: technician.id,
-      order_id: randomUUID(),
-      client_id: reviewClients[(index + reviewIndex) % reviewClients.length].id,
-      rating,
-      comment: `Seed review ${reviewIndex + 1} para ${displayName || technician.email}`,
-    }));
-
     const [
       applianceInsert,
       brandInsert,
       zoneInsert,
       documentInsert,
-      reviewInsert,
     ] = await Promise.all([
       context.supabase
         .from('technician_appliance_specialties')
@@ -392,9 +321,6 @@ export async function seedTechnicianProfiles({
       documentRows.length > 0
         ? context.supabase.from('technician_documents').insert(documentRows)
         : Promise.resolve({ error: null }),
-      reviewRows.length > 0
-        ? context.supabase.from('technician_reviews').insert(reviewRows)
-        : Promise.resolve({ error: null }),
     ]);
 
     const insertErrors = [
@@ -402,7 +328,6 @@ export async function seedTechnicianProfiles({
       brandInsert.error,
       zoneInsert.error,
       documentInsert.error,
-      reviewInsert.error,
     ].filter(Boolean);
 
     if (insertErrors.length > 0) {

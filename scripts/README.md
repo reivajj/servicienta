@@ -34,6 +34,8 @@ pnpm seed:users -- --count 100 --admins 10 --technicians 45 --clients 45
 pnpm seed:technician-profiles -- --technicians 10
 pnpm seed:scenario -- --scenario admin-basic
 pnpm seed:scenario -- --scenario technician-search-basic
+pnpm seed:scenario -- --scenario orders-operations-realistic
+pnpm seed:reset-operational
 pnpm seed:cleanup -- --tag local-seed
 ```
 
@@ -57,9 +59,9 @@ ya existentes y les completa un dataset de búsqueda pública:
 - `technician_brand_specialties`
 - `technician_coverage_zones`
 - `technician_documents`
-- `technician_reviews`
 
-Además asegura 6 clientes seeded para poder crear reviews de prueba.
+Este seed ya no crea `technician_reviews`.
+Las reviews operativas pasan a depender del seed de `orders` / `operations`.
 
 Escenario recomendado para probar la búsqueda end-to-end:
 
@@ -88,6 +90,30 @@ pnpm seed:scenario -- --scenario technician-search-basic
 
 Sirve para probar login manual, tabla de `users`, edición, delete sobre terceros
 y restore posterior.
+
+## Escenario operativo
+
+`orders-operations-realistic`:
+
+- resetea el dataset seeded del entorno
+- crea 2 admins, 8 technicians y 10 clients
+- completa `technician_profiles`
+- completa `client_profiles`
+- crea 16 `orders`
+- crea 12 `operations`
+- crea 4 `technician_reviews` ligadas a `orders` reales
+
+Comando:
+
+```bash
+pnpm seed:scenario -- --scenario orders-operations-realistic
+```
+
+Si querés ejecutar solo el reset operativo previo:
+
+```bash
+pnpm seed:reset-operational
+```
 
 ## Verificación manual mínima
 

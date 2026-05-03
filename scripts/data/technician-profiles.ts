@@ -30,7 +30,6 @@ export interface SeedTechnicianFixture {
     description: string;
     isPublic: boolean;
   }>;
-  reviewRatings: number[];
 }
 
 export const TECHNICIAN_SEARCH_APPLIANCE_TYPES: SeedApplianceType[] = [
@@ -100,7 +99,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [5, 5, 4, 5],
   },
   {
     baseAddressText: 'Mendoza 2400, Belgrano, CABA',
@@ -125,7 +123,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [5, 4, 4],
   },
   {
     baseAddressText: 'Rosario 600, Caballito, CABA',
@@ -149,7 +146,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: false,
       },
     ],
-    reviewRatings: [5, 5, 5, 4, 4],
   },
   {
     baseAddressText: 'Pueyrredón 1800, Recoleta, CABA',
@@ -174,7 +170,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [5, 4, 5],
   },
   {
     baseAddressText: 'Corrientes 5200, Villa Crespo, CABA',
@@ -195,7 +190,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: false,
       },
     ],
-    reviewRatings: [4, 4, 5],
   },
   {
     baseAddressText: 'Rivadavia 4200, Almagro, CABA',
@@ -217,7 +211,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [5, 5, 4],
   },
   {
     baseAddressText: 'Nazca 200, Flores, CABA',
@@ -238,7 +231,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [4, 5, 4, 4],
   },
   {
     baseAddressText: 'Triunvirato 4700, Villa Urquiza, CABA',
@@ -262,7 +254,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [5, 5, 5, 5],
   },
   {
     baseAddressText: 'Independencia 3500, Boedo, CABA',
@@ -284,7 +275,6 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [4, 4, 4],
   },
   {
     baseAddressText: 'Defensa 900, San Telmo, CABA',
@@ -309,6 +299,5 @@ export const TECHNICIAN_SEARCH_FIXTURES: SeedTechnicianFixture[] = [
         isPublic: true,
       },
     ],
-    reviewRatings: [5, 4, 5, 4],
   },
 ];

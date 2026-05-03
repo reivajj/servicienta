@@ -11,7 +11,8 @@
     "seed:users": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-users.ts",
     "seed:technician-profiles": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-technician-profiles.ts",
     "seed:scenario": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/seed-scenario.ts",
-    "seed:cleanup": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/cleanup-seeded-data.ts"
+    "seed:cleanup": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/cleanup-seeded-data.ts",
+    "seed:reset-operational": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx scripts/cli/reset-operational-seed.ts"
   },
   "dependencies": {
     "@servicienta/types": "workspace:^",

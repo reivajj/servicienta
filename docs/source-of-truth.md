@@ -405,6 +405,7 @@ Notas:
 
 - hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks`, `apps/api-gateway` y una primera vista admin en `apps/web`
 - la implementación actual todavía es mínima: snapshot de dirección de servicio, estados base y endpoints/clientes para creación y listado
+- hoy también existe un seed operativo desde cero en `scripts/` para poblar `client_profiles`, `orders`, `operations` y `technician_reviews` con relaciones válidas
 - sigue siendo un modelo provisional: el hecho de que ya exista en runtime no implica que su contrato esté cerrado
 
 ### Operation
@@ -428,6 +429,7 @@ Notas:
 - hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks`, `apps/api-gateway` y una primera vista admin en `apps/web`
 - en runtime actual, `Operation` sigue siendo la entidad puente entre `Order` y técnico, y al completarse mueve la `Order` a `en_garantia`
 - el vínculo de `technician_id` se está resolviendo contra `TechnicianProfile.id`, no directamente contra `User.id`
+- hoy también existe un seed operativo desde cero en `scripts/` para poblar `operations` y `reviews` sobre `orders` reales, evitando `order_id` inventados
 - la implementación actual no cubre todavía cancelaciones, múltiples operaciones simultáneas por orden ni reglas más finas del flujo `tech_applies`
 
 ### Payment
@@ -573,6 +575,7 @@ Implementado hoy:
 - `ClientProfile` real en Supabase con datos básicos de contacto y dirección base
 - `Order` real en Supabase con contratos compartidos, endpoints y vista admin inicial
 - `Operation` real en Supabase con contratos compartidos, endpoints y vista admin inicial
+- escenario de seed `orders-operations-realistic` que resetea dataset seeded y reconstruye `users`, `client_profiles`, `technician_profiles`, `orders`, `operations` y `technician_reviews` con integridad válida
 - catálogos reales de `ApplianceType`, `Brand` y `Zone`
 - relaciones reales de especialidades, marcas, zonas de cobertura, reviews y documentos de técnicos
 - view pública y RPC de búsqueda de técnicos
@@ -638,6 +641,23 @@ salvo que en una conversación futura decidamos otra cosa.
 - endpoints de Flujo A
 - endpoints de Flujo B
 - reglas de transición de estados
+
+## Próxima prioridad
+
+La siguiente tarea prioritaria pasa a ser poner a punto las tablas y pantallas de `Orders` y `Operations` para que sirvan de verdad como herramientas operativas y no solo como vistas iniciales.
+
+Eso implica al menos:
+
+- mejorar la visualización de `Orders` y `Operations` en `apps/web`
+- agregar popups o drawers de detalle para ver mejor cliente, técnico, dirección, estados y timestamps
+- exponer mejor la información relacionada de `User`, `ClientProfile`, `TechnicianProfile` y `TechnicianReview`
+- revisar si la tabla de `Operations` necesita mostrar también la review asociada o su ausencia
+- validar que los filtros y estados tengan sentido sobre datos seeded reales
+- probar el flujo de crear una `Order` siendo `client`
+- probar el flujo de crear/confirmar/completar `Operation`
+- detectar gaps de autorización o UX antes de pasar a pagos o lógica más avanzada
+
+La prioridad inmediata ya no es solo modelar entidades, sino verificar que el flujo real pueda recorrerse end-to-end desde UI, API y seed consistente.
 - momento exacto de creación de `Payment`
 - estrategia landing: `api-gateway` vs acceso directo a Supabase
 
