@@ -401,6 +401,12 @@ La crea un cliente.
 | `description` | `string` | |
 | `created_at` | `timestamp` | |
 
+Notas:
+
+- hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks`, `apps/api-gateway` y una primera vista admin en `apps/web`
+- la implementación actual todavía es mínima: snapshot de dirección de servicio, estados base y endpoints/clientes para creación y listado
+- sigue siendo un modelo provisional: el hecho de que ya exista en runtime no implica que su contrato esté cerrado
+
 ### Operation
 
 Una `Operation` vincula un técnico concreto con una `Order`.
@@ -412,10 +418,17 @@ una `Order` puede tener múltiples `Operation`, pero una `Operation` corresponde
 |---|---|---|
 | `id` | `uuid` | PK |
 | `order_id` | `uuid` | FK → `Order` |
-| `technician_id` | `uuid` | FK → `User` |
+| `technician_id` | `uuid` | FK → `TechnicianProfile` |
 | `status` | `enum` | `pending \| confirmed \| completed \| cancelled` |
 | `scheduled_at` | `timestamp` | nullable |
 | `completed_at` | `timestamp` | nullable |
+
+Notas:
+
+- hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks`, `apps/api-gateway` y una primera vista admin en `apps/web`
+- en runtime actual, `Operation` sigue siendo la entidad puente entre `Order` y técnico, y al completarse mueve la `Order` a `en_garantia`
+- el vínculo de `technician_id` se está resolviendo contra `TechnicianProfile.id`, no directamente contra `User.id`
+- la implementación actual no cubre todavía cancelaciones, múltiples operaciones simultáneas por orden ni reglas más finas del flujo `tech_applies`
 
 ### Payment
 
@@ -558,6 +571,8 @@ Implementado hoy:
 - `User` real con `role`, `status` y `deleted_at`
 - `TechnicianProfile` real en Supabase con `public_slug`, `rating`, `available`, ubicación base y timestamps
 - `ClientProfile` real en Supabase con datos básicos de contacto y dirección base
+- `Order` real en Supabase con contratos compartidos, endpoints y vista admin inicial
+- `Operation` real en Supabase con contratos compartidos, endpoints y vista admin inicial
 - catálogos reales de `ApplianceType`, `Brand` y `Zone`
 - relaciones reales de especialidades, marcas, zonas de cobertura, reviews y documentos de técnicos
 - view pública y RPC de búsqueda de técnicos
@@ -565,8 +580,6 @@ Implementado hoy:
 
 No implementado todavía:
 
-- `Order`
-- `Operation`
 - `Subscription`
 - `Payment`
 - `Payout`
@@ -578,8 +591,8 @@ No implementado todavía:
 Desalineación a tener presente:
 
 - este documento venía describiendo `TechnicianProfile` como intención futura, pero esa parte ya avanzó bastante en el repo
-- hoy la brecha principal ya no está en perfiles técnicos sino en `ClientProfile` y en la vertical de `Order` / `Operation`
-- hoy la brecha principal pasa a estar sobre `Order` / `Operation`, pagos y reglas de autorización más finas
+- hoy la brecha principal ya no está en perfiles técnicos sino en pagos, reglas de autorización más finas y el cierre funcional de `Order` / `Operation`
+- `Order` y `Operation` ya existen en runtime, pero siguen incompletas frente al modelo conceptual
 
 ## Regla práctica para próximas tareas
 

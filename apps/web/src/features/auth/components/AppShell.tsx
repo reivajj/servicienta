@@ -40,6 +40,9 @@ export function AppShell() {
           <Link to="/orders" className="app-shell__link">
             Orders
           </Link>
+          <Link to="/operations" className="app-shell__link">
+            Operations
+          </Link>
           <Link to="/technician-search" className="app-shell__link">
             Technician Search
           </Link>

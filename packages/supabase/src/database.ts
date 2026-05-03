@@ -3,6 +3,7 @@ import type {
   ApplianceType,
   Brand,
   ClientProfile,
+  Operation,
   Order,
   PublicTechnicianProfile,
   TechnicianApplianceSpecialty,
@@ -59,6 +60,13 @@ export interface Database {
         Row: Order;
         Insert: Insertable<Order>;
         Update: Updatable<Omit<Order, 'id' | 'client_id' | 'created_at'>>;
+      };
+      operations: {
+        Row: Operation;
+        Insert: Insertable<Operation>;
+        Update: Updatable<
+          Omit<Operation, 'id' | 'order_id' | 'technician_id' | 'created_at'>
+        >;
       };
       technician_profiles: {
         Row: TechnicianProfile;

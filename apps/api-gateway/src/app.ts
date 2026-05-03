@@ -5,6 +5,7 @@ import { clientProfilesRouter } from './client-profiles/router.js';
 import type { ApiGatewayEnv } from './env.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFound } from './middleware/not-found.js';
+import { operationsRouter } from './operations/router.js';
 import { requestId } from './middleware/request-id.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { ordersRouter } from './orders/router.js';
@@ -24,6 +25,7 @@ export function createApp(env: ApiGatewayEnv) {
 
   app.use(apiDocsRouter({ supabase }));
   app.use(healthRouter);
+  app.use(operationsRouter({ supabase }));
   app.use(ordersRouter({ supabase }));
   app.use(clientProfilesRouter({ supabase }));
   app.use(technicianProfilesRouter({ supabase }));

@@ -10,6 +10,10 @@ import {
   createClientProfilesApiClient,
   type ClientProfilesApiClient,
 } from '../client-profiles/client.js';
+import {
+  createOperationsApiClient,
+  type OperationsApiClient,
+} from '../operations/client.js';
 import { createOrdersApiClient, type OrdersApiClient } from '../orders/client.js';
 import {
   createTechnicianProfilesApiClient,
@@ -19,6 +23,7 @@ import {
 export interface ApiClient {
   users: UsersApiClient['users'];
   clientProfiles: ClientProfilesApiClient['clientProfiles'];
+  operations: OperationsApiClient['operations'];
   orders: OrdersApiClient['orders'];
   technicianProfiles: TechnicianProfilesApiClient['technicianProfiles'];
 }
@@ -55,6 +60,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
   return {
     ...createUsersApiClient({ apiFetch }),
     ...createClientProfilesApiClient({ apiFetch }),
+    ...createOperationsApiClient({ apiFetch }),
     ...createOrdersApiClient({ apiFetch }),
     ...createTechnicianProfilesApiClient({ apiFetch }),
   };

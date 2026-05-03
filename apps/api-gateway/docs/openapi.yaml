@@ -16,6 +16,8 @@ tags:
   - name: System
   - name: Users
   - name: Client Profiles
+  - name: Orders
+  - name: Operations
   - name: Technician Profiles
 paths:
   /health:
@@ -341,6 +343,559 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/orders:
+    post:
+      tags: [Orders]
+      summary: Create order
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderInput'
+            examples:
+              createOrder:
+                value:
+                  flow_type: client_selects
+                  description: Heladera no enfría
+                  service_address_text: Calle Falsa 123
+                  service_lat: -34.6037
+                  service_lng: -58.3816
+                  address_notes: Timbre 2, piso 4
+      responses:
+        '201':
+          $ref: '#/components/responses/OrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                clientRoleRequired:
+                  value:
+                    error: Client role required
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders/current:
+    get:
+      tags: [Orders]
+      summary: List current client orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated current client orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrdersResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      items:
+                        - id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                          client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                          status: open
+                          flow_type: client_selects
+                          description: Heladera no enfría
+                          service_address_text: Calle Falsa 123
+                          service_lat: -34.6037
+                          service_lng: -58.3816
+                          address_notes: Timbre 2, piso 4
+                          created_at: '2026-05-03T14:00:00.000Z'
+                          updated_at: '2026-05-03T14:00:00.000Z'
+                      pagination:
+                        page: 1
+                        pageSize: 25
+                        total: 1
+                        totalPages: 1
+                      summary:
+                        totalOrders: 1
+                        openOrders: 1
+                        inProgressOrders: 0
+                        enGarantiaOrders: 0
+                        closedOrders: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                clientRoleRequired:
+                  value:
+                    error: Client role required
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get current client order by id
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                clientRoleRequired:
+                  value:
+                    error: Client role required
+                    requestId: req_123
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orderNotFound:
+                  value:
+                    error: Order not found
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/orders:
+    get:
+      tags: [Orders]
+      summary: List orders for admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - name: flowType
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrderFlowType'
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated admin orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminOrdersResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      items:
+                        - id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                          client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                          client_email: client@example.com
+                          client_name: Kiara
+                          client_surname: Pérez
+                          client_status: ACTIVE
+                          status: in_progress
+                          flow_type: client_selects
+                          description: Heladera no enfría
+                          service_address_text: Calle Falsa 123
+                          service_lat: -34.6037
+                          service_lng: -58.3816
+                          address_notes: Timbre 2, piso 4
+                          created_at: '2026-05-03T14:00:00.000Z'
+                          updated_at: '2026-05-03T14:05:00.000Z'
+                      pagination:
+                        page: 1
+                        pageSize: 25
+                        total: 1
+                        totalPages: 1
+                      summary:
+                        totalOrders: 1
+                        openOrders: 0
+                        inProgressOrders: 1
+                        enGarantiaOrders: 0
+                        closedOrders: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get order by id for admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminOrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orderNotFound:
+                  value:
+                    error: Order not found
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders/{orderId}/operations:
+    post:
+      tags: [Operations]
+      summary: Create operation for an order
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOperationInput'
+            examples:
+              createOperation:
+                value:
+                  technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                  scheduled_at: '2026-05-04T15:00:00.000Z'
+      responses:
+        '201':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidState:
+                  value:
+                    error: Order is not open for a new operation
+                    requestId: req_123
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                clientRoleRequired:
+                  value:
+                    error: Client role required
+                    requestId: req_123
+        '404':
+          description: Related entity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orderNotFound:
+                  value:
+                    error: Order not found
+                    requestId: req_123
+                technicianNotFound:
+                  value:
+                    error: Technician profile not found
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/operations/current:
+    get:
+      tags: [Operations]
+      summary: List current operations for authenticated client or technician
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OperationStatus'
+      responses:
+        '200':
+          description: Paginated current operations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOperationsResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      items:
+                        - id: d364272c-aa8c-4273-86b0-6fd9999bb222
+                          order_id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                          technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                          status: confirmed
+                          scheduled_at: '2026-05-04T15:00:00.000Z'
+                          completed_at: null
+                          created_at: '2026-05-03T14:05:00.000Z'
+                          updated_at: '2026-05-03T14:05:00.000Z'
+                      pagination:
+                        page: 1
+                        pageSize: 25
+                        total: 1
+                        totalPages: 1
+                      summary:
+                        totalOperations: 1
+                        pendingOperations: 0
+                        confirmedOperations: 1
+                        completedOperations: 0
+                        cancelledOperations: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                roleRequired:
+                  value:
+                    error: Client or technician role required
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/operations/{operationId}:
+    get:
+      tags: [Operations]
+      summary: Get current operation by id for authenticated client or technician
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                roleRequired:
+                  value:
+                    error: Client or technician role required
+                    requestId: req_123
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                operationNotFound:
+                  value:
+                    error: Operation not found
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/operations/{operationId}/complete:
+    post:
+      tags: [Operations]
+      summary: Complete operation as technician
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                alreadyCompleted:
+                  value:
+                    error: Operation is already completed
+                    requestId: req_123
+                cancelledOperation:
+                  value:
+                    error: Cancelled operations cannot be completed
+                    requestId: req_123
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                technicianRoleRequired:
+                  value:
+                    error: Technician role required
+                    requestId: req_123
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                operationNotFound:
+                  value:
+                    error: Operation not found
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/operations:
+    get:
+      tags: [Operations]
+      summary: List operations for admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OperationStatus'
+      responses:
+        '200':
+          description: Paginated admin operations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminOperationsResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      items:
+                        - id: d364272c-aa8c-4273-86b0-6fd9999bb222
+                          order_id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                          technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                          status: completed
+                          scheduled_at: '2026-05-04T15:00:00.000Z'
+                          completed_at: '2026-05-04T16:30:00.000Z'
+                          created_at: '2026-05-03T14:05:00.000Z'
+                          updated_at: '2026-05-04T16:30:00.000Z'
+                          order_status: en_garantia
+                          order_flow_type: client_selects
+                          service_address_text: Calle Falsa 123
+                          client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                          client_email: client@example.com
+                          client_name: Kiara
+                          client_surname: Pérez
+                          technician_email: technician@example.com
+                          technician_name: Marcelo
+                          technician_surname: Ruiz
+                          technician_public_slug: tech-abc12345
+                      pagination:
+                        page: 1
+                        pageSize: 25
+                        total: 1
+                        totalPages: 1
+                      summary:
+                        totalOperations: 1
+                        pendingOperations: 0
+                        confirmedOperations: 0
+                        completedOperations: 1
+                        cancelledOperations: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/operations/{operationId}:
+    get:
+      tags: [Operations]
+      summary: Get operation by id for admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminOperationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                operationNotFound:
+                  value:
+                    error: Operation not found
+                    requestId: req_123
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/admin/technician-profiles:
     get:
       tags: [Technician Profiles]
@@ -621,6 +1176,20 @@ components:
       schema:
         type: string
         format: uuid
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    OperationId:
+      name: operationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     UserResponse:
       description: User response
@@ -666,6 +1235,99 @@ components:
                   preferred_contact_channel: whatsapp
                   created_at: '2026-05-01T09:00:01.000Z'
                   updated_at: '2026-05-01T09:00:01.000Z'
+    OrderResponse:
+      description: Order response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OrderResponse'
+          examples:
+            success:
+              value:
+                data:
+                  id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                  client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                  status: open
+                  flow_type: client_selects
+                  description: Heladera no enfría
+                  service_address_text: Calle Falsa 123
+                  service_lat: -34.6037
+                  service_lng: -58.3816
+                  address_notes: Timbre 2, piso 4
+                  created_at: '2026-05-03T14:00:00.000Z'
+                  updated_at: '2026-05-03T14:00:00.000Z'
+    AdminOrderResponse:
+      description: Admin order response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminOrderResponse'
+          examples:
+            success:
+              value:
+                data:
+                  id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                  client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                  client_email: client@example.com
+                  client_name: Kiara
+                  client_surname: Pérez
+                  client_status: ACTIVE
+                  status: in_progress
+                  flow_type: client_selects
+                  description: Heladera no enfría
+                  service_address_text: Calle Falsa 123
+                  service_lat: -34.6037
+                  service_lng: -58.3816
+                  address_notes: Timbre 2, piso 4
+                  created_at: '2026-05-03T14:00:00.000Z'
+                  updated_at: '2026-05-03T14:05:00.000Z'
+    OperationResponse:
+      description: Operation response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OperationResponse'
+          examples:
+            success:
+              value:
+                data:
+                  id: d364272c-aa8c-4273-86b0-6fd9999bb222
+                  order_id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                  technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                  status: confirmed
+                  scheduled_at: '2026-05-04T15:00:00.000Z'
+                  completed_at: null
+                  created_at: '2026-05-03T14:05:00.000Z'
+                  updated_at: '2026-05-03T14:05:00.000Z'
+    AdminOperationResponse:
+      description: Admin operation response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminOperationResponse'
+          examples:
+            success:
+              value:
+                data:
+                  id: d364272c-aa8c-4273-86b0-6fd9999bb222
+                  order_id: eaf86abc-ae80-486a-a0cf-6cacbe761111
+                  technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                  status: completed
+                  scheduled_at: '2026-05-04T15:00:00.000Z'
+                  completed_at: '2026-05-04T16:30:00.000Z'
+                  created_at: '2026-05-03T14:05:00.000Z'
+                  updated_at: '2026-05-04T16:30:00.000Z'
+                  order_status: en_garantia
+                  order_flow_type: client_selects
+                  service_address_text: Calle Falsa 123
+                  client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                  client_email: client@example.com
+                  client_name: Kiara
+                  client_surname: Pérez
+                  technician_email: technician@example.com
+                  technician_name: Marcelo
+                  technician_surname: Ruiz
+                  technician_public_slug: tech-abc12345
     PublicTechnicianProfileResponse:
       description: Public technician profile response
       content:
@@ -761,6 +1423,15 @@ components:
     UserStatus:
       type: string
       enum: [ACTIVE, DELETED]
+    OrderStatus:
+      type: string
+      enum: [open, in_progress, en_garantia, closed]
+    OrderFlowType:
+      type: string
+      enum: [client_selects, tech_applies]
+    OperationStatus:
+      type: string
+      enum: [pending, confirmed, completed, cancelled]
     UsersPageSize:
       type: integer
       enum: [25, 50, 100]
@@ -969,6 +1640,333 @@ components:
             - 'null'
         preferred_contact_channel:
           $ref: '#/components/schemas/ClientPreferredContactChannel'
+    Order:
+      type: object
+      required:
+        - id
+        - client_id
+        - status
+        - flow_type
+        - description
+        - service_address_text
+        - service_lat
+        - service_lng
+        - address_notes
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        flow_type:
+          $ref: '#/components/schemas/OrderFlowType'
+        description:
+          type: string
+        service_address_text:
+          type: string
+        service_lat:
+          type:
+            - number
+            - 'null'
+        service_lng:
+          type:
+            - number
+            - 'null'
+        address_notes:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AdminOrder:
+      allOf:
+        - $ref: '#/components/schemas/Order'
+        - type: object
+          required:
+            - client_email
+            - client_name
+            - client_surname
+            - client_status
+          properties:
+            client_email:
+              type: string
+              format: email
+            client_name:
+              type:
+                - string
+                - 'null'
+            client_surname:
+              type:
+                - string
+                - 'null'
+            client_status:
+              $ref: '#/components/schemas/UserStatus'
+    OrderResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Order'
+    AdminOrderResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdminOrder'
+    CreateOrderInput:
+      type: object
+      required:
+        - flow_type
+        - description
+        - service_address_text
+        - service_lat
+        - service_lng
+        - address_notes
+      properties:
+        flow_type:
+          $ref: '#/components/schemas/OrderFlowType'
+        description:
+          type: string
+        service_address_text:
+          type: string
+        service_lat:
+          type:
+            - number
+            - 'null'
+        service_lng:
+          type:
+            - number
+            - 'null'
+        address_notes:
+          type:
+            - string
+            - 'null'
+    PaginatedOrdersSummary:
+      type: object
+      required:
+        [totalOrders, openOrders, inProgressOrders, enGarantiaOrders, closedOrders]
+      properties:
+        totalOrders:
+          type: integer
+        openOrders:
+          type: integer
+        inProgressOrders:
+          type: integer
+        enGarantiaOrders:
+          type: integer
+        closedOrders:
+          type: integer
+    PaginatedOrders:
+      type: object
+      required: [items, pagination, summary]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        summary:
+          $ref: '#/components/schemas/PaginatedOrdersSummary'
+    PaginatedOrdersResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedOrders'
+    PaginatedAdminOrders:
+      type: object
+      required: [items, pagination, summary]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOrder'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        summary:
+          $ref: '#/components/schemas/PaginatedOrdersSummary'
+    PaginatedAdminOrdersResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedAdminOrders'
+    Operation:
+      type: object
+      required:
+        - id
+        - order_id
+        - technician_id
+        - status
+        - scheduled_at
+        - completed_at
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+        technician_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/OperationStatus'
+        scheduled_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AdminOperation:
+      allOf:
+        - $ref: '#/components/schemas/Operation'
+        - type: object
+          required:
+            - order_status
+            - order_flow_type
+            - service_address_text
+            - client_id
+            - client_email
+            - client_name
+            - client_surname
+            - technician_email
+            - technician_name
+            - technician_surname
+            - technician_public_slug
+          properties:
+            order_status:
+              $ref: '#/components/schemas/OrderStatus'
+            order_flow_type:
+              $ref: '#/components/schemas/OrderFlowType'
+            service_address_text:
+              type: string
+            client_id:
+              type: string
+              format: uuid
+            client_email:
+              type: string
+              format: email
+            client_name:
+              type:
+                - string
+                - 'null'
+            client_surname:
+              type:
+                - string
+                - 'null'
+            technician_email:
+              type: string
+              format: email
+            technician_name:
+              type:
+                - string
+                - 'null'
+            technician_surname:
+              type:
+                - string
+                - 'null'
+            technician_public_slug:
+              type: string
+    OperationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Operation'
+    AdminOperationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdminOperation'
+    CreateOperationInput:
+      type: object
+      required:
+        - technician_id
+        - scheduled_at
+      properties:
+        technician_id:
+          type: string
+          format: uuid
+        scheduled_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    PaginatedOperationsSummary:
+      type: object
+      required:
+        [totalOperations, pendingOperations, confirmedOperations, completedOperations, cancelledOperations]
+      properties:
+        totalOperations:
+          type: integer
+        pendingOperations:
+          type: integer
+        confirmedOperations:
+          type: integer
+        completedOperations:
+          type: integer
+        cancelledOperations:
+          type: integer
+    PaginatedOperations:
+      type: object
+      required: [items, pagination, summary]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Operation'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        summary:
+          $ref: '#/components/schemas/PaginatedOperationsSummary'
+    PaginatedOperationsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedOperations'
+    PaginatedAdminOperations:
+      type: object
+      required: [items, pagination, summary]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOperation'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        summary:
+          $ref: '#/components/schemas/PaginatedOperationsSummary'
+    PaginatedAdminOperationsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedAdminOperations'
     PaginatedClientProfilesSummary:
       type: object
       required: [totalClients, activeClients, deletedClients]
