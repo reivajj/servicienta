@@ -1,4 +1,5 @@
 export {
+  useAdminTechnicianProfiles,
   useAdminTechnicianCatalogs,
   useAdminTechniciansByCatalogItem,
   usePublicTechnicianProfileCatalogs,

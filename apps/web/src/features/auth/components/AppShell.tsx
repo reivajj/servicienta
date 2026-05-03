@@ -31,6 +31,15 @@ export function AppShell() {
           <Link to="/users" className="app-shell__link">
             Users
           </Link>
+          <Link to="/client-profiles" className="app-shell__link">
+            Client Profiles
+          </Link>
+          <Link to="/technician-profiles" className="app-shell__link">
+            Technician Profiles
+          </Link>
+          <Link to="/orders" className="app-shell__link">
+            Orders
+          </Link>
           <Link to="/technician-search" className="app-shell__link">
             Technician Search
           </Link>

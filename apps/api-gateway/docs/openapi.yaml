@@ -1,0 +1,1230 @@
+openapi: 3.1.0
+info:
+  title: Servicienta API Gateway
+  version: 0.1.0
+  description: |
+    OpenAPI specification for the current Express API Gateway.
+
+    Notes:
+    - Most application responses use the `{ data: ... }` envelope.
+    - Error responses use `{ error, requestId }`.
+    - `/health` is the only endpoint that does not use the standard envelope.
+servers:
+  - url: http://localhost:4000
+    description: Local development
+tags:
+  - name: System
+  - name: Users
+  - name: Client Profiles
+  - name: Technician Profiles
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                success:
+                  value:
+                    ok: true
+  /api/users/current:
+    get:
+      tags: [Users]
+      summary: Get current authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Users]
+      summary: Update current authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserInput'
+            examples:
+              updateCurrentUser:
+                value:
+                  name: Javier
+                  surname: Gómez
+                  role: client
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/users:
+    get:
+      tags: [Users]
+      summary: List users
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated users list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsersResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      items:
+                        - id: 5dbf6e6c-0b31-47f2-920f-e1d52a146111
+                          email: javier@example.com
+                          name: Javier
+                          surname: Gómez
+                          role: client
+                          status: ACTIVE
+                          deleted_at: null
+                          created_at: '2026-05-01T10:30:00.000Z'
+                      pagination:
+                        page: 1
+                        pageSize: 25
+                        total: 1
+                        totalPages: 1
+                      summary:
+                        totalUsers: 1
+                        activeUsers: 1
+                        deletedUsers: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get user by id
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Users]
+      summary: Update user by id
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserInput'
+            examples:
+              updateUser:
+                value:
+                  name: Kiara
+                  surname: Pérez
+                  role: technician
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Users]
+      summary: Soft delete user
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/users/{userId}/restore:
+    patch:
+      tags: [Users]
+      summary: Restore soft deleted user
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/client-profiles:
+    get:
+      tags: [Client Profiles]
+      summary: List client profiles
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated client profiles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClientProfilesResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      items:
+                        - id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                          email: client@example.com
+                          name: Kiara
+                          surname: Pérez
+                          status: ACTIVE
+                          deleted_at: null
+                          user_created_at: '2026-05-01T09:00:00.000Z'
+                          phone: '+5491133344455'
+                          whatsapp_phone: '+5491133344455'
+                          default_address_text: Calle Falsa 123
+                          default_lat: -34.6037
+                          default_lng: -58.3816
+                          address_notes: Piso 4, dto B
+                          preferred_contact_channel: whatsapp
+                          created_at: '2026-05-01T09:00:01.000Z'
+                          updated_at: '2026-05-01T09:00:01.000Z'
+                      pagination:
+                        page: 1
+                        pageSize: 25
+                        total: 1
+                        totalPages: 1
+                      summary:
+                        totalClients: 1
+                        activeClients: 1
+                        deletedClients: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/client-profiles/{clientProfileId}:
+    get:
+      tags: [Client Profiles]
+      summary: Get client profile by id
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ClientProfileId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminClientProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Client Profiles]
+      summary: Update client profile by id
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ClientProfileId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientProfileInput'
+            examples:
+              updateClientProfile:
+                value:
+                  phone: '+5491155511111'
+                  whatsapp_phone: '+5491155511111'
+                  default_address_text: Av. Siempre Viva 742
+                  address_notes: Casa al fondo
+                  preferred_contact_channel: whatsapp
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminClientProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/technician-profiles:
+    get:
+      tags: [Technician Profiles]
+      summary: List technician profiles for admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - name: available
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            $ref: '#/components/schemas/AdminTechnicianProfilesSort'
+      responses:
+        '200':
+          description: Paginated technician profiles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminTechnicianProfilesResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      items:
+                        - id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                          email: technician@example.com
+                          name: Marcelo
+                          surname: Ruiz
+                          status: ACTIVE
+                          public_slug: tech-abc12345
+                          available: true
+                          rating: 4.7
+                          rating_count: 18
+                          verified_at: '2026-04-20T14:30:00.000Z'
+                          bio: Técnico matriculado en refrigeración
+                          created_at: '2026-04-10T14:30:00.000Z'
+                          updated_at: '2026-05-03T11:00:00.000Z'
+                      pagination:
+                        page: 1
+                        pageSize: 25
+                        total: 1
+                        totalPages: 1
+                      summary:
+                        totalTechnicians: 1
+                        activeTechnicians: 1
+                        deletedTechnicians: 0
+                        availableTechnicians: 1
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/technician-profiles/catalogs:
+    get:
+      tags: [Technician Profiles]
+      summary: List admin technician catalogs
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Catalogs with technician counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTechnicianCatalogsResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      zones:
+                        - id: zone-1
+                          name: Palermo
+                          slug: palermo
+                          technician_count: 2
+                      brands:
+                        - id: brand-1
+                          name: Samsung
+                          slug: samsung
+                          technician_count: 1
+                      applianceTypes:
+                        - id: app-1
+                          name: Heladera
+                          slug: heladera
+                          technician_count: 2
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/technician-profiles/catalogs/{kind}/{slug}/technicians:
+    get:
+      tags: [Technician Profiles]
+      summary: List technicians associated to an admin catalog item
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/TechnicianCatalogKind'
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Technicians associated to the catalog item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTechniciansByCatalogItemResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      kind: zones
+                      item:
+                        id: zone-1
+                        name: Palermo
+                        slug: palermo
+                        technician_count: 2
+                      technicians:
+                        - id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                          email: technician@example.com
+                          name: Marcelo
+                          surname: Ruiz
+                          status: ACTIVE
+                          public_slug: tech-abc12345
+                          available: true
+                          rating: 4.7
+                          rating_count: 18
+                          verified_at: '2026-04-20T14:30:00.000Z'
+                          created_at: '2026-04-10T14:30:00.000Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/public/technician-profiles/catalogs:
+    get:
+      tags: [Technician Profiles]
+      summary: List public technician search catalogs
+      responses:
+        '200':
+          description: Public search catalogs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicTechnicianProfileCatalogsResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      zones:
+                        - id: zone-1
+                          name: Palermo
+                          slug: palermo
+                      applianceTypes:
+                        - id: app-1
+                          name: Heladera
+                          slug: heladera
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/public/technician-profiles:
+    get:
+      tags: [Technician Profiles]
+      summary: Search public technician profiles
+      parameters:
+        - name: zoneSlug
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: applianceTypeSlug
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: available
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Public technician profile search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicTechnicianProfilesResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      - public_slug: tech-abc12345
+                        bio: Técnico matriculado en refrigeración
+                        rating: 4.7
+                        rating_count: 18
+                        available: true
+                        verified_at: '2026-04-20T14:30:00.000Z'
+                        created_at: '2026-04-10T14:30:00.000Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/public/technician-profiles/{publicSlug}:
+    get:
+      tags: [Technician Profiles]
+      summary: Get public technician profile by slug
+      parameters:
+        - name: publicSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/PublicTechnicianProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        $ref: '#/components/schemas/UsersPageSize'
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ClientProfileId:
+      name: clientProfileId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    UserResponse:
+      description: User response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserResponse'
+          examples:
+            success:
+              value:
+                data:
+                  id: 5dbf6e6c-0b31-47f2-920f-e1d52a146111
+                  email: javier@example.com
+                  name: Javier
+                  surname: Gómez
+                  role: client
+                  status: ACTIVE
+                  deleted_at: null
+                  created_at: '2026-05-01T10:30:00.000Z'
+    AdminClientProfileResponse:
+      description: Admin client profile response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminClientProfileResponse'
+          examples:
+            success:
+              value:
+                data:
+                  id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
+                  email: client@example.com
+                  name: Kiara
+                  surname: Pérez
+                  status: ACTIVE
+                  deleted_at: null
+                  user_created_at: '2026-05-01T09:00:00.000Z'
+                  phone: '+5491133344455'
+                  whatsapp_phone: '+5491133344455'
+                  default_address_text: Calle Falsa 123
+                  default_lat: -34.6037
+                  default_lng: -58.3816
+                  address_notes: Piso 4, dto B
+                  preferred_contact_channel: whatsapp
+                  created_at: '2026-05-01T09:00:01.000Z'
+                  updated_at: '2026-05-01T09:00:01.000Z'
+    PublicTechnicianProfileResponse:
+      description: Public technician profile response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PublicTechnicianProfileResponse'
+          examples:
+            success:
+              value:
+                data:
+                  public_slug: tech-abc12345
+                  bio: Técnico matriculado en refrigeración
+                  rating: 4.7
+                  rating_count: 18
+                  available: true
+                  verified_at: '2026-04-20T14:30:00.000Z'
+                  created_at: '2026-04-10T14:30:00.000Z'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidPage:
+              value:
+                error: Invalid page
+                requestId: req_123
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthorized:
+              value:
+                error: Missing bearer token
+                requestId: req_123
+    ForbiddenError:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            forbidden:
+              value:
+                error: Admin role required
+                requestId: req_123
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notFound:
+              value:
+                error: User not found
+                requestId: req_123
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            internal:
+              value:
+                error: Internal server error
+                requestId: req_123
+  schemas:
+    HealthResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required: [error, requestId]
+      properties:
+        error:
+          type: string
+        requestId:
+          type:
+            - string
+            - 'null'
+    UserRole:
+      type: string
+      enum: [admin, client, technician]
+    UserStatus:
+      type: string
+      enum: [ACTIVE, DELETED]
+    UsersPageSize:
+      type: integer
+      enum: [25, 50, 100]
+    ClientPreferredContactChannel:
+      type: string
+      enum: [phone, whatsapp]
+    TechnicianCatalogKind:
+      type: string
+      enum: [zones, brands, appliance-types]
+    AdminTechnicianProfilesSort:
+      type: string
+      enum: [default, rating-desc, rating-asc, name-asc, name-desc]
+    User:
+      type: object
+      required:
+        [id, email, name, surname, role, status, deleted_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type:
+            - string
+            - 'null'
+        surname:
+          type:
+            - string
+            - 'null'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        deleted_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    UserResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+    UpdateUserInput:
+      type: object
+      required: [name, surname, role]
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+    PaginatedUsersSummary:
+      type: object
+      required: [totalUsers, activeUsers, deletedUsers]
+      properties:
+        totalUsers:
+          type: integer
+        activeUsers:
+          type: integer
+        deletedUsers:
+          type: integer
+    Pagination:
+      type: object
+      required: [page, pageSize, total, totalPages]
+      properties:
+        page:
+          type: integer
+        pageSize:
+          $ref: '#/components/schemas/UsersPageSize'
+        total:
+          type: integer
+        totalPages:
+          type: integer
+    PaginatedUsers:
+      type: object
+      required: [items, pagination, summary]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        summary:
+          $ref: '#/components/schemas/PaginatedUsersSummary'
+    PaginatedUsersResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedUsers'
+    AdminClientProfile:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - surname
+        - status
+        - deleted_at
+        - user_created_at
+        - phone
+        - whatsapp_phone
+        - default_address_text
+        - default_lat
+        - default_lng
+        - address_notes
+        - preferred_contact_channel
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type:
+            - string
+            - 'null'
+        surname:
+          type:
+            - string
+            - 'null'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        deleted_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        user_created_at:
+          type: string
+          format: date-time
+        phone:
+          type:
+            - string
+            - 'null'
+        whatsapp_phone:
+          type:
+            - string
+            - 'null'
+        default_address_text:
+          type:
+            - string
+            - 'null'
+        default_lat:
+          type:
+            - number
+            - 'null'
+        default_lng:
+          type:
+            - number
+            - 'null'
+        address_notes:
+          type:
+            - string
+            - 'null'
+        preferred_contact_channel:
+          $ref: '#/components/schemas/ClientPreferredContactChannel'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AdminClientProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdminClientProfile'
+    UpdateClientProfileInput:
+      type: object
+      required:
+        - phone
+        - whatsapp_phone
+        - default_address_text
+        - address_notes
+        - preferred_contact_channel
+      properties:
+        phone:
+          type:
+            - string
+            - 'null'
+        whatsapp_phone:
+          type:
+            - string
+            - 'null'
+        default_address_text:
+          type:
+            - string
+            - 'null'
+        address_notes:
+          type:
+            - string
+            - 'null'
+        preferred_contact_channel:
+          $ref: '#/components/schemas/ClientPreferredContactChannel'
+    PaginatedClientProfilesSummary:
+      type: object
+      required: [totalClients, activeClients, deletedClients]
+      properties:
+        totalClients:
+          type: integer
+        activeClients:
+          type: integer
+        deletedClients:
+          type: integer
+    PaginatedClientProfiles:
+      type: object
+      required: [items, pagination, summary]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminClientProfile'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        summary:
+          $ref: '#/components/schemas/PaginatedClientProfilesSummary'
+    PaginatedClientProfilesResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedClientProfiles'
+    PublicTechnicianProfile:
+      type: object
+      required:
+        [public_slug, bio, rating, rating_count, available, verified_at, created_at]
+      properties:
+        public_slug:
+          type: string
+        bio:
+          type:
+            - string
+            - 'null'
+        rating:
+          type: number
+        rating_count:
+          type: integer
+        available:
+          type: boolean
+        verified_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    PublicTechnicianProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PublicTechnicianProfile'
+    PublicTechnicianProfilesResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicTechnicianProfile'
+    PublicTechnicianCatalogItem:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+    PublicTechnicianProfileCatalogs:
+      type: object
+      required: [zones, applianceTypes]
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicTechnicianCatalogItem'
+        applianceTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicTechnicianCatalogItem'
+    PublicTechnicianProfileCatalogsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PublicTechnicianProfileCatalogs'
+    AdminTechnicianCatalogItem:
+      type: object
+      required: [id, name, slug, technician_count]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        technician_count:
+          type: integer
+    AdminTechnicianCatalogs:
+      type: object
+      required: [zones, brands, applianceTypes]
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminTechnicianCatalogItem'
+        brands:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminTechnicianCatalogItem'
+        applianceTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminTechnicianCatalogItem'
+    AdminTechnicianCatalogsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdminTechnicianCatalogs'
+    AdminAssociatedTechnician:
+      type: object
+      required:
+        [id, email, name, surname, status, public_slug, available, rating, rating_count, verified_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type:
+            - string
+            - 'null'
+        surname:
+          type:
+            - string
+            - 'null'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        public_slug:
+          type: string
+        available:
+          type: boolean
+        rating:
+          type: number
+        rating_count:
+          type: integer
+        verified_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    AdminTechnicianProfile:
+      type: object
+      required:
+        [id, email, name, surname, status, public_slug, available, rating, rating_count, verified_at, bio, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type:
+            - string
+            - 'null'
+        surname:
+          type:
+            - string
+            - 'null'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        public_slug:
+          type: string
+        available:
+          type: boolean
+        rating:
+          type: number
+        rating_count:
+          type: integer
+        verified_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        bio:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PaginatedAdminTechnicianProfilesSummary:
+      type: object
+      required:
+        [totalTechnicians, activeTechnicians, deletedTechnicians, availableTechnicians]
+      properties:
+        totalTechnicians:
+          type: integer
+        activeTechnicians:
+          type: integer
+        deletedTechnicians:
+          type: integer
+        availableTechnicians:
+          type: integer
+    PaginatedAdminTechnicianProfiles:
+      type: object
+      required: [items, pagination, summary]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminTechnicianProfile'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        summary:
+          $ref: '#/components/schemas/PaginatedAdminTechnicianProfilesSummary'
+    PaginatedAdminTechnicianProfilesResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedAdminTechnicianProfiles'
+    AdminTechniciansByCatalogItem:
+      type: object
+      required: [kind, item, technicians]
+      properties:
+        kind:
+          $ref: '#/components/schemas/TechnicianCatalogKind'
+        item:
+          $ref: '#/components/schemas/AdminTechnicianCatalogItem'
+        technicians:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminAssociatedTechnician'
+    AdminTechniciansByCatalogItemResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdminTechniciansByCatalogItem'

@@ -7,12 +7,19 @@ import {
 } from './http.js';
 import { createUsersApiClient, type UsersApiClient } from '../users/client.js';
 import {
+  createClientProfilesApiClient,
+  type ClientProfilesApiClient,
+} from '../client-profiles/client.js';
+import { createOrdersApiClient, type OrdersApiClient } from '../orders/client.js';
+import {
   createTechnicianProfilesApiClient,
   type TechnicianProfilesApiClient,
 } from '../technician-profiles/client.js';
 
 export interface ApiClient {
   users: UsersApiClient['users'];
+  clientProfiles: ClientProfilesApiClient['clientProfiles'];
+  orders: OrdersApiClient['orders'];
   technicianProfiles: TechnicianProfilesApiClient['technicianProfiles'];
 }
 
@@ -47,6 +54,8 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 
   return {
     ...createUsersApiClient({ apiFetch }),
+    ...createClientProfilesApiClient({ apiFetch }),
+    ...createOrdersApiClient({ apiFetch }),
     ...createTechnicianProfilesApiClient({ apiFetch }),
   };
 }

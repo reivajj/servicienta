@@ -1,4 +1,5 @@
 import type {
+  ListAdminTechnicianProfilesInput,
   ListAdminTechniciansByCatalogItemInput,
   ListPublicTechnicianProfilesInput,
 } from '@servicienta/types';
@@ -15,6 +16,9 @@ export const technicianProfileKeys = {
   detail: (publicSlug: string) =>
     [...technicianProfileKeys.details(), publicSlug] as const,
   admin: () => [...technicianProfileKeys.all, 'admin'] as const,
+  adminLists: () => [...technicianProfileKeys.admin(), 'list'] as const,
+  adminList: (input: ListAdminTechnicianProfilesInput) =>
+    [...technicianProfileKeys.adminLists(), input] as const,
   adminCatalogs: () => [...technicianProfileKeys.admin(), 'catalogs'] as const,
   adminCatalogItemTechnicians: () =>
     [...technicianProfileKeys.admin(), 'catalog-item-technicians'] as const,

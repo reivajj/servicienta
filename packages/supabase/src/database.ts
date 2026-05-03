@@ -1,6 +1,9 @@
 import type {
+  AdminClientProfile,
   ApplianceType,
   Brand,
+  ClientProfile,
+  Order,
   PublicTechnicianProfile,
   TechnicianApplianceSpecialty,
   TechnicianBrandSpecialty,
@@ -44,6 +47,18 @@ export interface Database {
           deleted_at?: string | null;
           created_at?: string;
         };
+      };
+      client_profiles: {
+        Row: ClientProfile;
+        Insert: Insertable<ClientProfile> & { id: string };
+        Update: Updatable<
+          Omit<ClientProfile, 'id' | 'created_at' | 'updated_at'>
+        >;
+      };
+      orders: {
+        Row: Order;
+        Insert: Insertable<Order>;
+        Update: Updatable<Omit<Order, 'id' | 'client_id' | 'created_at'>>;
       };
       technician_profiles: {
         Row: TechnicianProfile;
@@ -110,6 +125,9 @@ export interface Database {
     Views: {
       public_technician_profiles: {
         Row: PublicTechnicianProfile;
+      };
+      admin_client_profiles: {
+        Row: AdminClientProfile;
       };
     };
     Functions: {

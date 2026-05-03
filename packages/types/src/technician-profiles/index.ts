@@ -1,5 +1,6 @@
 export type {
   AdminAssociatedTechnician,
+  AdminTechnicianProfile,
   AdminTechnicianCatalogItem,
   AdminTechnicianCatalogs,
   ApplianceType,
@@ -17,11 +18,17 @@ export type {
   Zone,
 } from './domain.js';
 export type {
+  AdminTechnicianProfilesSort,
   AdminTechniciansByCatalogItem,
+  ListAdminTechnicianProfilesInput,
+  ListAdminTechnicianProfilesResponse,
   GetPublicTechnicianProfileResponse,
   ListAdminTechnicianCatalogsResponse,
   ListAdminTechniciansByCatalogItemInput,
   ListAdminTechniciansByCatalogItemResponse,
+  PaginatedAdminTechnicianProfiles,
+  PaginatedAdminTechnicianProfilesPagination,
+  PaginatedAdminTechnicianProfilesSummary,
   ListPublicTechnicianProfileCatalogsResponse,
   ListPublicTechnicianProfilesInput,
   ListPublicTechnicianProfilesResponse,

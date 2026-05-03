@@ -6,12 +6,14 @@ import { asyncHandler } from '../middleware/async-handler.js';
 import { readQueryParam } from './helpers/http.js';
 import {
   getPublicTechnicianProfileBySlug,
+  listAdminTechnicianProfiles,
   listAdminTechnicianCatalogs,
   listAdminTechniciansByCatalogItem,
   listPublicTechnicianProfileCatalogs,
   listPublicTechnicianProfiles,
 } from './service.js';
 import {
+  validateListAdminTechnicianProfilesInput,
   validateAdminTechniciansByCatalogItemInput,
   validateListPublicTechnicianProfilesInput,
   validatePublicTechnicianSlug,
@@ -25,6 +27,26 @@ export function technicianProfilesRouter(
   options: TechnicianProfilesRouterOptions,
 ) {
   const router = Router();
+
+  router.get(
+    '/api/admin/technician-profiles',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const profiles = await listAdminTechnicianProfiles(
+        options.supabase,
+        validateListAdminTechnicianProfilesInput({
+          page: readQueryParam(request.query.page),
+          pageSize: readQueryParam(request.query.pageSize),
+          status: readQueryParam(request.query.status),
+          available: readQueryParam(request.query.available),
+          search: readQueryParam(request.query.search),
+          sort: readQueryParam(request.query.sort),
+        }),
+      );
+
+      ok(response, profiles);
+    }),
+  );
 
   router.get(
     '/api/admin/technician-profiles/catalogs',

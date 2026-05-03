@@ -25,6 +25,7 @@ La referencia principal del proyecto está en:
 
 - [docs/source-of-truth.md](./docs/source-of-truth.md)
 - [docs/supabase-rpcs.md](./docs/supabase-rpcs.md)
+- [docs/supabase-workflow.md](./docs/supabase-workflow.md)
 
 Ese documento explica:
 

@@ -64,6 +64,22 @@ export interface AdminAssociatedTechnician {
   created_at: string;
 }
 
+export interface AdminTechnicianProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  surname: string | null;
+  status: 'ACTIVE' | 'DELETED';
+  public_slug: string;
+  available: boolean;
+  rating: number;
+  rating_count: number;
+  verified_at: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ApplianceType {
   id: string;
   name: string;

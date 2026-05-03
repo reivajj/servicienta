@@ -15,7 +15,10 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users.index'
 import { Route as TechnicianSearchIndexRouteImport } from './routes/technician-search.index'
+import { Route as TechnicianProfilesIndexRouteImport } from './routes/technician-profiles.index'
 import { Route as TechnicianCatalogsIndexRouteImport } from './routes/technician-catalogs.index'
+import { Route as OrdersIndexRouteImport } from './routes/orders.index'
+import { Route as ClientProfilesIndexRouteImport } from './routes/client-profiles.index'
 import { Route as DevSupabaseRouteImport } from './routes/dev.supabase'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -48,9 +51,24 @@ const TechnicianSearchIndexRoute = TechnicianSearchIndexRouteImport.update({
   path: '/technician-search/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TechnicianProfilesIndexRoute = TechnicianProfilesIndexRouteImport.update({
+  id: '/technician-profiles/',
+  path: '/technician-profiles/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TechnicianCatalogsIndexRoute = TechnicianCatalogsIndexRouteImport.update({
   id: '/technician-catalogs/',
   path: '/technician-catalogs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersIndexRoute = OrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientProfilesIndexRoute = ClientProfilesIndexRouteImport.update({
+  id: '/client-profiles/',
+  path: '/client-profiles/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevSupabaseRoute = DevSupabaseRouteImport.update({
@@ -65,7 +83,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/client-profiles/': typeof ClientProfilesIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/technician-catalogs/': typeof TechnicianCatalogsIndexRoute
+  '/technician-profiles/': typeof TechnicianProfilesIndexRoute
   '/technician-search/': typeof TechnicianSearchIndexRoute
   '/users/': typeof UsersIndexRoute
 }
@@ -75,7 +96,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/client-profiles': typeof ClientProfilesIndexRoute
+  '/orders': typeof OrdersIndexRoute
   '/technician-catalogs': typeof TechnicianCatalogsIndexRoute
+  '/technician-profiles': typeof TechnicianProfilesIndexRoute
   '/technician-search': typeof TechnicianSearchIndexRoute
   '/users': typeof UsersIndexRoute
 }
@@ -86,7 +110,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/client-profiles/': typeof ClientProfilesIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/technician-catalogs/': typeof TechnicianCatalogsIndexRoute
+  '/technician-profiles/': typeof TechnicianProfilesIndexRoute
   '/technician-search/': typeof TechnicianSearchIndexRoute
   '/users/': typeof UsersIndexRoute
 }
@@ -98,7 +125,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/client-profiles/'
+    | '/orders/'
     | '/technician-catalogs/'
+    | '/technician-profiles/'
     | '/technician-search/'
     | '/users/'
   fileRoutesByTo: FileRoutesByTo
@@ -108,7 +138,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/client-profiles'
+    | '/orders'
     | '/technician-catalogs'
+    | '/technician-profiles'
     | '/technician-search'
     | '/users'
   id:
@@ -118,7 +151,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/client-profiles/'
+    | '/orders/'
     | '/technician-catalogs/'
+    | '/technician-profiles/'
     | '/technician-search/'
     | '/users/'
   fileRoutesById: FileRoutesById
@@ -129,7 +165,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   DevSupabaseRoute: typeof DevSupabaseRoute
+  ClientProfilesIndexRoute: typeof ClientProfilesIndexRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
   TechnicianCatalogsIndexRoute: typeof TechnicianCatalogsIndexRoute
+  TechnicianProfilesIndexRoute: typeof TechnicianProfilesIndexRoute
   TechnicianSearchIndexRoute: typeof TechnicianSearchIndexRoute
   UsersIndexRoute: typeof UsersIndexRoute
 }
@@ -178,11 +217,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TechnicianSearchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/technician-profiles/': {
+      id: '/technician-profiles/'
+      path: '/technician-profiles'
+      fullPath: '/technician-profiles/'
+      preLoaderRoute: typeof TechnicianProfilesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/technician-catalogs/': {
       id: '/technician-catalogs/'
       path: '/technician-catalogs'
       fullPath: '/technician-catalogs/'
       preLoaderRoute: typeof TechnicianCatalogsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders/': {
+      id: '/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/client-profiles/': {
+      id: '/client-profiles/'
+      path: '/client-profiles'
+      fullPath: '/client-profiles/'
+      preLoaderRoute: typeof ClientProfilesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dev/supabase': {
@@ -201,7 +261,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   DevSupabaseRoute: DevSupabaseRoute,
+  ClientProfilesIndexRoute: ClientProfilesIndexRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
   TechnicianCatalogsIndexRoute: TechnicianCatalogsIndexRoute,
+  TechnicianProfilesIndexRoute: TechnicianProfilesIndexRoute,
   TechnicianSearchIndexRoute: TechnicianSearchIndexRoute,
   UsersIndexRoute: UsersIndexRoute,
 }

@@ -4,9 +4,18 @@ import type { UserRole } from '@servicienta/types';
 import { useAuth } from '../../auth/components/AuthProvider';
 
 export function DashboardPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { data: currentUser, error, isLoading } = useCurrentUser();
   const updateCurrentUser = useUpdateCurrentUser();
+  const apiDocsUrl = (() => {
+    const url = new URL('/api-docs', import.meta.env.VITE_API_URL);
+
+    if (session?.access_token) {
+      url.searchParams.set('access_token', session.access_token);
+    }
+
+    return url.toString();
+  })();
   const errorMessage = error instanceof Error ? error.message : '';
   const mutationError =
     updateCurrentUser.error instanceof Error
@@ -117,12 +126,22 @@ export function DashboardPage() {
           Ir al tester de users
         </Link>
         {currentUser?.role === 'admin' ? (
-          <Link
-            to="/technician-search"
-            className="dashboard-card__link dashboard-card__link--secondary"
-          >
-            Ir al buscador técnico
-          </Link>
+          <>
+            <Link
+              to="/technician-search"
+              className="dashboard-card__link dashboard-card__link--secondary"
+            >
+              Ir al buscador técnico
+            </Link>
+            <a
+              href={apiDocsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="dashboard-card__link dashboard-card__link--secondary"
+            >
+              Ver API Docs
+            </a>
+          </>
         ) : null}
         <Link
           to="/technician-catalogs"

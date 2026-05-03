@@ -1,4 +1,6 @@
 import type {
+  ListAdminTechnicianProfilesInput,
+  ListAdminTechnicianProfilesResponse,
   ListAdminTechnicianCatalogsResponse,
   ListAdminTechniciansByCatalogItemInput,
   ListAdminTechniciansByCatalogItemResponse,
@@ -14,6 +16,9 @@ interface TechnicianProfilesApiClientDependencies {
 
 export interface TechnicianProfilesApiClient {
   technicianProfiles: {
+    listAdmin: (
+      input: ListAdminTechnicianProfilesInput,
+    ) => Promise<ListAdminTechnicianProfilesResponse>;
     listPublic: (
       input: ListPublicTechnicianProfilesInput,
     ) => Promise<ListPublicTechnicianProfilesResponse>;
@@ -26,6 +31,24 @@ export interface TechnicianProfilesApiClient {
       input: ListAdminTechniciansByCatalogItemInput,
     ) => Promise<ListAdminTechniciansByCatalogItemResponse>;
   };
+}
+
+function buildAdminTechnicianProfilesListQuery(
+  input: ListAdminTechnicianProfilesInput,
+) {
+  const searchParams = new URLSearchParams({
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  });
+
+  if (input.status) searchParams.set('status', input.status);
+  if (typeof input.available === 'boolean') {
+    searchParams.set('available', String(input.available));
+  }
+  if (input.search) searchParams.set('search', input.search);
+  if (input.sort) searchParams.set('sort', input.sort);
+
+  return searchParams.toString();
 }
 
 function buildPublicTechnicianProfilesListQuery(
@@ -48,6 +71,10 @@ export function createTechnicianProfilesApiClient({
 }: TechnicianProfilesApiClientDependencies): TechnicianProfilesApiClient {
   return {
     technicianProfiles: {
+      listAdmin: (input) =>
+        apiFetch<ListAdminTechnicianProfilesResponse>(
+          `/api/admin/technician-profiles?${buildAdminTechnicianProfilesListQuery(input)}`,
+        ),
       listPublicCatalogs: () =>
         apiFetch<ListPublicTechnicianProfileCatalogsResponse>(
           '/api/public/technician-profiles/catalogs',

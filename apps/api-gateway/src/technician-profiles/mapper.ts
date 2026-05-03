@@ -1,11 +1,13 @@
 import type {
   AdminAssociatedTechnician,
+  AdminTechnicianProfile,
   AdminTechnicianCatalogItem,
   PublicTechnicianCatalogItem,
   PublicTechnicianProfile,
 } from '@servicienta/types';
 import type {
   AdminTechnicianCatalogItemRow,
+  AdminTechnicianProfileRow,
   PublicTechnicianProfileRow,
 } from './types.js';
 
@@ -70,5 +72,31 @@ export function mapAdminAssociatedTechnicianRow(row: {
     rating_count: row.rating_count,
     verified_at: row.verified_at,
     created_at: row.created_at,
+  };
+}
+
+export function mapAdminTechnicianProfileRow(
+  row: AdminTechnicianProfileRow,
+): AdminTechnicianProfile | null {
+  const profile = Array.isArray(row.technician_profiles)
+    ? row.technician_profiles[0]
+    : row.technician_profiles;
+
+  if (!profile) return null;
+
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    surname: row.surname,
+    status: row.status === 'DELETED' ? 'DELETED' : 'ACTIVE',
+    public_slug: profile.public_slug,
+    available: profile.available,
+    rating: Number(profile.rating),
+    rating_count: profile.rating_count,
+    verified_at: profile.verified_at,
+    bio: profile.bio,
+    created_at: profile.created_at,
+    updated_at: profile.updated_at,
   };
 }

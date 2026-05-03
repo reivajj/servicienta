@@ -1,6 +1,6 @@
 # Servicienta — Fuente de verdad provisional
 
-_Última actualización: 2026-03-19_
+_Última actualización: 2026-05-03_
 
 ## Propósito de este documento
 
@@ -180,7 +180,8 @@ Notas:
 - la ubicación exacta del técnico debe tratarse como privada; puede usarse internamente para matching y distancia
 - `id` sigue siendo interno; para referencias públicas debe usarse `public_slug`
 - lo público para potenciales clientes incluye al menos `public_slug`, `bio`, `rating`, `rating_count`, `available`, `verified_at`, `created_at`, zonas de cobertura, especialidades y documentos/cv públicos
-- el schema actual todavía no la implementa como tal
+- hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks` y `apps/api-gateway`
+- sigue siendo un modelo provisional: que hoy exista en runtime no implica que ya esté cerrado
 
 #### PublicTechnicianProfile
 
@@ -333,12 +334,45 @@ Notas:
 
 Perfil del cliente.
 
+Dirección preferida actual:
+
+- mantenerlo como perfil separado de `User`, compartiendo `id`
+- modelar primero datos operativos mínimos para crear y gestionar `Order`
+- evitar meter múltiples direcciones como columnas sueltas en esta primera versión
+- dejar explícito qué parte es contacto, qué parte es dirección base y qué parte son preferencias
+
+Campos mínimos recomendados para una primera implementación:
+
 | campo | tipo | notas |
 |---|---|---|
 | `id` | `uuid` | PK = FK → `User.id` |
-| `phone` | `string` | |
-| `address` | `string` | probablemente evolucione |
-| `...` | | a definir |
+| `phone` | `string` | teléfono principal de contacto |
+| `whatsapp_phone` | `string` | nullable, si se quiere separar del teléfono principal |
+| `default_address_text` | `string` | dirección base o más habitual del cliente |
+| `default_lat` | `decimal` | nullable, coordenada asociada a la dirección base |
+| `default_lng` | `decimal` | nullable, coordenada asociada a la dirección base |
+| `address_notes` | `string` | nullable, piso, dpto, referencias, portón, etc. |
+| `preferred_contact_channel` | `enum/string` | ej. `phone \| whatsapp` |
+| `created_at` | `timestamp` | |
+| `updated_at` | `timestamp` | |
+
+Notas:
+
+- `default_address_text` reemplaza la idea anterior de un `address` genérico demasiado ambiguo
+- para una v1, una sola dirección base simplifica bastante el flujo
+- si luego aparecen múltiples domicilios, conviene crear una entidad aparte tipo `ClientAddress` en vez de seguir agregando columnas
+- `default_lat` y `default_lng` deberían ser privadas y usarse solo para matching, distancia o autocompletado interno
+- `preferred_contact_channel` sirve para reducir fricción operativa sin abrir todavía un sistema completo de notificaciones
+
+Campos opcionales que podrían agregarse más adelante si el producto realmente los necesita:
+
+- `secondary_phone`
+- `preferred_visit_time_window`
+- `building_access_notes`
+- `invoice_name`
+- `invoice_tax_id`
+- `is_business_client`
+- `deleted_at`
 
 ### Subscription
 
@@ -520,21 +554,32 @@ Implementado hoy:
 - API gateway simple
 - cliente compartido
 - query hooks
-- integración básica con Supabase
-- ya no existe una entidad runtime de técnicos en el repo
+- integración con Supabase para `users`
+- `User` real con `role`, `status` y `deleted_at`
+- `TechnicianProfile` real en Supabase con `public_slug`, `rating`, `available`, ubicación base y timestamps
+- `ClientProfile` real en Supabase con datos básicos de contacto y dirección base
+- catálogos reales de `ApplianceType`, `Brand` y `Zone`
+- relaciones reales de especialidades, marcas, zonas de cobertura, reviews y documentos de técnicos
+- view pública y RPC de búsqueda de técnicos
+- tipos compartidos, cliente HTTP, query hooks y endpoints del gateway para `technician-profiles`
 
 No implementado todavía:
 
-- `User` + perfiles reales
 - `Order`
 - `Operation`
 - `Subscription`
 - `Payment`
 - `Payout`
 - `ActivityEvent`
-- RLS completo por rol
+- RLS completo y consistente por rol en todas las entidades
 - microservicios reales
 - landing SSR funcional
+
+Desalineación a tener presente:
+
+- este documento venía describiendo `TechnicianProfile` como intención futura, pero esa parte ya avanzó bastante en el repo
+- hoy la brecha principal ya no está en perfiles técnicos sino en `ClientProfile` y en la vertical de `Order` / `Operation`
+- hoy la brecha principal pasa a estar sobre `Order` / `Operation`, pagos y reglas de autorización más finas
 
 ## Regla práctica para próximas tareas
 
@@ -560,9 +605,8 @@ salvo que en una conversación futura decidamos otra cosa.
 
 ### Schema
 
-- definir campos completos de `TechnicianProfile`
-- definir campos completos de `ClientProfile`
-- definir mejor `address`
+- revisar si faltan campos en `TechnicianProfile` o si ya alcanza para pasar a otras entidades
+- revisar si la v1 de `ClientProfile` alcanza o si luego necesita entidad separada para múltiples direcciones
 - tipar eventos válidos de `ActivityEvent`
 - definir duración de garantía
 - decidir si además del radio y zonas habrá otros mecanismos de cobertura

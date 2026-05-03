@@ -866,6 +866,24 @@ p {
   font-size: 0.9rem;
 }
 
+.technician-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.technician-rating__stars {
+  color: #d6622b;
+  letter-spacing: 0.08em;
+  font-size: 1rem;
+}
+
+.technician-rating__value {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .technician-catalog-dialog__meta {
   margin-bottom: 18px;
 }

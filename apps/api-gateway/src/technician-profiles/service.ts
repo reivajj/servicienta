@@ -2,8 +2,10 @@ import type {
   AdminTechnicianCatalogItem,
   AdminTechnicianCatalogs,
   AdminTechniciansByCatalogItem,
+  ListAdminTechnicianProfilesInput,
   ListAdminTechniciansByCatalogItemInput,
   ListPublicTechnicianProfilesInput,
+  PaginatedAdminTechnicianProfiles,
   PublicTechnicianProfileCatalogs,
   PublicTechnicianProfile,
 } from '@servicienta/types';
@@ -15,9 +17,11 @@ import { buildTechnicianCountMap } from './helpers/utils.js';
 import {
   mapAdminAssociatedTechnicianRow,
   mapAdminTechnicianCatalogItemRow,
+  mapAdminTechnicianProfileRow,
   mapPublicTechnicianCatalogItemRow,
   mapPublicTechnicianProfileRow,
 } from './mapper.js';
+import type { AdminTechnicianProfileRow } from './types.js';
 
 export async function listPublicTechnicianProfiles(
   supabase: SupabaseClient,
@@ -146,6 +150,84 @@ export async function listAdminTechnicianCatalogs(
   };
 }
 
+export async function listAdminTechnicianProfiles(
+  supabase: SupabaseClient,
+  input: ListAdminTechnicianProfilesInput,
+): Promise<PaginatedAdminTechnicianProfiles> {
+  const from = (input.page - 1) * input.pageSize;
+  const to = from + input.pageSize - 1;
+
+  const profilesQuery = buildAdminTechnicianProfilesQuery(
+    supabase,
+    input,
+    from,
+    to,
+  );
+  const totalQuery = buildAdminTechnicianProfilesCountQuery(supabase, input);
+  const activeCountQuery = buildAdminTechnicianProfilesCountQuery(
+    supabase,
+    { ...input, status: undefined },
+    'ACTIVE',
+  );
+  const deletedCountQuery = buildAdminTechnicianProfilesCountQuery(
+    supabase,
+    { ...input, status: undefined },
+    'DELETED',
+  );
+  const availableCountQuery = buildAdminTechnicianProfilesCountQuery(
+    supabase,
+    { ...input, available: undefined },
+    undefined,
+    true,
+  );
+
+  const [
+    profilesResult,
+    totalResult,
+    activeCountResult,
+    deletedCountResult,
+    availableCountResult,
+  ] = await Promise.all([
+    profilesQuery,
+    totalQuery,
+    activeCountQuery,
+    deletedCountQuery,
+    availableCountQuery,
+  ]);
+
+  if (profilesResult.error) throw new Error(profilesResult.error.message);
+  if (totalResult.error) throw new Error(totalResult.error.message);
+  if (activeCountResult.error) throw new Error(activeCountResult.error.message);
+  if (deletedCountResult.error)
+    throw new Error(deletedCountResult.error.message);
+  if (availableCountResult.error)
+    throw new Error(availableCountResult.error.message);
+
+  const total = totalResult.count ?? profilesResult.count ?? 0;
+
+  return {
+    items: ((profilesResult.data ?? []) as AdminTechnicianProfileRow[]).flatMap(
+      (row) => {
+        const profile = mapAdminTechnicianProfileRow(row);
+
+        return profile ? [profile] : [];
+      },
+    ),
+    pagination: {
+      page: input.page,
+      pageSize: input.pageSize,
+      total,
+      totalPages: total === 0 ? 1 : Math.ceil(total / input.pageSize),
+    },
+    summary: {
+      totalTechnicians: total,
+      activeTechnicians: activeCountResult.count ?? 0,
+      deletedTechnicians: deletedCountResult.count ?? 0,
+      availableTechnicians: availableCountResult.count ?? 0,
+    },
+  };
+}
+
 export async function listAdminTechniciansByCatalogItem(
   supabase: SupabaseClient,
   input: ListAdminTechniciansByCatalogItemInput,
@@ -228,4 +310,140 @@ export async function listAdminTechniciansByCatalogItem(
     item,
     technicians,
   };
+}
+
+function buildAdminTechnicianProfilesQuery(
+  supabase: SupabaseClient,
+  input: ListAdminTechnicianProfilesInput,
+  from: number,
+  to: number,
+) {
+  let query = supabase
+    .from('users')
+    .select(
+      `
+        id,
+        email,
+        name,
+        surname,
+        status,
+        technician_profiles!inner(
+          public_slug,
+          available,
+          rating,
+          rating_count,
+          verified_at,
+          bio,
+          created_at,
+          updated_at
+        )
+      `,
+      { count: 'exact' },
+    )
+    .eq('role', 'technician')
+    .range(from, to);
+
+  if (input.status) query = query.eq('status', input.status);
+  if (typeof input.available === 'boolean') {
+    query = query.eq('technician_profiles.available', input.available);
+  }
+  if (input.search) query = query.or(buildTechnicianSearchFilter(input.search));
+
+  query = applyAdminTechnicianProfilesSort(query, input.sort ?? 'default');
+
+  return query;
+}
+
+function buildAdminTechnicianProfilesCountQuery(
+  supabase: SupabaseClient,
+  input: ListAdminTechnicianProfilesInput,
+  status?: 'ACTIVE' | 'DELETED',
+  available?: boolean,
+) {
+  let query = supabase
+    .from('users')
+    .select('id, technician_profiles!inner(id)', { count: 'exact', head: true })
+    .eq('role', 'technician');
+
+  if (status) query = query.eq('status', status);
+  if (input.status) query = query.eq('status', input.status);
+  if (typeof available === 'boolean') {
+    query = query.eq('technician_profiles.available', available);
+  }
+  if (typeof input.available === 'boolean') {
+    query = query.eq('technician_profiles.available', input.available);
+  }
+  if (input.search) query = query.or(buildTechnicianSearchFilter(input.search));
+
+  return query;
+}
+
+function buildTechnicianSearchFilter(search: string) {
+  const escapedSearch = search.replace(/[%]/g, '');
+
+  return [
+    `email.ilike.%${escapedSearch}%`,
+    `name.ilike.%${escapedSearch}%`,
+    `surname.ilike.%${escapedSearch}%`,
+  ].join(',');
+}
+
+function applyAdminTechnicianProfilesSort<
+  TQuery extends {
+    order(
+      column: string,
+      options?: {
+        ascending?: boolean;
+        foreignTable?: string;
+        nullsFirst?: boolean;
+      },
+    ): TQuery;
+  },
+>(query: TQuery, sort: ListAdminTechnicianProfilesInput['sort']) {
+  if (sort === 'rating-desc') {
+    return query
+      .order('rating', {
+        foreignTable: 'technician_profiles',
+        ascending: false,
+      })
+      .order('rating_count', {
+        foreignTable: 'technician_profiles',
+        ascending: false,
+      })
+      .order('email', { ascending: true });
+  }
+
+  if (sort === 'rating-asc') {
+    return query
+      .order('rating', {
+        foreignTable: 'technician_profiles',
+        ascending: true,
+      })
+      .order('rating_count', {
+        foreignTable: 'technician_profiles',
+        ascending: true,
+      })
+      .order('email', { ascending: true });
+  }
+
+  if (sort === 'name-asc') {
+    return query
+      .order('name', { ascending: true })
+      .order('surname', { ascending: true })
+      .order('email', { ascending: true });
+  }
+
+  if (sort === 'name-desc') {
+    return query
+      .order('name', { ascending: false })
+      .order('surname', { ascending: false })
+      .order('email', { ascending: false });
+  }
+
+  return query
+    .order('created_at', {
+      foreignTable: 'technician_profiles',
+      ascending: false,
+    })
+    .order('email', { ascending: true });
 }

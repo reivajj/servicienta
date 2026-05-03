@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type {
+  ListAdminTechnicianProfilesInput,
   ListAdminTechniciansByCatalogItemInput,
   ListPublicTechnicianProfilesInput,
 } from '@servicienta/api-client';
@@ -60,6 +61,20 @@ export function useAdminTechnicianCatalogs() {
     queryKey: technicianProfileKeys.adminCatalogs(),
     queryFn: async () => {
       const response = await apiClient.technicianProfiles.listAdminCatalogs();
+      return response.data;
+    },
+  });
+}
+
+export function useAdminTechnicianProfiles(
+  input: ListAdminTechnicianProfilesInput,
+) {
+  const apiClient = useApiClient();
+
+  return useQuery({
+    queryKey: technicianProfileKeys.adminList(input),
+    queryFn: async () => {
+      const response = await apiClient.technicianProfiles.listAdmin(input);
       return response.data;
     },
   });

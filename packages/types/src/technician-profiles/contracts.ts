@@ -1,11 +1,14 @@
 import type {
   AdminAssociatedTechnician,
+  AdminTechnicianProfile,
   AdminTechnicianCatalogItem,
   AdminTechnicianCatalogs,
   PublicTechnicianProfileCatalogs,
   PublicTechnicianProfile,
   TechnicianCatalogKind,
 } from './domain.js';
+import type { UserStatus } from '../users/domain.js';
+import type { UsersPageSize } from '../users/contracts.js';
 
 export interface ListPublicTechnicianProfilesInput {
   zoneSlug: string;
@@ -27,6 +30,46 @@ export interface ListPublicTechnicianProfileCatalogsResponse {
 
 export interface ListAdminTechnicianCatalogsResponse {
   data: AdminTechnicianCatalogs;
+}
+
+export interface ListAdminTechnicianProfilesInput {
+  page: number;
+  pageSize: UsersPageSize;
+  status?: UserStatus;
+  available?: boolean;
+  search?: string;
+  sort?: AdminTechnicianProfilesSort;
+}
+
+export type AdminTechnicianProfilesSort =
+  | 'default'
+  | 'rating-desc'
+  | 'rating-asc'
+  | 'name-asc'
+  | 'name-desc';
+
+export interface PaginatedAdminTechnicianProfilesSummary {
+  totalTechnicians: number;
+  activeTechnicians: number;
+  deletedTechnicians: number;
+  availableTechnicians: number;
+}
+
+export interface PaginatedAdminTechnicianProfilesPagination {
+  page: number;
+  pageSize: UsersPageSize;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedAdminTechnicianProfiles {
+  items: AdminTechnicianProfile[];
+  pagination: PaginatedAdminTechnicianProfilesPagination;
+  summary: PaginatedAdminTechnicianProfilesSummary;
+}
+
+export interface ListAdminTechnicianProfilesResponse {
+  data: PaginatedAdminTechnicianProfiles;
 }
 
 export interface ListAdminTechniciansByCatalogItemInput {
