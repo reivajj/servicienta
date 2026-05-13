@@ -4,16 +4,17 @@ import type {
   ListMyOrdersInput,
   PaginatedAdminOrders,
   PaginatedOrders,
+  UpdateAdminOrderInput,
 } from '@servicienta/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-  ForbiddenError,
-  NotFoundError,
-} from '../core/errors.js';
+import { ForbiddenError, NotFoundError } from '../core/errors.js';
 import type { RequestAuth } from '../core/http.js';
 import { mapAdminOrderRow, mapOrderRow } from './mapper.js';
 import type { AdminOrderRow, OrderRow } from './types.js';
-import { validateCreateOrderInput } from './validators.js';
+import {
+  validateCreateOrderInput,
+  validateUpdateAdminOrderInput,
+} from './validators.js';
 
 const ORDER_SELECT =
   'id, client_id, status, flow_type, description, service_address_text, service_lat, service_lng, address_notes, created_at, updated_at';
@@ -115,7 +116,11 @@ export async function listAdminOrders(
     input,
     'en_garantia',
   );
-  const closedCountQuery = buildOrdersStatusCountQuery(supabase, input, 'closed');
+  const closedCountQuery = buildOrdersStatusCountQuery(
+    supabase,
+    input,
+    'closed',
+  );
 
   const [
     ordersResult,
@@ -178,6 +183,38 @@ export async function getAdminOrderById(
 
   if (error) throw new Error(error.message);
   if (!data) throw new NotFoundError('Order not found');
+
+  const order = mapAdminOrderRow(data as AdminOrderRow);
+  if (!order) throw new NotFoundError('Order not found');
+
+  return order;
+}
+
+export async function updateAdminOrderById(
+  supabase: SupabaseClient,
+  orderId: string,
+  input: UpdateAdminOrderInput,
+) {
+  const payload = validateUpdateAdminOrderInput(input);
+  const existingOrder = await getAdminOrderById(supabase, orderId);
+
+  const { data, error } = await supabase
+    .from('orders')
+    .update({
+      status: payload.status,
+      flow_type: payload.flow_type,
+      description: payload.description,
+      service_address_text: payload.service_address_text,
+      service_lat: payload.service_lat,
+      service_lng: payload.service_lng,
+      address_notes: payload.address_notes,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', existingOrder.id)
+    .select(ADMIN_ORDER_SELECT)
+    .single();
+
+  if (error) throw new Error(error.message);
 
   const order = mapAdminOrderRow(data as AdminOrderRow);
   if (!order) throw new NotFoundError('Order not found');

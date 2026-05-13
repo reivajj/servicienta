@@ -5,5 +5,6 @@ export {
   useCreateOperation,
   useCurrentOperation,
   useCurrentOperations,
+  useUpdateAdminOperation,
 } from './hooks.js';
 export { operationKeys } from './keys.js';

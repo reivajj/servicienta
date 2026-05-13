@@ -1,10 +1,12 @@
 import type {
+  AdminOperation,
   CreateOperationInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
   OperationStatus,
   PaginatedAdminOperations,
   PaginatedOperations,
+  UpdateAdminOperationInput,
 } from '@servicienta/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -14,8 +16,15 @@ import {
 } from '../core/errors.js';
 import type { RequestAuth } from '../core/http.js';
 import { mapAdminOperationRow, mapOperationRow } from './mapper.js';
-import type { AdminOperationRow, OperationRow } from './types.js';
-import { validateCreateOperationInput } from './validators.js';
+import type {
+  AdminOperationRow,
+  OperationRow,
+  TechnicianReviewRow,
+} from './types.js';
+import {
+  validateCreateOperationInput,
+  validateUpdateAdminOperationInput,
+} from './validators.js';
 
 const OPERATION_SELECT =
   'id, order_id, technician_id, status, scheduled_at, completed_at, created_at, updated_at';
@@ -281,14 +290,16 @@ export async function listAdminOperations(
 
   const total = totalResult.count ?? operationsResult.count ?? 0;
 
-  return {
-    items: ((operationsResult.data ?? []) as AdminOperationRow[]).flatMap(
-      (row) => {
-        const operation = mapAdminOperationRow(row);
+  const items = ((operationsResult.data ?? []) as AdminOperationRow[]).flatMap(
+    (row) => {
+      const operation = mapAdminOperationRow(row);
 
-        return operation ? [operation] : [];
-      },
-    ),
+      return operation ? [operation] : [];
+    },
+  );
+
+  return {
+    items: await attachTechnicianReviews(supabase, items),
     pagination: {
       page: input.page,
       pageSize: input.pageSize,
@@ -321,7 +332,81 @@ export async function getAdminOperationById(
   const operation = mapAdminOperationRow(data as AdminOperationRow);
   if (!operation) throw new NotFoundError('Operation not found');
 
-  return operation;
+  const [operationWithReview] = await attachTechnicianReviews(supabase, [
+    operation,
+  ]);
+
+  return operationWithReview;
+}
+
+export async function updateAdminOperationById(
+  supabase: SupabaseClient,
+  operationId: string,
+  input: UpdateAdminOperationInput,
+) {
+  const payload = validateUpdateAdminOperationInput(input);
+  const existingOperation = await getAdminOperationById(supabase, operationId);
+
+  const { data, error } = await supabase
+    .from('operations')
+    .update({
+      status: payload.status,
+      scheduled_at: payload.scheduled_at,
+      completed_at: payload.completed_at,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', existingOperation.id)
+    .select(ADMIN_OPERATION_SELECT)
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const operation = mapAdminOperationRow(data as AdminOperationRow);
+  if (!operation) throw new NotFoundError('Operation not found');
+
+  const [operationWithReview] = await attachTechnicianReviews(supabase, [
+    operation,
+  ]);
+
+  return operationWithReview;
+}
+
+async function attachTechnicianReviews(
+  supabase: SupabaseClient,
+  operations: AdminOperation[],
+): Promise<AdminOperation[]> {
+  if (!operations.length) return operations;
+
+  const operationIds = operations.map((operation) => operation.id);
+
+  const { data, error } = await supabase
+    .from('technician_reviews')
+    .select('id, technician_id, operation_id, rating, comment, created_at')
+    .in('operation_id', operationIds);
+
+  if (error) throw new Error(error.message);
+
+  const reviewsByOperationId = new Map<string, TechnicianReviewRow>();
+
+  for (const review of (data ?? []) as TechnicianReviewRow[]) {
+    reviewsByOperationId.set(review.operation_id, review);
+  }
+
+  return operations.map((operation) => {
+    const review = reviewsByOperationId.get(operation.id);
+
+    return {
+      ...operation,
+      technician_review: review
+        ? {
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment,
+            created_at: review.created_at,
+          }
+        : null,
+    };
+  });
 }
 
 async function listClientOperations(
@@ -625,6 +710,7 @@ function buildAdminOperationsQuery(
     .range(from, to);
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
 
   return query;
 }
@@ -638,19 +724,22 @@ function buildAdminOperationsCountQuery(
     .select('id', { count: 'exact', head: true });
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
 
   return query;
 }
 
 function buildOperationsStatusCountQuery(
   supabase: SupabaseClient,
-  _input: ListAdminOperationsInput,
+  input: ListAdminOperationsInput,
   status: OperationStatus,
 ) {
-  const query = supabase
+  let query = supabase
     .from('operations')
     .select('id', { count: 'exact', head: true })
     .eq('status', status);
+
+  if (input.order_id) query = query.eq('order_id', input.order_id);
 
   return query;
 }

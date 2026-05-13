@@ -1,6 +1,11 @@
 import { useDeferredValue, useState } from 'react';
 import { useAdminOrders } from '@servicienta/query-hooks';
-import type { OrderFlowType, OrderStatus, UsersPageSize } from '@servicienta/types';
+import type {
+  OrderFlowType,
+  OrderStatus,
+  UsersPageSize,
+} from '@servicienta/types';
+import { OrderDetailDialog } from './OrderDetailDialog';
 
 function formatClientName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -12,6 +17,10 @@ function formatFlowType(flowType: OrderFlowType) {
   return flowType === 'client_selects' ? 'Client selects' : 'Tech applies';
 }
 
+function getStatusBadgeClass(status: OrderStatus) {
+  return `status-badge status-badge--${status}`;
+}
+
 export function OrdersListPage() {
   const MIN_SEARCH_LENGTH = 3;
   const [page, setPage] = useState(1);
@@ -19,6 +28,7 @@ export function OrdersListPage() {
   const [status, setStatus] = useState<OrderStatus | 'all'>('all');
   const [flowType, setFlowType] = useState<OrderFlowType | 'all'>('all');
   const [search, setSearch] = useState('');
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search.trim());
   const searchFilter =
     deferredSearch.length >= MIN_SEARCH_LENGTH ? deferredSearch : undefined;
@@ -135,7 +145,9 @@ export function OrdersListPage() {
             <select
               value={flowType}
               onChange={(event) =>
-                handleFlowTypeChange(event.target.value as OrderFlowType | 'all')
+                handleFlowTypeChange(
+                  event.target.value as OrderFlowType | 'all',
+                )
               }
             >
               <option value="all">Todos</option>
@@ -223,6 +235,7 @@ export function OrdersListPage() {
             <table className="users-table">
               <thead>
                 <tr>
+                  <th>Accion</th>
                   <th>Cliente</th>
                   <th>Email</th>
                   <th>Flujo</th>
@@ -235,12 +248,24 @@ export function OrdersListPage() {
                 {items.map((order) => (
                   <tr key={order.id}>
                     <td>
-                      {formatClientName(order.client_name, order.client_surname)}
+                      <button
+                        type="button"
+                        className="users-table__action"
+                        onClick={() => setSelectedOrderId(order.id)}
+                      >
+                        Ver y editar
+                      </button>
+                    </td>
+                    <td>
+                      {formatClientName(
+                        order.client_name,
+                        order.client_surname,
+                      )}
                     </td>
                     <td>{order.client_email}</td>
                     <td>{formatFlowType(order.flow_type)}</td>
                     <td>
-                      <span className="technician-catalog-chip">
+                      <span className={getStatusBadgeClass(order.status)}>
                         {order.status}
                       </span>
                     </td>
@@ -290,6 +315,13 @@ export function OrdersListPage() {
             </button>
           </div>
         </section>
+
+        {selectedOrderId ? (
+          <OrderDetailDialog
+            orderId={selectedOrderId}
+            onClose={() => setSelectedOrderId(null)}
+          />
+        ) : null}
       </section>
     </main>
   );

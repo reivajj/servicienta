@@ -47,7 +47,7 @@ interface OperationInsertRow {
 
 interface ReviewInsertRow {
   technician_id: string;
-  order_id: string;
+  operation_id: string;
   client_id: string;
   rating: number;
   comment: string;
@@ -55,13 +55,19 @@ interface ReviewInsertRow {
 }
 
 interface ReviewValidationRow {
-  order_id: string;
+  operation_id: string;
   client_id: string;
 }
 
-interface OrderValidationRow {
+interface OperationValidationRow {
   id: string;
-  client_id: string;
+  order:
+    | {
+        client_id: string;
+      }
+    | Array<{
+        client_id: string;
+      }>;
 }
 
 interface SeedOperationalDataOptions {
@@ -256,7 +262,7 @@ function buildReviews(
 
       return {
         technician_id: operation.technician_id,
-        order_id: order.id,
+        operation_id: operation.id,
         client_id: order.client_id,
         rating: reviewRatings[index % reviewRatings.length],
         comment: `Review seeded para ${order.description.toLowerCase()}`,
@@ -312,7 +318,9 @@ async function seedOperations(
   context: SeedContext,
   operations: OperationInsertRow[],
 ): Promise<SeederResult> {
-  const { error } = await context.supabase.from('operations').insert(operations);
+  const { error } = await context.supabase
+    .from('operations')
+    .insert(operations);
 
   if (error) {
     throw new Error(`Could not seed operations: ${error.message}`);
@@ -365,7 +373,10 @@ async function validateOperationalSeed(
       .select('id, orders!inner(id)', { count: 'exact', head: true }),
     context.supabase
       .from('operations')
-      .select('id, technician_profiles!inner(id)', { count: 'exact', head: true }),
+      .select('id, technician_profiles!inner(id)', {
+        count: 'exact',
+        head: true,
+      }),
     context.supabase
       .from('client_profiles')
       .select('id', { count: 'exact', head: true }),
@@ -394,14 +405,18 @@ async function validateOperationalSeed(
   }
 
   const [ordersCount, operationsCount] = await Promise.all([
-    context.supabase.from('orders').select('id', { count: 'exact', head: true }),
+    context.supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true }),
     context.supabase
       .from('operations')
       .select('id', { count: 'exact', head: true }),
   ]);
 
   if (ordersCount.error) {
-    throw new Error(`Could not validate orders count: ${ordersCount.error.message}`);
+    throw new Error(
+      `Could not validate orders count: ${ordersCount.error.message}`,
+    );
   }
 
   if (operationsCount.error) {
@@ -426,58 +441,72 @@ async function validateOperationalSeed(
     throw new Error('Some operations do not resolve to a technician profile');
   }
 
-  await validateReviewOrderIntegrity(context, expectedReviewCount);
+  await validateReviewOperationIntegrity(context, expectedReviewCount);
 }
 
-async function validateReviewOrderIntegrity(
+async function validateReviewOperationIntegrity(
   context: SeedContext,
   expectedReviewCount: number,
 ) {
   const { data: reviewRows, error: reviewRowsError } = await context.supabase
     .from('technician_reviews')
-    .select('order_id, client_id');
+    .select('operation_id, client_id');
 
   if (reviewRowsError) {
     throw new Error(
-      `Could not validate reviews by order: ${reviewRowsError.message}`,
+      `Could not validate reviews by operation: ${reviewRowsError.message}`,
     );
   }
 
   const reviews = (reviewRows ?? []) as ReviewValidationRow[];
 
   if (reviews.length !== expectedReviewCount) {
-    throw new Error('Technician reviews seeded count does not match expected dataset');
-  }
-
-  const orderIds = Array.from(new Set(reviews.map((review) => review.order_id)));
-  const { data: orderRows, error: orderRowsError } = await context.supabase
-    .from('orders')
-    .select('id, client_id')
-    .in('id', orderIds);
-
-  if (orderRowsError) {
     throw new Error(
-      `Could not load orders for review validation: ${orderRowsError.message}`,
+      'Technician reviews seeded count does not match expected dataset',
     );
   }
 
-  const ordersById = new Map(
-    ((orderRows ?? []) as OrderValidationRow[]).map((order) => [order.id, order]),
+  const operationIds = Array.from(
+    new Set(reviews.map((review) => review.operation_id)),
+  );
+  const { data: operationRows, error: operationRowsError } =
+    await context.supabase
+      .from('operations')
+      .select('id, order:orders!operations_order_id_fkey(client_id)')
+      .in('id', operationIds);
+
+  if (operationRowsError) {
+    throw new Error(
+      `Could not load operations for review validation: ${operationRowsError.message}`,
+    );
+  }
+
+  const operationsById = new Map(
+    ((operationRows ?? []) as OperationValidationRow[]).map((operation) => [
+      operation.id,
+      operation,
+    ]),
   );
 
-  if (ordersById.size !== orderIds.length) {
-    throw new Error('Some technician reviews do not resolve to an order');
+  if (operationsById.size !== operationIds.length) {
+    throw new Error('Some technician reviews do not resolve to an operation');
   }
 
   for (const review of reviews) {
-    const order = ordersById.get(review.order_id);
+    const operation = operationsById.get(review.operation_id);
 
-    if (!order) {
-      throw new Error('Some technician reviews do not resolve to an order');
+    if (!operation) {
+      throw new Error('Some technician reviews do not resolve to an operation');
     }
 
-    if (order.client_id !== review.client_id) {
-      throw new Error('Some technician reviews do not match the order client');
+    const order = Array.isArray(operation.order)
+      ? operation.order[0]
+      : operation.order;
+
+    if (!order || order.client_id !== review.client_id) {
+      throw new Error(
+        'Some technician reviews do not match the operation client',
+      );
     }
   }
 }
@@ -527,10 +556,5 @@ export async function seedOperationalData(
     reviews: reviews.length,
   });
 
-  return [
-    clientProfilesResult,
-    ordersResult,
-    operationsResult,
-    reviewsResult,
-  ];
+  return [clientProfilesResult, ordersResult, operationsResult, reviewsResult];
 }

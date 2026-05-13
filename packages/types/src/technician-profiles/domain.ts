@@ -128,7 +128,7 @@ export interface TechnicianCoverageZone {
 export interface TechnicianReview {
   id: string;
   technician_id: string;
-  order_id: string;
+  operation_id: string;
   client_id: string;
   rating: number;
   comment: string | null;

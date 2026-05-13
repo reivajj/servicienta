@@ -3,6 +3,7 @@ import type {
   CreateOperationInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
+  UpdateAdminOperationInput,
 } from '@servicienta/api-client';
 import { useApiClient } from '../core/api-client-context.js';
 import { operationKeys } from './keys.js';
@@ -26,7 +27,8 @@ export function useCompleteOperation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (operationId: string) => apiClient.operations.complete(operationId),
+    mutationFn: (operationId: string) =>
+      apiClient.operations.complete(operationId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
       void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
@@ -81,5 +83,29 @@ export function useAdminOperation(operationId: string) {
       return response.data;
     },
     enabled: Boolean(operationId),
+  });
+}
+
+export function useUpdateAdminOperation() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      operationId,
+      input,
+    }: {
+      operationId: string;
+      input: UpdateAdminOperationInput;
+    }) => apiClient.operations.admin.updateById(operationId, input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        operationKeys.adminDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({
+        queryKey: operationKeys.adminLists(),
+      });
+    },
   });
 }

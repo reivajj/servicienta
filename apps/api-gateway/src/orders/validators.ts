@@ -4,13 +4,16 @@ import type {
   ListMyOrdersInput,
   OrderFlowType,
   OrderStatus,
+  UpdateAdminOrderInput,
   UsersPageSize,
 } from '@servicienta/types';
 import { ValidationError } from '../core/errors.js';
 
 const ALLOWED_PAGE_SIZES: UsersPageSize[] = [25, 50, 100];
 
-export function validateCreateOrderInput(input: CreateOrderInput): CreateOrderInput {
+export function validateCreateOrderInput(
+  input: CreateOrderInput,
+): CreateOrderInput {
   const description = input.description.trim();
   const serviceAddressText = input.service_address_text.trim();
   const addressNotes = input.address_notes?.trim() || null;
@@ -25,6 +28,37 @@ export function validateCreateOrderInput(input: CreateOrderInput): CreateOrderIn
   }
 
   return {
+    flow_type: input.flow_type,
+    description,
+    service_address_text: serviceAddressText,
+    service_lat: normalizeNullableNumber(input.service_lat),
+    service_lng: normalizeNullableNumber(input.service_lng),
+    address_notes: addressNotes,
+  };
+}
+
+export function validateUpdateAdminOrderInput(
+  input: UpdateAdminOrderInput,
+): UpdateAdminOrderInput {
+  const description = input.description.trim();
+  const serviceAddressText = input.service_address_text.trim();
+  const addressNotes = input.address_notes?.trim() || null;
+
+  if (!isOrderStatus(input.status)) {
+    throw new ValidationError('Invalid order status');
+  }
+
+  if (!isOrderFlowType(input.flow_type)) {
+    throw new ValidationError('Invalid order flow type');
+  }
+
+  if (!description) throw new ValidationError('Description is required');
+  if (!serviceAddressText) {
+    throw new ValidationError('Service address is required');
+  }
+
+  return {
+    status: input.status,
     flow_type: input.flow_type,
     description,
     service_address_text: serviceAddressText,
@@ -58,9 +92,10 @@ export function validateListAdminOrdersInput(input: {
 
   return {
     ...base,
-    flow_type: input.flowType && isOrderFlowType(input.flowType)
-      ? input.flowType
-      : undefined,
+    flow_type:
+      input.flowType && isOrderFlowType(input.flowType)
+        ? input.flowType
+        : undefined,
   };
 }
 
@@ -102,7 +137,8 @@ function validatePaginatedOrdersInput(input: {
   return {
     page,
     pageSize: pageSize as UsersPageSize,
-    status: input.status && isOrderStatus(input.status) ? input.status : undefined,
+    status:
+      input.status && isOrderStatus(input.status) ? input.status : undefined,
     search,
   };
 }

@@ -14,6 +14,16 @@ export interface CompleteOperationResponse {
   data: Operation;
 }
 
+export interface UpdateAdminOperationInput {
+  status: OperationStatus;
+  scheduled_at: string | null;
+  completed_at: string | null;
+}
+
+export interface UpdateAdminOperationResponse {
+  data: AdminOperation;
+}
+
 export interface ListCurrentOperationsInput {
   page: number;
   pageSize: UsersPageSize;
@@ -53,6 +63,7 @@ export interface ListAdminOperationsInput {
   page: number;
   pageSize: UsersPageSize;
   status?: OperationStatus;
+  order_id?: string;
 }
 
 export interface PaginatedAdminOperations {

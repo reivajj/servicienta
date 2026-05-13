@@ -9,4 +9,6 @@ export type {
   ListAdminOrdersResponse,
   ListMyOrdersInput,
   ListMyOrdersResponse,
+  UpdateAdminOrderInput,
+  UpdateAdminOrderResponse,
 } from '@servicienta/types';

@@ -140,18 +140,15 @@ function CatalogTable({
           <table className="users-table">
             <thead>
               <tr>
+                <th>Acción</th>
                 <th>Nombre</th>
                 <th>Slug</th>
                 <th>Técnicos</th>
-                <th>Acción</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={`${kind}:${item.id}`}>
-                  <td>{item.name}</td>
-                  <td>{item.slug}</td>
-                  <td>{item.technician_count}</td>
                   <td>
                     <button
                       type="button"
@@ -161,6 +158,9 @@ function CatalogTable({
                       Ver técnicos
                     </button>
                   </td>
+                  <td>{item.name}</td>
+                  <td>{item.slug}</td>
+                  <td>{item.technician_count}</td>
                 </tr>
               ))}
             </tbody>

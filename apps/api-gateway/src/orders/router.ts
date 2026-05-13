@@ -10,6 +10,7 @@ import {
   getMyOrderById,
   listAdminOrders,
   listMyOrders,
+  updateAdminOrderById,
 } from './service.js';
 import {
   validateCreateOrderInput,
@@ -98,6 +99,20 @@ export function ordersRouter(options: OrdersRouterOptions) {
       const order = await getAdminOrderById(
         options.supabase,
         validateOrderId(request.params.orderId),
+      );
+
+      ok(response, order);
+    }),
+  );
+
+  router.patch(
+    '/api/admin/orders/:orderId',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const order = await updateAdminOrderById(
+        options.supabase,
+        validateOrderId(request.params.orderId),
+        request.body,
       );
 
       ok(response, order);

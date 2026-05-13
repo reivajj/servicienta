@@ -101,7 +101,7 @@ y restore posterior.
 - completa `client_profiles`
 - crea 16 `orders`
 - crea 12 `operations`
-- crea 4 `technician_reviews` ligadas a `orders` reales
+- crea 4 `technician_reviews` ligadas a `operations` reales
 
 Comando:
 

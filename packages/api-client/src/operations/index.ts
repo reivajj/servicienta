@@ -10,4 +10,6 @@ export type {
   ListAdminOperationsResponse,
   ListCurrentOperationsInput,
   ListCurrentOperationsResponse,
+  UpdateAdminOperationInput,
+  UpdateAdminOperationResponse,
 } from '@servicienta/types';

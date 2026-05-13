@@ -69,6 +69,18 @@ p {
   backdrop-filter: blur(14px);
 }
 
+.app-shell__body {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: calc(100vh - 77px);
+}
+
+.app-shell__sidebar {
+  border-right: 1px solid var(--border);
+  background: rgba(255, 250, 242, 0.56);
+  backdrop-filter: blur(14px);
+}
+
 .app-shell__brand,
 .app-shell__link,
 .dashboard-card__link {
@@ -84,17 +96,37 @@ p {
 
 .app-shell__nav {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
 }
 
 .app-shell__link {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 12px;
   color: var(--muted);
+  font-weight: 700;
 }
 
 .app-shell__link:hover,
 .app-shell__brand:hover {
   color: var(--accent);
+}
+
+.app-shell__link:hover {
+  background: rgba(214, 98, 43, 0.08);
+}
+
+.app-shell__link--active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.app-shell__content {
+  min-width: 0;
 }
 
 .app-shell__status {
@@ -732,6 +764,32 @@ p {
   cursor: pointer;
 }
 
+.orders-dialog {
+  width: min(1180px, 100%);
+}
+
+.orders-dialog__content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.orders-dialog__operations-card {
+  grid-column: 1 / -1;
+}
+
+.orders-dialog__operations {
+  margin-top: 18px;
+}
+
+.orders-dialog__pagination {
+  margin-top: 16px;
+}
+
+.operation-detail-review {
+  grid-column: 1 / -1;
+}
+
 .technician-catalog-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -773,6 +831,114 @@ p {
   color: var(--text);
   font-size: 0.88rem;
   font-weight: 700;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.status-badge--open {
+  border-color: rgba(44, 106, 49, 0.2);
+  background: rgba(91, 140, 90, 0.16);
+  color: #2c6a31;
+}
+
+.status-badge--in_progress,
+.status-badge--confirmed {
+  border-color: rgba(35, 91, 153, 0.2);
+  background: rgba(35, 91, 153, 0.14);
+  color: #235b99;
+}
+
+.status-badge--en_garantia,
+.status-badge--pending {
+  border-color: rgba(172, 111, 20, 0.24);
+  background: rgba(214, 151, 48, 0.18);
+  color: #9a5e0d;
+}
+
+.status-badge--closed,
+.status-badge--completed {
+  border-color: rgba(52, 120, 98, 0.22);
+  background: rgba(52, 120, 98, 0.15);
+  color: #347862;
+}
+
+.status-badge--cancelled {
+  border-color: rgba(180, 68, 24, 0.2);
+  background: rgba(180, 68, 24, 0.12);
+  color: #b44418;
+}
+
+.operation-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  padding: 8px 10px;
+  border: 1px solid rgba(35, 91, 153, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 250, 242, 0.72);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.operation-review--empty {
+  border-color: var(--border);
+  color: var(--muted);
+  cursor: default;
+}
+
+.operation-review__rating {
+  flex: 0 0 auto;
+  color: #235b99;
+  font-weight: 800;
+}
+
+.operation-review__preview {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operation-review-row td {
+  background: rgba(255, 250, 242, 0.62);
+}
+
+.operation-review-row__content {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+  color: var(--text);
+}
+
+.operation-review-row__content p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.operation-review-row__content small,
+.operation-review-row__label {
+  color: var(--muted);
+}
+
+.operation-review-row__label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .technician-catalog-card__table {
@@ -974,9 +1140,21 @@ p {
     padding: 18px;
   }
 
-  .app-shell__nav,
   .app-shell__status {
     flex-wrap: wrap;
+  }
+
+  .app-shell__body {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell__sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-shell__nav {
+    padding: 14px 18px;
   }
 
   .home-page {
@@ -1011,6 +1189,10 @@ p {
   }
 
   .users-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .orders-dialog__content {
     grid-template-columns: 1fr;
   }
 

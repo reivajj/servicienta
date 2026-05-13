@@ -53,6 +53,7 @@ export function mapAdminOperationRow(
     technician_name: technicianUser.name,
     technician_surname: technicianUser.surname,
     technician_public_slug: technician.public_slug,
+    technician_review: null,
   };
 }
 

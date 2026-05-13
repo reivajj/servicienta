@@ -3,6 +3,7 @@ import type {
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
   OperationStatus,
+  UpdateAdminOperationInput,
   UsersPageSize,
 } from '@servicienta/types';
 import { ValidationError } from '../core/errors.js';
@@ -22,6 +23,20 @@ export function validateCreateOperationInput(
   };
 }
 
+export function validateUpdateAdminOperationInput(
+  input: UpdateAdminOperationInput,
+): UpdateAdminOperationInput {
+  if (!isOperationStatus(input.status)) {
+    throw new ValidationError('Invalid operation status');
+  }
+
+  return {
+    status: input.status,
+    scheduled_at: normalizeNullableDateTime(input.scheduled_at),
+    completed_at: normalizeNullableDateTime(input.completed_at),
+  };
+}
+
 export function validateListCurrentOperationsInput(input: {
   page?: string;
   pageSize?: string;
@@ -34,11 +49,19 @@ export function validateListAdminOperationsInput(input: {
   page?: string;
   pageSize?: string;
   status?: string;
+  orderId?: string;
 }): ListAdminOperationsInput {
-  return validatePaginatedOperationsInput(input);
+  const paginatedInput = validatePaginatedOperationsInput(input);
+
+  return {
+    ...paginatedInput,
+    order_id: input.orderId ? validateOrderId(input.orderId) : undefined,
+  };
 }
 
-export function validateOperationId(value: string | string[] | undefined): string {
+export function validateOperationId(
+  value: string | string[] | undefined,
+): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new ValidationError('Invalid operation id');
   }
@@ -82,7 +105,9 @@ function validatePaginatedOperationsInput(input: {
     page,
     pageSize: pageSize as UsersPageSize,
     status:
-      input.status && isOperationStatus(input.status) ? input.status : undefined,
+      input.status && isOperationStatus(input.status)
+        ? input.status
+        : undefined,
   };
 }
 

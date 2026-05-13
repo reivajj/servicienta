@@ -229,17 +229,26 @@ export function UsersListPage() {
             <table className="users-table">
               <thead>
                 <tr>
+                  <th>Accion</th>
                   <th>Nombre</th>
                   <th>Email</th>
                   <th>Role</th>
                   <th>Status</th>
                   <th>User ID</th>
-                  <th>Accion</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((user) => (
                   <tr key={user.id}>
+                    <td>
+                      <button
+                        type="button"
+                        className="users-table__action"
+                        onClick={() => setSelectedUserId(user.id)}
+                      >
+                        Ver y editar
+                      </button>
+                    </td>
                     <td>{formatUserName(user.name, user.surname)}</td>
                     <td>{user.email}</td>
                     <td>{user.role}</td>
@@ -255,15 +264,6 @@ export function UsersListPage() {
                       </span>
                     </td>
                     <td className="users-table__id">{user.id}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="users-table__action"
-                        onClick={() => setSelectedUserId(user.id)}
-                      >
-                        Ver y editar
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -7,6 +7,8 @@ import type {
   ListAdminOrdersResponse,
   ListMyOrdersInput,
   ListMyOrdersResponse,
+  UpdateAdminOrderInput,
+  UpdateAdminOrderResponse,
 } from '@servicienta/types';
 
 interface OrdersApiClientDependencies {
@@ -23,6 +25,10 @@ export interface OrdersApiClient {
     admin: {
       list: (input: ListAdminOrdersInput) => Promise<ListAdminOrdersResponse>;
       getById: (orderId: string) => Promise<GetAdminOrderResponse>;
+      updateById: (
+        orderId: string,
+        input: UpdateAdminOrderInput,
+      ) => Promise<UpdateAdminOrderResponse>;
     };
   };
 }
@@ -69,6 +75,11 @@ export function createOrdersApiClient({
           ),
         getById: (orderId) =>
           apiFetch<GetAdminOrderResponse>(`/api/admin/orders/${orderId}`),
+        updateById: (orderId, input) =>
+          apiFetch<UpdateAdminOrderResponse>(`/api/admin/orders/${orderId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(input),
+          }),
       },
     },
   };

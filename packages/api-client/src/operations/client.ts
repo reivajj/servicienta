@@ -8,6 +8,8 @@ import type {
   ListAdminOperationsResponse,
   ListCurrentOperationsInput,
   ListCurrentOperationsResponse,
+  UpdateAdminOperationInput,
+  UpdateAdminOperationResponse,
 } from '@servicienta/types';
 
 interface OperationsApiClientDependencies {
@@ -32,6 +34,10 @@ export interface OperationsApiClient {
         input: ListAdminOperationsInput,
       ) => Promise<ListAdminOperationsResponse>;
       getById: (operationId: string) => Promise<GetAdminOperationResponse>;
+      updateById: (
+        operationId: string,
+        input: UpdateAdminOperationInput,
+      ) => Promise<UpdateAdminOperationResponse>;
     };
   };
 }
@@ -45,6 +51,9 @@ function buildPaginatedOperationsQuery(
   });
 
   if (input.status) searchParams.set('status', input.status);
+  if ('order_id' in input && input.order_id) {
+    searchParams.set('orderId', input.order_id);
+  }
 
   return searchParams.toString();
 }
@@ -80,6 +89,14 @@ export function createOperationsApiClient({
         getById: (operationId) =>
           apiFetch<GetAdminOperationResponse>(
             `/api/admin/operations/${operationId}`,
+          ),
+        updateById: (operationId, input) =>
+          apiFetch<UpdateAdminOperationResponse>(
+            `/api/admin/operations/${operationId}`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify(input),
+            },
           ),
       },
     },

@@ -1,26 +1,16 @@
 import { useState } from 'react';
 import { useAdminOperations } from '@servicienta/query-hooks';
 import type { OperationStatus, UsersPageSize } from '@servicienta/types';
-
-function formatFullName(name: string | null, surname: string | null) {
-  const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
-
-  return fullName || 'Sin nombre';
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) return 'Sin definir';
-
-  return new Intl.DateTimeFormat('es-AR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(value));
-}
+import { AdminOperationsTable } from './AdminOperationsTable';
+import { OperationDetailDialog } from './OperationDetailDialog';
 
 export function OperationsListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<UsersPageSize>(25);
   const [status, setStatus] = useState<OperationStatus | 'all'>('all');
+  const [selectedOperationId, setSelectedOperationId] = useState<string | null>(
+    null,
+  );
 
   const { data, error, isLoading } = useAdminOperations({
     page,
@@ -85,7 +75,9 @@ export function OperationsListPage() {
             <select
               value={status}
               onChange={(event) =>
-                handleStatusChange(event.target.value as OperationStatus | 'all')
+                handleStatusChange(
+                  event.target.value as OperationStatus | 'all',
+                )
               }
             >
               <option value="all">Todos</option>
@@ -171,54 +163,10 @@ export function OperationsListPage() {
             <p className="users-message users-message--error">{errorMessage}</p>
           </section>
         ) : items.length ? (
-          <section className="users-table-wrapper">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Técnico</th>
-                  <th>Slug</th>
-                  <th>Order</th>
-                  <th>Operation</th>
-                  <th>Programada</th>
-                  <th>Completada</th>
-                  <th>Dirección</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((operation) => (
-                  <tr key={operation.id}>
-                    <td>
-                      {formatFullName(
-                        operation.client_name,
-                        operation.client_surname,
-                      )}
-                    </td>
-                    <td>
-                      {formatFullName(
-                        operation.technician_name,
-                        operation.technician_surname,
-                      )}
-                    </td>
-                    <td>{operation.technician_public_slug}</td>
-                    <td>
-                      <span className="technician-catalog-chip">
-                        {operation.order_status}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="technician-catalog-chip">
-                        {operation.status}
-                      </span>
-                    </td>
-                    <td>{formatDateTime(operation.scheduled_at)}</td>
-                    <td>{formatDateTime(operation.completed_at)}</td>
-                    <td>{operation.service_address_text}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+          <AdminOperationsTable
+            operations={items}
+            onSelectOperation={setSelectedOperationId}
+          />
         ) : (
           <section className="users-panel">
             <p>No hay operations para los filtros actuales.</p>
@@ -237,7 +185,9 @@ export function OperationsListPage() {
           <div className="users-pagination__controls">
             <button
               type="button"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
               disabled={!pagination || pagination.page <= 1}
             >
               Anterior
@@ -260,6 +210,13 @@ export function OperationsListPage() {
             </button>
           </div>
         </section>
+
+        {selectedOperationId ? (
+          <OperationDetailDialog
+            operationId={selectedOperationId}
+            onClose={() => setSelectedOperationId(null)}
+          />
+        ) : null}
       </section>
     </main>
   );

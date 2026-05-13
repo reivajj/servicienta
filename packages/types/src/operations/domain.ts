@@ -15,6 +15,13 @@ export interface Operation {
   updated_at: string;
 }
 
+export interface AdminOperationTechnicianReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
 export interface AdminOperation extends Operation {
   order_status: 'open' | 'in_progress' | 'en_garantia' | 'closed';
   order_flow_type: 'client_selects' | 'tech_applies';
@@ -27,4 +34,5 @@ export interface AdminOperation extends Operation {
   technician_name: string | null;
   technician_surname: string | null;
   technician_public_slug: string;
+  technician_review: AdminOperationTechnicianReview | null;
 }

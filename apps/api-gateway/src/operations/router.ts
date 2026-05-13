@@ -11,6 +11,7 @@ import {
   getCurrentOperationById,
   listAdminOperations,
   listCurrentOperations,
+  updateAdminOperationById,
 } from './service.js';
 import {
   validateCreateOperationInput,
@@ -98,6 +99,7 @@ export function operationsRouter(options: OperationsRouterOptions) {
           page: readQueryParam(request.query.page),
           pageSize: readQueryParam(request.query.pageSize),
           status: readQueryParam(request.query.status),
+          orderId: readQueryParam(request.query.orderId),
         }),
       );
 
@@ -112,6 +114,20 @@ export function operationsRouter(options: OperationsRouterOptions) {
       const operation = await getAdminOperationById(
         options.supabase,
         validateOperationId(request.params.operationId),
+      );
+
+      ok(response, operation);
+    }),
+  );
+
+  router.patch(
+    '/api/admin/operations/:operationId',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const operation = await updateAdminOperationById(
+        options.supabase,
+        validateOperationId(request.params.operationId),
+        request.body,
       );
 
       ok(response, operation);

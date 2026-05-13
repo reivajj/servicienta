@@ -1,0 +1,36 @@
+Me quede sin tokens... 
+
+Tengo que retomar la conversacion: Revisa source-of-truth (del 13 de Mayo)
+
+Proximo paso
+
+Probar flujo end-to-end con seed:
+
+YA HECHO:
+Agregar TechnicianReview a la vista operativa:
+En Operations o en el dialog de Order, mostrar si la order tiene review.
+Mostrar rating/comment básico.
+Esto está nombrado explícitamente como pendiente.
+
+FALTA: 
+Entrar como client.
+Crear order.
+Seleccionar técnico / crear operation.
+Completar operation.
+Confirmar estados en UI.
+Reemplazar edición libre de status por acciones de negocio:
+
+Confirmar operation
+Completar operation
+Cancelar operation
+Cerrar order
+Esto evitaría que admin cambie estados a mano sin reglas.
+
+Actualizar source-of-truth.md:
+a.Marcar como implementado el dialog de Orders.
+b.Marcar como implementadas mutaciones admin de Orders/Operations.
+c.Dejar como próximo foco reviews + validación end-to-end + reglas de transición.
+
+QUE SUMARIA ADEMAS:
+Permitir reviews a la ORDER, que serian reviews a la plataforma en si, las
+podrian hacer los CLIENTS y los TECHNICIAN. (PlatformReview).

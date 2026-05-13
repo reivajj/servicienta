@@ -1,4 +1,9 @@
-export type { AdminOrder, Order, OrderFlowType, OrderStatus } from './domain.js';
+export type {
+  AdminOrder,
+  Order,
+  OrderFlowType,
+  OrderStatus,
+} from './domain.js';
 export type {
   CreateOrderInput,
   CreateOrderResponse,
@@ -12,4 +17,6 @@ export type {
   PaginatedOrders,
   PaginatedOrdersPagination,
   PaginatedOrdersSummary,
+  UpdateAdminOrderInput,
+  UpdateAdminOrderResponse,
 } from './contracts.js';

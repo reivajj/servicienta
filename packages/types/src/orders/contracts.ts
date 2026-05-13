@@ -1,5 +1,10 @@
 import type { UsersPageSize } from '../users/contracts.js';
-import type { Order, OrderFlowType, OrderStatus, AdminOrder } from './domain.js';
+import type {
+  Order,
+  OrderFlowType,
+  OrderStatus,
+  AdminOrder,
+} from './domain.js';
 
 export interface CreateOrderInput {
   flow_type: OrderFlowType;
@@ -12,6 +17,20 @@ export interface CreateOrderInput {
 
 export interface CreateOrderResponse {
   data: Order;
+}
+
+export interface UpdateAdminOrderInput {
+  status: OrderStatus;
+  flow_type: OrderFlowType;
+  description: string;
+  service_address_text: string;
+  service_lat: number | null;
+  service_lng: number | null;
+  address_notes: string | null;
+}
+
+export interface UpdateAdminOrderResponse {
+  data: AdminOrder;
 }
 
 export interface ListMyOrdersInput {

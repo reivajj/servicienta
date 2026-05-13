@@ -2,6 +2,19 @@ import { Link, Outlet } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useAuth } from './AuthProvider';
 
+const navItems = [
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/users', label: 'Users' },
+  { to: '/client-profiles', label: 'Client Profiles' },
+  { to: '/technician-profiles', label: 'Technician Profiles' },
+  { to: '/orders', label: 'Orders' },
+  { to: '/operations', label: 'Operations' },
+  { to: '/technician-search', label: 'Technician Search' },
+  { to: '/technician-catalogs', label: 'Technician Catalogs' },
+  { to: '/login', label: 'Login' },
+  { to: '/dev/supabase', label: 'Diagnostico' },
+] as const;
+
 export function AppShell() {
   const { isLoading, user, signOut } = useAuth();
   const [signOutMessage, setSignOutMessage] = useState('');
@@ -23,39 +36,6 @@ export function AppShell() {
         <Link to="/" className="app-shell__brand">
           Servicienta
         </Link>
-
-        <nav className="app-shell__nav">
-          <Link to="/dashboard" className="app-shell__link">
-            Dashboard
-          </Link>
-          <Link to="/users" className="app-shell__link">
-            Users
-          </Link>
-          <Link to="/client-profiles" className="app-shell__link">
-            Client Profiles
-          </Link>
-          <Link to="/technician-profiles" className="app-shell__link">
-            Technician Profiles
-          </Link>
-          <Link to="/orders" className="app-shell__link">
-            Orders
-          </Link>
-          <Link to="/operations" className="app-shell__link">
-            Operations
-          </Link>
-          <Link to="/technician-search" className="app-shell__link">
-            Technician Search
-          </Link>
-          <Link to="/technician-catalogs" className="app-shell__link">
-            Technician Catalogs
-          </Link>
-          <Link to="/login" className="app-shell__link">
-            Login
-          </Link>
-          <Link to="/dev/supabase" className="app-shell__link">
-            Diagnostico
-          </Link>
-        </nav>
 
         <div className="app-shell__status">
           {isLoading ? (
@@ -79,7 +59,28 @@ export function AppShell() {
         </p>
       ) : null}
 
-      <Outlet />
+      <div className="app-shell__body">
+        <aside className="app-shell__sidebar" aria-label="Navegacion principal">
+          <nav className="app-shell__nav">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="app-shell__link"
+                activeProps={{
+                  className: 'app-shell__link app-shell__link--active',
+                }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </aside>
+
+        <main className="app-shell__content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

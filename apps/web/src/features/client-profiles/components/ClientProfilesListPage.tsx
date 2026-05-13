@@ -197,18 +197,29 @@ export function ClientProfilesListPage() {
             <table className="users-table">
               <thead>
                 <tr>
+                  <th>Accion</th>
                   <th>Nombre</th>
                   <th>Email</th>
                   <th>Telefono</th>
                   <th>Canal</th>
                   <th>Status</th>
                   <th>Direccion base</th>
-                  <th>Accion</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((clientProfile) => (
                   <tr key={clientProfile.id}>
+                    <td>
+                      <button
+                        type="button"
+                        className="users-table__action"
+                        onClick={() =>
+                          setSelectedClientProfileId(clientProfile.id)
+                        }
+                      >
+                        Ver y editar
+                      </button>
+                    </td>
                     <td>
                       {formatClientName(
                         clientProfile.name,
@@ -216,7 +227,11 @@ export function ClientProfilesListPage() {
                       )}
                     </td>
                     <td>{clientProfile.email}</td>
-                    <td>{clientProfile.phone ?? clientProfile.whatsapp_phone ?? 'No cargado'}</td>
+                    <td>
+                      {clientProfile.phone ??
+                        clientProfile.whatsapp_phone ??
+                        'No cargado'}
+                    </td>
                     <td>{clientProfile.preferred_contact_channel}</td>
                     <td>
                       <span
@@ -231,17 +246,6 @@ export function ClientProfilesListPage() {
                     </td>
                     <td>
                       {clientProfile.default_address_text ?? 'No cargada'}
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="users-table__action"
-                        onClick={() =>
-                          setSelectedClientProfileId(clientProfile.id)
-                        }
-                      >
-                        Ver y editar
-                      </button>
                     </td>
                   </tr>
                 ))}

@@ -3,8 +3,10 @@ import type {
   CreateOrderInput,
   ListAdminOrdersInput,
   ListMyOrdersInput,
+  UpdateAdminOrderInput,
 } from '@servicienta/api-client';
 import { useApiClient } from '../core/api-client-context.js';
+import { operationKeys } from '../operations/keys.js';
 import { orderKeys } from './keys.js';
 
 export function useCreateOrder() {
@@ -67,5 +69,30 @@ export function useAdminOrder(orderId: string) {
       return response.data;
     },
     enabled: Boolean(orderId),
+  });
+}
+
+export function useUpdateAdminOrder() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      input,
+    }: {
+      orderId: string;
+      input: UpdateAdminOrderInput;
+    }) => apiClient.orders.admin.updateById(orderId, input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        orderKeys.adminDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: orderKeys.adminLists() });
+      void queryClient.invalidateQueries({
+        queryKey: operationKeys.adminLists(),
+      });
+    },
   });
 }

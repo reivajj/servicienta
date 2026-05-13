@@ -1,6 +1,6 @@
 # Servicienta — Fuente de verdad provisional
 
-_Última actualización: 2026-05-03_
+_Última actualización: 2026-05-13_
 
 ## Propósito de este documento
 
@@ -299,7 +299,7 @@ agregaria raitings particulares de:
 |---|---|---|
 | `id` | `uuid` | PK |
 | `technician_id` | `uuid` | FK → `TechnicianProfile` |
-| `order_id` | `uuid` | FK → `Order` |
+| `operation_id` | `uuid` | FK → `Operation` |
 | `client_id` | `uuid` | FK → `User` |
 | `rating` | `integer` | por ahora puede pensarse como escala simple, ej. 1..5 |
 | `comment` | `string` | comentario visible |
@@ -307,7 +307,9 @@ agregaria raitings particulares de:
 
 Notas:
 
-- las reviews cuelgan de `Order`, no de `Operation`
+- las reviews de técnico cuelgan de `Operation`, porque evalúan el trabajo concreto de un técnico
+- `Order` queda como entidad del sistema/pedido; una futura review sobre la experiencia de plataforma debería modelarse aparte
+- la review la hace un usuario `client` sobre la operación realizada por el técnico
 - `TechnicianProfile.rating` y `TechnicianProfile.rating_count` se derivan de esta entidad
 
 ### TechnicianDocument
@@ -429,7 +431,7 @@ Notas:
 - hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks`, `apps/api-gateway` y una primera vista admin en `apps/web`
 - en runtime actual, `Operation` sigue siendo la entidad puente entre `Order` y técnico, y al completarse mueve la `Order` a `en_garantia`
 - el vínculo de `technician_id` se está resolviendo contra `TechnicianProfile.id`, no directamente contra `User.id`
-- hoy también existe un seed operativo desde cero en `scripts/` para poblar `operations` y `reviews` sobre `orders` reales, evitando `order_id` inventados
+- hoy también existe un seed operativo desde cero en `scripts/` para poblar `operations` y `reviews` sobre `operations` reales, evitando referencias inventadas
 - la implementación actual no cubre todavía cancelaciones, múltiples operaciones simultáneas por orden ni reglas más finas del flujo `tech_applies`
 
 ### Payment
@@ -494,7 +496,7 @@ Brand          1 → N    TechnicianBrandSpecialty
 Zone           1 → N    TechnicianCoverageZone
 Order         1 → N    Operation
 User (tech)   1 → N    Operation
-Order         1 → N    TechnicianReview
+Operation     1 → 0..1 TechnicianReview
 Order         1 → N    Payment
 Subscription  1 → N    Payment
 Payment       1 → 0..1 Payout
