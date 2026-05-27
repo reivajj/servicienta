@@ -96,6 +96,17 @@ export function mapAdminTechnicianProfileRow(
     rating_count: profile.rating_count,
     verified_at: profile.verified_at,
     bio: profile.bio,
+    phone: profile.phone,
+    whatsapp_phone: profile.whatsapp_phone,
+    preferred_contact_channel:
+      profile.preferred_contact_channel === 'whatsapp' ? 'whatsapp' : 'phone',
+    base_address_text: profile.base_address_text,
+    base_lat: profile.base_lat === null ? null : Number(profile.base_lat),
+    base_lng: profile.base_lng === null ? null : Number(profile.base_lng),
+    service_radius_km:
+      profile.service_radius_km === null
+        ? null
+        : Number(profile.service_radius_km),
     created_at: profile.created_at,
     updated_at: profile.updated_at,
   };

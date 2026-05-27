@@ -23,13 +23,22 @@ interface ClientProfileSeedRow {
 interface OrderInsertRow {
   id: string;
   client_id: string;
-  status: 'open' | 'in_progress' | 'en_garantia' | 'closed';
+  technician_id: string;
+  status:
+    | 'pending'
+    | 'accepted'
+    | 'cancelled'
+    | 'in_progress'
+    | 'completed_tech'
+    | 'completed';
   flow_type: 'client_selects' | 'tech_applies';
   description: string;
   service_address_text: string;
   service_lat: number;
   service_lng: number;
   address_notes: string;
+  zone_slug: string;
+  appliance_type_slug: string;
   created_at: string;
   updated_at: string;
 }
@@ -38,8 +47,10 @@ interface OperationInsertRow {
   id: string;
   order_id: string;
   technician_id: string;
-  status: 'confirmed' | 'completed';
+  status: 'pending' | 'scheduled' | 'completed_tech' | 'completed';
   scheduled_at: string;
+  description: string | null;
+  technician_completed_at: string | null;
   completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -109,22 +120,22 @@ const BASE_CLIENT_ADDRESSES = [
 ];
 
 const ORDER_STATUS_SEQUENCE: Array<OrderInsertRow['status']> = [
-  'open',
-  'open',
-  'open',
-  'open',
+  'pending',
+  'pending',
+  'accepted',
+  'accepted',
   'in_progress',
   'in_progress',
   'in_progress',
   'in_progress',
-  'en_garantia',
-  'en_garantia',
-  'en_garantia',
-  'en_garantia',
-  'closed',
-  'closed',
-  'closed',
-  'closed',
+  'completed_tech',
+  'completed_tech',
+  'completed_tech',
+  'completed_tech',
+  'completed',
+  'completed',
+  'completed',
+  'completed',
 ];
 
 const ORDER_DESCRIPTIONS = [
@@ -181,9 +192,13 @@ function buildClientProfiles(clients: UserRow[]): ClientProfileSeedRow[] {
   });
 }
 
-function buildOrders(clients: UserRow[]): OrderInsertRow[] {
+function buildOrders(
+  clients: UserRow[],
+  technicians: UserRow[],
+): OrderInsertRow[] {
   return ORDER_STATUS_SEQUENCE.map((status, index) => {
     const client = clients[index % clients.length];
+    const technician = technicians[index % technicians.length];
     const address = BASE_CLIENT_ADDRESSES[index % BASE_CLIENT_ADDRESSES.length];
     const createdAt = new Date(
       Date.UTC(2026, 4, 1 + index, 9 + (index % 4), 0, 0),
@@ -195,6 +210,7 @@ function buildOrders(clients: UserRow[]): OrderInsertRow[] {
     return {
       id: randomUUID(),
       client_id: client.id,
+      technician_id: technician.id,
       status,
       flow_type: index % 3 === 0 ? 'tech_applies' : 'client_selects',
       description: ORDER_DESCRIPTIONS[index],
@@ -202,6 +218,16 @@ function buildOrders(clients: UserRow[]): OrderInsertRow[] {
       service_lat: address.lat,
       service_lng: address.lng,
       address_notes: address.notes,
+      zone_slug: [
+        'palermo',
+        'belgrano',
+        'caballito',
+        'recoleta',
+        'villa-crespo',
+      ][index % 5],
+      appliance_type_slug: ['heladeras', 'lavarropas', 'microondas', 'cocinas'][
+        index % 4
+      ],
       created_at: createdAt,
       updated_at: updatedAt,
     };
@@ -212,28 +238,47 @@ function buildOperations(
   orders: OrderInsertRow[],
   technicians: UserRow[],
 ): OperationInsertRow[] {
-  const eligibleOrders = orders.filter((order) => order.status !== 'open');
+  const eligibleOrders = orders.filter((order) => order.status !== 'pending');
 
   return eligibleOrders.map((order, index) => {
-    const technician = technicians[index % technicians.length];
+    const technicianId =
+      order.technician_id ?? technicians[index % technicians.length].id;
     const scheduledAt = new Date(
       Date.UTC(2026, 4, 2 + index, 14 + (index % 3), 0, 0),
     ).toISOString();
     const isCompleted =
-      order.status === 'en_garantia' || order.status === 'closed';
-    const completedAt = isCompleted
+      order.status === 'completed_tech' || order.status === 'completed';
+    const technicianCompletedAt = isCompleted
       ? new Date(
           Date.UTC(2026, 4, 2 + index, 16 + (index % 3), 15, 0),
         ).toISOString()
       : null;
+    const completedAt =
+      order.status === 'completed' && technicianCompletedAt
+        ? new Date(
+            Date.parse(technicianCompletedAt) + 1000 * 60 * 30,
+          ).toISOString()
+        : null;
     const updatedAt = completedAt ?? scheduledAt;
 
     return {
       id: randomUUID(),
       order_id: order.id,
-      technician_id: technician.id,
-      status: isCompleted ? 'completed' : 'confirmed',
+      technician_id: technicianId,
+      status:
+        order.status === 'accepted'
+          ? 'pending'
+          : order.status === 'in_progress'
+            ? 'scheduled'
+            : order.status === 'completed_tech'
+              ? 'completed_tech'
+              : 'completed',
       scheduled_at: scheduledAt,
+      description:
+        order.status === 'accepted'
+          ? null
+          : `Visita técnica para ${order.description.toLowerCase()}`,
+      technician_completed_at: technicianCompletedAt,
       completed_at: completedAt,
       created_at: scheduledAt,
       updated_at: updatedAt,
@@ -251,7 +296,7 @@ function buildReviews(
   const reviewRatings = [5, 4, 5, 4];
 
   return orders
-    .filter((order) => order.status === 'closed')
+    .filter((order) => order.status === 'completed')
     .slice(0, 4)
     .map((order, index) => {
       const operation = operationsByOrderId.get(order.id);
@@ -530,7 +575,7 @@ export async function seedOperationalData(
 
   const targetClients = clients.slice(0, 10);
   const targetTechnicians = technicians.slice(0, 8);
-  const orders = buildOrders(targetClients);
+  const orders = buildOrders(targetClients, targetTechnicians);
   const operations = buildOperations(orders, targetTechnicians);
   const reviews = buildReviews(orders, operations);
 

@@ -9,6 +9,7 @@ export type {
   PublicTechnicianProfileCatalogs,
   PublicTechnicianProfile,
   TechnicianCatalogKind,
+  TechnicianPreferredContactChannel,
   TechnicianApplianceSpecialty,
   TechnicianBrandSpecialty,
   TechnicianCoverageZone,
@@ -20,6 +21,8 @@ export type {
 export type {
   AdminTechnicianProfilesSort,
   AdminTechniciansByCatalogItem,
+  GetAdminTechnicianProfileResponse,
+  GetCurrentTechnicianProfileResponse,
   ListAdminTechnicianProfilesInput,
   ListAdminTechnicianProfilesResponse,
   GetPublicTechnicianProfileResponse,
@@ -32,4 +35,6 @@ export type {
   ListPublicTechnicianProfileCatalogsResponse,
   ListPublicTechnicianProfilesInput,
   ListPublicTechnicianProfilesResponse,
+  UpdateTechnicianProfileInput,
+  UpdateTechnicianProfileResponse,
 } from './contracts.js';

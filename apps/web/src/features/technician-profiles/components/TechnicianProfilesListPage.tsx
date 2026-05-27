@@ -1,4 +1,5 @@
 import { useDeferredValue, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useAdminTechnicianProfiles } from '@servicienta/query-hooks';
 import type {
   AdminTechnicianProfilesSort,
@@ -52,9 +53,7 @@ export function TechnicianProfilesListPage() {
     pageSize,
     status: status === 'all' ? undefined : status,
     available:
-      availability === 'all'
-        ? undefined
-        : availability === 'available',
+      availability === 'all' ? undefined : availability === 'available',
     search: searchFilter,
     sort,
   });
@@ -303,6 +302,7 @@ export function TechnicianProfilesListPage() {
             <table className="users-table">
               <thead>
                 <tr>
+                  <th>Perfil</th>
                   <th>Nombre</th>
                   <th>Email</th>
                   <th>Slug</th>
@@ -316,7 +316,18 @@ export function TechnicianProfilesListPage() {
               <tbody>
                 {sortedItems.map((profile) => (
                   <tr key={profile.id}>
-                    <td>{formatTechnicianName(profile.name, profile.surname)}</td>
+                    <td>
+                      <Link
+                        to="/technicians/$technicianId"
+                        params={{ technicianId: profile.id }}
+                        className="users-table__action"
+                      >
+                        Ver
+                      </Link>
+                    </td>
+                    <td>
+                      {formatTechnicianName(profile.name, profile.surname)}
+                    </td>
                     <td>{profile.email}</td>
                     <td>{profile.public_slug}</td>
                     <td>

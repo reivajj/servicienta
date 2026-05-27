@@ -1,6 +1,7 @@
 export interface OrderRow {
   id: string;
   client_id: string;
+  technician_id: string | null;
   status: string;
   flow_type: string;
   description: string;
@@ -8,6 +9,8 @@ export interface OrderRow {
   service_lat: number | null;
   service_lng: number | null;
   address_notes: string | null;
+  zone_slug: string | null;
+  appliance_type_slug: string | null;
   created_at: string;
   updated_at: string;
 }

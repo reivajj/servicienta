@@ -1,6 +1,7 @@
 export type OperationStatus =
   | 'pending'
-  | 'confirmed'
+  | 'scheduled'
+  | 'completed_tech'
   | 'completed'
   | 'cancelled';
 
@@ -10,7 +11,9 @@ export interface Operation {
   technician_id: string;
   status: OperationStatus;
   scheduled_at: string | null;
+  description: string | null;
   completed_at: string | null;
+  technician_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,7 +26,13 @@ export interface AdminOperationTechnicianReview {
 }
 
 export interface AdminOperation extends Operation {
-  order_status: 'open' | 'in_progress' | 'en_garantia' | 'closed';
+  order_status:
+    | 'pending'
+    | 'accepted'
+    | 'cancelled'
+    | 'in_progress'
+    | 'completed_tech'
+    | 'completed';
   order_flow_type: 'client_selects' | 'tech_applies';
   service_address_text: string;
   client_id: string;

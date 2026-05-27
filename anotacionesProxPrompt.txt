@@ -26,10 +26,6 @@ Cancelar operation
 Cerrar order
 Esto evitaría que admin cambie estados a mano sin reglas.
 
-Actualizar source-of-truth.md:
-a.Marcar como implementado el dialog de Orders.
-b.Marcar como implementadas mutaciones admin de Orders/Operations.
-c.Dejar como próximo foco reviews + validación end-to-end + reglas de transición.
 
 QUE SUMARIA ADEMAS:
 Permitir reviews a la ORDER, que serian reviews a la plataforma en si, las

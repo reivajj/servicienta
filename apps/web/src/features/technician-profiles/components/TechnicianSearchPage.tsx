@@ -1,8 +1,12 @@
 import {
+  useCreateOrder,
   usePublicTechnicianProfileCatalogs,
   usePublicTechnicianProfiles,
 } from '@servicienta/query-hooks';
-import type { ListPublicTechnicianProfilesInput } from '@servicienta/types';
+import type {
+  ListPublicTechnicianProfilesInput,
+  PublicTechnicianProfile,
+} from '@servicienta/types';
 import { useState } from 'react';
 
 export function TechnicianSearchPage() {
@@ -15,6 +19,9 @@ export function TechnicianSearchPage() {
   const [applianceTypeSlug, setApplianceTypeSlug] = useState('');
   const [submittedInput, setSubmittedInput] =
     useState<ListPublicTechnicianProfilesInput | null>(null);
+  const [selectedTechnician, setSelectedTechnician] =
+    useState<PublicTechnicianProfile | null>(null);
+  const createOrder = useCreateOrder();
   const {
     data: profiles,
     error: profilesError,
@@ -39,6 +46,26 @@ export function TechnicianSearchPage() {
       zoneSlug,
       applianceTypeSlug,
     });
+  }
+
+  async function handleCreateOrder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedTechnician || !submittedInput) return;
+
+    const formData = new FormData(event.currentTarget);
+
+    await createOrder.mutateAsync({
+      technician_public_slug: selectedTechnician.public_slug,
+      zone_slug: submittedInput.zoneSlug,
+      appliance_type_slug: submittedInput.applianceTypeSlug,
+      description: String(formData.get('description') ?? ''),
+      service_address_text: String(formData.get('service_address_text') ?? ''),
+      service_lat: null,
+      service_lng: null,
+      address_notes: String(formData.get('address_notes') ?? '') || null,
+    });
+
+    setSelectedTechnician(null);
   }
 
   return (
@@ -183,6 +210,15 @@ export function TechnicianSearchPage() {
                     Perfil creado el{' '}
                     {new Date(profile.created_at).toLocaleDateString('es-AR')}
                   </p>
+
+                  <button
+                    type="button"
+                    className="dashboard-card__link"
+                    disabled={!profile.available}
+                    onClick={() => setSelectedTechnician(profile)}
+                  >
+                    Seleccionar técnico
+                  </button>
                 </article>
               ))}
             </div>
@@ -194,6 +230,90 @@ export function TechnicianSearchPage() {
           )}
         </section>
       </section>
+
+      {selectedTechnician ? (
+        <div
+          className="users-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-order-title"
+          onClick={() => setSelectedTechnician(null)}
+        >
+          <section
+            className="users-modal__panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="users-modal__header">
+              <div>
+                <p className="users-hero__eyebrow">Client Selects</p>
+                <h2 id="create-order-title">Crear order</h2>
+              </div>
+              <button
+                type="button"
+                className="users-modal__close"
+                onClick={() => setSelectedTechnician(null)}
+              >
+                Cerrar
+              </button>
+            </header>
+
+            <form className="auth-form" onSubmit={handleCreateOrder}>
+              <label className="auth-form__field">
+                <span>Técnico</span>
+                <input
+                  type="text"
+                  value={selectedTechnician.public_slug}
+                  readOnly
+                />
+              </label>
+
+              <label className="auth-form__field">
+                <span>Problema</span>
+                <textarea
+                  name="description"
+                  placeholder="Contá qué está pasando con el equipo"
+                  required
+                />
+              </label>
+
+              <label className="auth-form__field">
+                <span>Dirección aproximada</span>
+                <input
+                  name="service_address_text"
+                  type="text"
+                  placeholder="Calle, altura aproximada, barrio"
+                  required
+                />
+              </label>
+
+              <label className="auth-form__field">
+                <span>Notas de dirección</span>
+                <input
+                  name="address_notes"
+                  type="text"
+                  placeholder="Piso, referencias, horarios posibles"
+                />
+              </label>
+
+              <div className="users-message">
+                Imágenes: placeholder visual. El upload real se modelará en una
+                próxima pasada.
+              </div>
+
+              <button type="submit" disabled={createOrder.isPending}>
+                {createOrder.isPending ? 'Creando...' : 'Crear order pending'}
+              </button>
+              {createOrder.error ? (
+                <p className="users-message users-message--error">
+                  {createOrder.error instanceof Error
+                    ? createOrder.error.message
+                    : 'No se pudo crear la order'}
+                </p>
+              ) : null}
+            </form>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

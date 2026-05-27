@@ -1,22 +1,29 @@
 import { Router } from 'express';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { ForbiddenError } from '../core/errors.js';
 import { requireAdmin } from '../middleware/require-admin.js';
+import { requireAuth } from '../middleware/require-auth.js';
 import { ok } from '../core/http-response.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { readQueryParam } from './helpers/http.js';
 import {
+  getAdminTechnicianProfileById,
+  getCurrentTechnicianProfile,
   getPublicTechnicianProfileBySlug,
   listAdminTechnicianProfiles,
   listAdminTechnicianCatalogs,
   listAdminTechniciansByCatalogItem,
   listPublicTechnicianProfileCatalogs,
   listPublicTechnicianProfiles,
+  updateAdminTechnicianProfileById,
+  updateCurrentTechnicianProfile,
 } from './service.js';
 import {
   validateListAdminTechnicianProfilesInput,
   validateAdminTechniciansByCatalogItemInput,
   validateListPublicTechnicianProfilesInput,
   validatePublicTechnicianSlug,
+  validateTechnicianId,
 } from './validators.js';
 
 interface TechnicianProfilesRouterOptions {
@@ -55,6 +62,68 @@ export function technicianProfilesRouter(
       const catalogs = await listAdminTechnicianCatalogs(options.supabase);
 
       ok(response, catalogs);
+    }),
+  );
+
+  router.get(
+    '/api/technician-profile/me',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      if (request.auth?.role !== 'technician') {
+        throw new ForbiddenError('Technician role required');
+      }
+
+      const profile = await getCurrentTechnicianProfile(
+        options.supabase,
+        request.auth.id,
+      );
+
+      ok(response, profile);
+    }),
+  );
+
+  router.patch(
+    '/api/technician-profile/me',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      if (request.auth?.role !== 'technician') {
+        throw new ForbiddenError('Technician role required');
+      }
+
+      const profile = await updateCurrentTechnicianProfile(
+        options.supabase,
+        request.auth.id,
+        request.body,
+      );
+
+      ok(response, profile);
+    }),
+  );
+
+  router.get(
+    '/api/admin/technician-profiles/:technicianId',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const profile = await getAdminTechnicianProfileById(
+        options.supabase,
+        validateTechnicianId(request.params.technicianId),
+      );
+
+      ok(response, profile);
+    }),
+  );
+
+  router.patch(
+    '/api/admin/technician-profiles/:technicianId',
+    requireAdmin({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const profile = await updateAdminTechnicianProfileById(
+        options.supabase,
+        validateTechnicianId(request.params.technicianId),
+        request.body,
+      );
+
+      ok(response, profile);
     }),
   );
 

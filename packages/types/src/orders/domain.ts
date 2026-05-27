@@ -1,12 +1,19 @@
 import type { UserStatus } from '../users/domain.js';
 
-export type OrderStatus = 'open' | 'in_progress' | 'en_garantia' | 'closed';
+export type OrderStatus =
+  | 'pending'
+  | 'accepted'
+  | 'cancelled'
+  | 'in_progress'
+  | 'completed_tech'
+  | 'completed';
 
 export type OrderFlowType = 'client_selects' | 'tech_applies';
 
 export interface Order {
   id: string;
   client_id: string;
+  technician_id: string | null;
   status: OrderStatus;
   flow_type: OrderFlowType;
   description: string;
@@ -14,6 +21,8 @@ export interface Order {
   service_lat: number | null;
   service_lng: number | null;
   address_notes: string | null;
+  zone_slug: string | null;
+  appliance_type_slug: string | null;
   created_at: string;
   updated_at: string;
 }

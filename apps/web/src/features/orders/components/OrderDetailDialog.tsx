@@ -148,7 +148,7 @@ export function OrderDetailDialog({
     await updateOrder.mutateAsync({
       orderId,
       input: {
-        status: (formData.get('status') as OrderStatus | null) ?? 'open',
+        status: (formData.get('status') as OrderStatus | null) ?? 'pending',
         flow_type:
           (formData.get('flow_type') as OrderFlowType | null) ??
           'client_selects',
@@ -159,6 +159,10 @@ export function OrderDetailDialog({
         service_lat: toNullableNumber(formData.get('service_lat')),
         service_lng: toNullableNumber(formData.get('service_lng')),
         address_notes: String(formData.get('address_notes') ?? '') || null,
+        technician_id: String(formData.get('technician_id') ?? '') || null,
+        zone_slug: String(formData.get('zone_slug') ?? '') || null,
+        appliance_type_slug:
+          String(formData.get('appliance_type_slug') ?? '') || null,
       },
     });
   }
@@ -247,10 +251,12 @@ export function OrderDetailDialog({
                 <label className="auth-form__field">
                   <span>Status</span>
                   <select name="status" defaultValue={order.status}>
-                    <option value="open">Open</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="cancelled">Cancelled</option>
                     <option value="in_progress">In progress</option>
-                    <option value="en_garantia">En garantía</option>
-                    <option value="closed">Closed</option>
+                    <option value="completed_tech">Completed tech</option>
+                    <option value="completed">Completed</option>
                   </select>
                 </label>
 
@@ -277,6 +283,33 @@ export function OrderDetailDialog({
                     name="service_address_text"
                     type="text"
                     defaultValue={order.service_address_text}
+                  />
+                </label>
+
+                <label className="auth-form__field">
+                  <span>Technician ID</span>
+                  <input
+                    name="technician_id"
+                    type="text"
+                    defaultValue={order.technician_id ?? ''}
+                  />
+                </label>
+
+                <label className="auth-form__field">
+                  <span>Zona</span>
+                  <input
+                    name="zone_slug"
+                    type="text"
+                    defaultValue={order.zone_slug ?? ''}
+                  />
+                </label>
+
+                <label className="auth-form__field">
+                  <span>Rubro</span>
+                  <input
+                    name="appliance_type_slug"
+                    type="text"
+                    defaultValue={order.appliance_type_slug ?? ''}
                   />
                 </label>
 

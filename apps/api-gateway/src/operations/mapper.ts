@@ -14,7 +14,9 @@ export function mapOperationRow(row: OperationRow): Operation {
     technician_id: row.technician_id,
     status: normalizeOperationStatus(row.status),
     scheduled_at: row.scheduled_at,
+    description: row.description,
     completed_at: row.completed_at,
+    technician_completed_at: row.technician_completed_at,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -60,27 +62,30 @@ export function mapAdminOperationRow(
 function normalizeOperationStatus(value: string): OperationStatus {
   if (
     value === 'pending' ||
-    value === 'confirmed' ||
+    value === 'scheduled' ||
+    value === 'completed_tech' ||
     value === 'completed' ||
     value === 'cancelled'
   ) {
     return value;
   }
 
-  return 'confirmed';
+  return 'pending';
 }
 
 function normalizeOrderStatus(value: string): OrderStatus {
   if (
-    value === 'open' ||
+    value === 'pending' ||
+    value === 'accepted' ||
+    value === 'cancelled' ||
     value === 'in_progress' ||
-    value === 'en_garantia' ||
-    value === 'closed'
+    value === 'completed_tech' ||
+    value === 'completed'
   ) {
     return value;
   }
 
-  return 'open';
+  return 'pending';
 }
 
 function normalizeOrderFlowType(value: string): OrderFlowType {

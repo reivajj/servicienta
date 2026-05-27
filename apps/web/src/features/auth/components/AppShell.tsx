@@ -1,23 +1,76 @@
 import { Link, Outlet } from '@tanstack/react-router';
+import { useCurrentUser } from '@servicienta/query-hooks';
+import type { UserRole } from '@servicienta/types';
 import { useState } from 'react';
 import { useAuth } from './AuthProvider';
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/users', label: 'Users' },
-  { to: '/client-profiles', label: 'Client Profiles' },
-  { to: '/technician-profiles', label: 'Technician Profiles' },
-  { to: '/orders', label: 'Orders' },
-  { to: '/operations', label: 'Operations' },
-  { to: '/technician-search', label: 'Technician Search' },
-  { to: '/technician-catalogs', label: 'Technician Catalogs' },
-  { to: '/login', label: 'Login' },
-  { to: '/dev/supabase', label: 'Diagnostico' },
-] as const;
+interface NavItem {
+  to:
+    | '/dashboard'
+    | '/users'
+    | '/client-profiles'
+    | '/technician-profiles'
+    | '/orders'
+    | '/operations'
+    | '/technician-search'
+    | '/technician-catalogs'
+    | '/login'
+    | '/dev/supabase';
+  label: string;
+  roles?: readonly UserRole[];
+  publicOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
+  {
+    to: '/dashboard',
+    label: 'Dashboard',
+    roles: ['admin', 'client', 'technician'],
+  },
+  { to: '/users', label: 'Users', roles: ['admin'] },
+  { to: '/client-profiles', label: 'Client Profiles', roles: ['admin'] },
+  {
+    to: '/technician-profiles',
+    label: 'Technician Profiles',
+    roles: ['admin'],
+  },
+  { to: '/orders', label: 'Orders', roles: ['admin', 'client', 'technician'] },
+  {
+    to: '/operations',
+    label: 'Operations',
+    roles: ['admin', 'client', 'technician'],
+  },
+  {
+    to: '/technician-search',
+    label: 'Technician Search',
+    roles: ['admin', 'client'],
+  },
+  {
+    to: '/technician-catalogs',
+    label: 'Technician Catalogs',
+    roles: ['admin'],
+  },
+  { to: '/login', label: 'Login', publicOnly: true },
+  { to: '/dev/supabase', label: 'Diagnostico', roles: ['admin'] },
+];
 
 export function AppShell() {
-  const { isLoading, user, signOut } = useAuth();
+  const { isLoading, session, user, signOut } = useAuth();
+  const { data: currentUser } = useCurrentUser({ enabled: Boolean(session) });
   const [signOutMessage, setSignOutMessage] = useState('');
+  const currentRole = currentUser?.role;
+  const visibleNavItems = navItems.filter((item) =>
+    isNavItemVisible(item, currentRole, Boolean(session)),
+  );
+  const apiDocsUrl = (() => {
+    const url = new URL('/api-docs', import.meta.env.VITE_API_URL);
+
+    if (session?.access_token) {
+      url.searchParams.set('access_token', session.access_token);
+    }
+
+    return url.toString();
+  })();
 
   async function handleSignOut() {
     try {
@@ -62,7 +115,7 @@ export function AppShell() {
       <div className="app-shell__body">
         <aside className="app-shell__sidebar" aria-label="Navegacion principal">
           <nav className="app-shell__nav">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -74,6 +127,16 @@ export function AppShell() {
                 {item.label}
               </Link>
             ))}
+            {currentRole === 'admin' ? (
+              <a
+                href={apiDocsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="app-shell__link"
+              >
+                API Docs
+              </a>
+            ) : null}
           </nav>
         </aside>
 
@@ -83,4 +146,15 @@ export function AppShell() {
       </div>
     </div>
   );
+}
+
+function isNavItemVisible(
+  item: NavItem,
+  role: UserRole | undefined,
+  hasSession: boolean,
+) {
+  if (item.publicOnly) return !hasSession;
+  if (!role) return item.to === '/technician-search';
+
+  return item.roles?.includes(role) ?? false;
 }

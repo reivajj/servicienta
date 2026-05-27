@@ -5,6 +5,8 @@ export type {
   OrderStatus,
 } from './domain.js';
 export type {
+  AcceptOrderResponse,
+  CancelOrderResponse,
   CreateOrderInput,
   CreateOrderResponse,
   GetAdminOrderResponse,

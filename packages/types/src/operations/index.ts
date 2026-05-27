@@ -6,6 +6,9 @@ export type {
 } from './domain.js';
 export type {
   CompleteOperationResponse,
+  CompleteTechOperationResponse,
+  CancelOperationResponse,
+  ConfirmCompletedOperationResponse,
   CreateOperationInput,
   CreateOperationResponse,
   GetAdminOperationResponse,
@@ -18,6 +21,8 @@ export type {
   PaginatedOperations,
   PaginatedOperationsPagination,
   PaginatedOperationsSummary,
+  ScheduleOperationInput,
+  ScheduleOperationResponse,
   UpdateAdminOperationInput,
   UpdateAdminOperationResponse,
 } from './contracts.js';

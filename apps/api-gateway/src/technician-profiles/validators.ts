@@ -4,6 +4,8 @@ import type {
   ListAdminTechniciansByCatalogItemInput,
   ListPublicTechnicianProfilesInput,
   TechnicianCatalogKind,
+  TechnicianPreferredContactChannel,
+  UpdateTechnicianProfileInput,
   UsersPageSize,
 } from '@servicienta/types';
 import { ValidationError } from '../core/errors.js';
@@ -38,6 +40,16 @@ export function validatePublicTechnicianSlug(
 ): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new ValidationError('Invalid technician public slug');
+  }
+
+  return value.trim();
+}
+
+export function validateTechnicianId(
+  value: string | string[] | undefined,
+): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new ValidationError('Invalid technician id');
   }
 
   return value.trim();
@@ -90,9 +102,37 @@ export function validateListAdminTechnicianProfilesInput(input: {
         : undefined,
     available: parseOptionalBoolean(input.available),
     search,
-    sort: input.sort && isAdminTechnicianProfilesSort(input.sort)
-      ? input.sort
-      : 'default',
+    sort:
+      input.sort && isAdminTechnicianProfilesSort(input.sort)
+        ? input.sort
+        : 'default',
+  };
+}
+
+export function validateUpdateTechnicianProfileInput(
+  input: UpdateTechnicianProfileInput,
+): UpdateTechnicianProfileInput {
+  const name = normalizeRequiredText(input.name, 'Name is required');
+  const preferredContactChannel = input.preferred_contact_channel;
+
+  if (!isTechnicianPreferredContactChannel(preferredContactChannel)) {
+    throw new ValidationError('Invalid preferred contact channel');
+  }
+
+  return {
+    name,
+    surname: normalizeNullableText(input.surname),
+    bio: normalizeNullableText(input.bio),
+    phone: normalizeNullableText(input.phone),
+    whatsapp_phone: normalizeNullableText(input.whatsapp_phone),
+    preferred_contact_channel: preferredContactChannel,
+    base_address_text: normalizeNullableText(input.base_address_text),
+    base_lat: normalizeNullableNumber(input.base_lat, 'Invalid base latitude'),
+    base_lng: normalizeNullableNumber(input.base_lng, 'Invalid base longitude'),
+    service_radius_km: normalizeNullableNumber(
+      input.service_radius_km,
+      'Invalid service radius',
+    ),
   };
 }
 
@@ -106,6 +146,12 @@ function isAdminTechnicianProfilesSort(
     value === 'name-asc' ||
     value === 'name-desc'
   );
+}
+
+function isTechnicianPreferredContactChannel(
+  value: string,
+): value is TechnicianPreferredContactChannel {
+  return value === 'phone' || value === 'whatsapp';
 }
 
 function parseOptionalBoolean(value: string | undefined): boolean | undefined {
@@ -144,4 +190,30 @@ function normalizeSlug(value: string | string[] | undefined): string {
   }
 
   return value.trim();
+}
+
+function normalizeRequiredText(value: string, errorMessage: string): string {
+  const normalized = value?.trim();
+
+  if (!normalized) throw new ValidationError(errorMessage);
+
+  return normalized;
+}
+
+function normalizeNullableText(value: string | null): string | null {
+  const normalized = value?.trim();
+
+  return normalized ? normalized : null;
+}
+
+function normalizeNullableNumber(
+  value: number | null,
+  errorMessage: string,
+): number | null {
+  if (value === null) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new ValidationError(errorMessage);
+  }
+
+  return value;
 }

@@ -47,7 +47,56 @@ export function useCurrentOrder(orderId: string) {
   });
 }
 
-export function useAdminOrders(input: ListAdminOrdersInput) {
+export function useCancelOrder() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => apiClient.orders.cancel(orderId),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        orderKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+      void queryClient.invalidateQueries({
+        queryKey: operationKeys.current(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: operationKeys.admin(),
+      });
+    },
+  });
+}
+
+export function useAcceptOrder() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => apiClient.orders.accept(orderId),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        orderKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+      void queryClient.invalidateQueries({
+        queryKey: operationKeys.current(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: operationKeys.admin(),
+      });
+    },
+  });
+}
+
+export function useAdminOrders(
+  input: ListAdminOrdersInput,
+  options?: { enabled?: boolean },
+) {
   const apiClient = useApiClient();
 
   return useQuery({
@@ -56,6 +105,7 @@ export function useAdminOrders(input: ListAdminOrdersInput) {
       const response = await apiClient.orders.admin.list(input);
       return response.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

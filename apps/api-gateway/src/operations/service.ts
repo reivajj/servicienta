@@ -6,6 +6,7 @@ import type {
   OperationStatus,
   PaginatedAdminOperations,
   PaginatedOperations,
+  ScheduleOperationInput,
   UpdateAdminOperationInput,
 } from '@servicienta/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -23,11 +24,12 @@ import type {
 } from './types.js';
 import {
   validateCreateOperationInput,
+  validateScheduleOperationInput,
   validateUpdateAdminOperationInput,
 } from './validators.js';
 
 const OPERATION_SELECT =
-  'id, order_id, technician_id, status, scheduled_at, completed_at, created_at, updated_at';
+  'id, order_id, technician_id, status, scheduled_at, description, technician_completed_at, completed_at, created_at, updated_at';
 
 const CURRENT_OPERATION_SELECT = `
   id,
@@ -35,6 +37,8 @@ const CURRENT_OPERATION_SELECT = `
   technician_id,
   status,
   scheduled_at,
+  description,
+  technician_completed_at,
   completed_at,
   created_at,
   updated_at,
@@ -49,6 +53,8 @@ const ADMIN_OPERATION_SELECT = `
   technician_id,
   status,
   scheduled_at,
+  description,
+  technician_completed_at,
   completed_at,
   created_at,
   updated_at,
@@ -91,8 +97,8 @@ export async function createOperation(
 
   if (orderError) throw new Error(orderError.message);
   if (!order) throw new NotFoundError('Order not found');
-  if (order.status !== 'open') {
-    throw new ValidationError('Order is not open for a new operation');
+  if (order.status !== 'accepted') {
+    throw new ValidationError('Order is not accepted for a new operation');
   }
 
   const { data: technician, error: technicianError } = await supabase
@@ -109,7 +115,7 @@ export async function createOperation(
     .insert({
       order_id: orderId,
       technician_id: payload.technician_id,
-      status: 'confirmed',
+      status: 'pending',
       scheduled_at: payload.scheduled_at,
     })
     .select(OPERATION_SELECT)
@@ -180,7 +186,54 @@ export async function getCurrentOperationById(
   throw new ForbiddenError('Client or technician role required');
 }
 
-export async function completeOperation(
+export async function scheduleOperation(
+  supabase: SupabaseClient,
+  auth: RequestAuth,
+  operationId: string,
+  input: ScheduleOperationInput,
+) {
+  ensureTechnicianRole(auth);
+  const payload = validateScheduleOperationInput(input);
+
+  const { data: operation, error: operationError } = await supabase
+    .from('operations')
+    .select('id, order_id, technician_id, status')
+    .eq('id', operationId)
+    .eq('technician_id', auth.id)
+    .maybeSingle();
+
+  if (operationError) throw new Error(operationError.message);
+  if (!operation) throw new NotFoundError('Operation not found');
+  if (operation.status !== 'pending') {
+    throw new ValidationError('Only pending operations can be scheduled');
+  }
+
+  const { data, error } = await supabase
+    .from('operations')
+    .update({
+      status: 'scheduled',
+      scheduled_at: payload.scheduled_at,
+      description: payload.description,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', operationId)
+    .eq('technician_id', auth.id)
+    .select(OPERATION_SELECT)
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const { error: updateOrderError } = await supabase
+    .from('orders')
+    .update({ status: 'in_progress', updated_at: new Date().toISOString() })
+    .eq('id', operation.order_id);
+
+  if (updateOrderError) throw new Error(updateOrderError.message);
+
+  return mapOperationRow(data as OperationRow);
+}
+
+export async function completeTechOperation(
   supabase: SupabaseClient,
   auth: RequestAuth,
   operationId: string,
@@ -196,11 +249,8 @@ export async function completeOperation(
 
   if (operationError) throw new Error(operationError.message);
   if (!operation) throw new NotFoundError('Operation not found');
-  if (operation.status === 'completed') {
-    throw new ValidationError('Operation is already completed');
-  }
-  if (operation.status === 'cancelled') {
-    throw new ValidationError('Cancelled operations cannot be completed');
+  if (operation.status !== 'scheduled') {
+    throw new ValidationError('Only scheduled operations can be completed');
   }
 
   const completedAt = new Date().toISOString();
@@ -208,8 +258,9 @@ export async function completeOperation(
   const { data, error } = await supabase
     .from('operations')
     .update({
-      status: 'completed',
-      completed_at: completedAt,
+      status: 'completed_tech',
+      technician_completed_at: completedAt,
+      updated_at: completedAt,
     })
     .eq('id', operationId)
     .eq('technician_id', auth.id)
@@ -220,13 +271,107 @@ export async function completeOperation(
 
   const { error: updateOrderError } = await supabase
     .from('orders')
-    .update({ status: 'en_garantia' })
+    .update({ status: 'completed_tech', updated_at: completedAt })
     .eq('id', operation.order_id);
 
   if (updateOrderError) throw new Error(updateOrderError.message);
 
   return mapOperationRow(data as OperationRow);
 }
+
+export async function confirmCompletedOperation(
+  supabase: SupabaseClient,
+  auth: RequestAuth,
+  operationId: string,
+) {
+  ensureClientRole(auth);
+
+  const { data: operation, error: operationError } = await supabase
+    .from('operations')
+    .select('id, order_id, status, order:orders!inner(client_id)')
+    .eq('id', operationId)
+    .eq('order.client_id', auth.id)
+    .maybeSingle();
+
+  if (operationError) throw new Error(operationError.message);
+  if (!operation) throw new NotFoundError('Operation not found');
+  if (operation.status !== 'completed_tech') {
+    throw new ValidationError(
+      'Only technician-completed operations can be confirmed',
+    );
+  }
+
+  const completedAt = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('operations')
+    .update({
+      status: 'completed',
+      completed_at: completedAt,
+      updated_at: completedAt,
+    })
+    .eq('id', operationId)
+    .select(OPERATION_SELECT)
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const { error: updateOrderError } = await supabase
+    .from('orders')
+    .update({ status: 'completed', updated_at: completedAt })
+    .eq('id', operation.order_id);
+
+  if (updateOrderError) throw new Error(updateOrderError.message);
+
+  return mapOperationRow(data as OperationRow);
+}
+
+export async function cancelOperation(
+  supabase: SupabaseClient,
+  auth: RequestAuth,
+  operationId: string,
+) {
+  ensureTechnicianRole(auth);
+
+  const { data: operation, error: operationError } = await supabase
+    .from('operations')
+    .select('id, order_id, technician_id, status')
+    .eq('id', operationId)
+    .eq('technician_id', auth.id)
+    .maybeSingle();
+
+  if (operationError) throw new Error(operationError.message);
+  if (!operation) throw new NotFoundError('Operation not found');
+  if (
+    operation.status === 'completed' ||
+    operation.status === 'completed_tech'
+  ) {
+    throw new ValidationError('Completed operations cannot be cancelled');
+  }
+
+  const updatedAt = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('operations')
+    .update({ status: 'cancelled', updated_at: updatedAt })
+    .eq('id', operationId)
+    .eq('technician_id', auth.id)
+    .select(OPERATION_SELECT)
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const { error: updateOrderError } = await supabase
+    .from('orders')
+    .update({ status: 'cancelled', updated_at: updatedAt })
+    .eq('id', operation.order_id);
+
+  if (updateOrderError) throw new Error(updateOrderError.message);
+
+  return mapOperationRow(data as OperationRow);
+}
+
+export const completeOperation = completeTechOperation;
 
 export async function listAdminOperations(
   supabase: SupabaseClient,
@@ -242,10 +387,15 @@ export async function listAdminOperations(
     input,
     'pending',
   );
-  const confirmedCountQuery = buildOperationsStatusCountQuery(
+  const scheduledCountQuery = buildOperationsStatusCountQuery(
     supabase,
     input,
-    'confirmed',
+    'scheduled',
+  );
+  const completedTechCountQuery = buildOperationsStatusCountQuery(
+    supabase,
+    input,
+    'completed_tech',
   );
   const completedCountQuery = buildOperationsStatusCountQuery(
     supabase,
@@ -262,14 +412,16 @@ export async function listAdminOperations(
     operationsResult,
     totalResult,
     pendingCountResult,
-    confirmedCountResult,
+    scheduledCountResult,
+    completedTechCountResult,
     completedCountResult,
     cancelledCountResult,
   ] = await Promise.all([
     operationsQuery,
     totalQuery,
     pendingCountQuery,
-    confirmedCountQuery,
+    scheduledCountQuery,
+    completedTechCountQuery,
     completedCountQuery,
     cancelledCountQuery,
   ]);
@@ -278,8 +430,11 @@ export async function listAdminOperations(
   if (totalResult.error) throw new Error(totalResult.error.message);
   if (pendingCountResult.error)
     throw new Error(pendingCountResult.error.message);
-  if (confirmedCountResult.error) {
-    throw new Error(confirmedCountResult.error.message);
+  if (scheduledCountResult.error) {
+    throw new Error(scheduledCountResult.error.message);
+  }
+  if (completedTechCountResult.error) {
+    throw new Error(completedTechCountResult.error.message);
   }
   if (completedCountResult.error) {
     throw new Error(completedCountResult.error.message);
@@ -309,7 +464,8 @@ export async function listAdminOperations(
     summary: {
       totalOperations: total,
       pendingOperations: pendingCountResult.count ?? 0,
-      confirmedOperations: confirmedCountResult.count ?? 0,
+      scheduledOperations: scheduledCountResult.count ?? 0,
+      completedTechOperations: completedTechCountResult.count ?? 0,
       completedOperations: completedCountResult.count ?? 0,
       cancelledOperations: cancelledCountResult.count ?? 0,
     },
@@ -352,6 +508,8 @@ export async function updateAdminOperationById(
     .update({
       status: payload.status,
       scheduled_at: payload.scheduled_at,
+      description: payload.description,
+      technician_completed_at: payload.technician_completed_at,
       completed_at: payload.completed_at,
       updated_at: new Date().toISOString(),
     })
@@ -431,11 +589,17 @@ async function listClientOperations(
     clientId,
     'pending',
   );
-  const confirmedCountQuery = buildClientOperationsStatusCountQuery(
+  const scheduledCountQuery = buildClientOperationsStatusCountQuery(
     supabase,
     input,
     clientId,
-    'confirmed',
+    'scheduled',
+  );
+  const completedTechCountQuery = buildClientOperationsStatusCountQuery(
+    supabase,
+    input,
+    clientId,
+    'completed_tech',
   );
   const completedCountQuery = buildClientOperationsStatusCountQuery(
     supabase,
@@ -454,14 +618,16 @@ async function listClientOperations(
     operationsResult,
     totalResult,
     pendingCountResult,
-    confirmedCountResult,
+    scheduledCountResult,
+    completedTechCountResult,
     completedCountResult,
     cancelledCountResult,
   ] = await Promise.all([
     operationsQuery,
     totalQuery,
     pendingCountQuery,
-    confirmedCountQuery,
+    scheduledCountQuery,
+    completedTechCountQuery,
     completedCountQuery,
     cancelledCountQuery,
   ]);
@@ -470,8 +636,11 @@ async function listClientOperations(
   if (totalResult.error) throw new Error(totalResult.error.message);
   if (pendingCountResult.error)
     throw new Error(pendingCountResult.error.message);
-  if (confirmedCountResult.error) {
-    throw new Error(confirmedCountResult.error.message);
+  if (scheduledCountResult.error) {
+    throw new Error(scheduledCountResult.error.message);
+  }
+  if (completedTechCountResult.error) {
+    throw new Error(completedTechCountResult.error.message);
   }
   if (completedCountResult.error) {
     throw new Error(completedCountResult.error.message);
@@ -495,7 +664,8 @@ async function listClientOperations(
     summary: {
       totalOperations: total,
       pendingOperations: pendingCountResult.count ?? 0,
-      confirmedOperations: confirmedCountResult.count ?? 0,
+      scheduledOperations: scheduledCountResult.count ?? 0,
+      completedTechOperations: completedTechCountResult.count ?? 0,
       completedOperations: completedCountResult.count ?? 0,
       cancelledOperations: cancelledCountResult.count ?? 0,
     },
@@ -528,11 +698,17 @@ async function listTechnicianOperations(
     technicianId,
     'pending',
   );
-  const confirmedCountQuery = buildTechnicianOperationsStatusCountQuery(
+  const scheduledCountQuery = buildTechnicianOperationsStatusCountQuery(
     supabase,
     input,
     technicianId,
-    'confirmed',
+    'scheduled',
+  );
+  const completedTechCountQuery = buildTechnicianOperationsStatusCountQuery(
+    supabase,
+    input,
+    technicianId,
+    'completed_tech',
   );
   const completedCountQuery = buildTechnicianOperationsStatusCountQuery(
     supabase,
@@ -551,14 +727,16 @@ async function listTechnicianOperations(
     operationsResult,
     totalResult,
     pendingCountResult,
-    confirmedCountResult,
+    scheduledCountResult,
+    completedTechCountResult,
     completedCountResult,
     cancelledCountResult,
   ] = await Promise.all([
     operationsQuery,
     totalQuery,
     pendingCountQuery,
-    confirmedCountQuery,
+    scheduledCountQuery,
+    completedTechCountQuery,
     completedCountQuery,
     cancelledCountQuery,
   ]);
@@ -567,8 +745,11 @@ async function listTechnicianOperations(
   if (totalResult.error) throw new Error(totalResult.error.message);
   if (pendingCountResult.error)
     throw new Error(pendingCountResult.error.message);
-  if (confirmedCountResult.error) {
-    throw new Error(confirmedCountResult.error.message);
+  if (scheduledCountResult.error) {
+    throw new Error(scheduledCountResult.error.message);
+  }
+  if (completedTechCountResult.error) {
+    throw new Error(completedTechCountResult.error.message);
   }
   if (completedCountResult.error) {
     throw new Error(completedCountResult.error.message);
@@ -592,7 +773,8 @@ async function listTechnicianOperations(
     summary: {
       totalOperations: total,
       pendingOperations: pendingCountResult.count ?? 0,
-      confirmedOperations: confirmedCountResult.count ?? 0,
+      scheduledOperations: scheduledCountResult.count ?? 0,
+      completedTechOperations: completedTechCountResult.count ?? 0,
       completedOperations: completedCountResult.count ?? 0,
       cancelledOperations: cancelledCountResult.count ?? 0,
     },
@@ -711,6 +893,8 @@ function buildAdminOperationsQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.technician_id)
+    query = query.eq('technician_id', input.technician_id);
 
   return query;
 }
@@ -725,6 +909,8 @@ function buildAdminOperationsCountQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.technician_id)
+    query = query.eq('technician_id', input.technician_id);
 
   return query;
 }
@@ -740,6 +926,8 @@ function buildOperationsStatusCountQuery(
     .eq('status', status);
 
   if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.technician_id)
+    query = query.eq('technician_id', input.technician_id);
 
   return query;
 }

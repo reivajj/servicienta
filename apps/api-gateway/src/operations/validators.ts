@@ -3,6 +3,7 @@ import type {
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
   OperationStatus,
+  ScheduleOperationInput,
   UpdateAdminOperationInput,
   UsersPageSize,
 } from '@servicienta/types';
@@ -33,7 +34,28 @@ export function validateUpdateAdminOperationInput(
   return {
     status: input.status,
     scheduled_at: normalizeNullableDateTime(input.scheduled_at),
+    description: input.description?.trim() || null,
     completed_at: normalizeNullableDateTime(input.completed_at),
+    technician_completed_at: normalizeNullableDateTime(
+      input.technician_completed_at,
+    ),
+  };
+}
+
+export function validateScheduleOperationInput(
+  input: ScheduleOperationInput,
+): ScheduleOperationInput {
+  const description = input.description.trim();
+  const scheduledAt = normalizeRequiredDateTime(
+    input.scheduled_at,
+    'scheduled_at',
+  );
+
+  if (!description) throw new ValidationError('Description is required');
+
+  return {
+    scheduled_at: scheduledAt,
+    description,
   };
 }
 
@@ -50,12 +72,16 @@ export function validateListAdminOperationsInput(input: {
   pageSize?: string;
   status?: string;
   orderId?: string;
+  technicianId?: string;
 }): ListAdminOperationsInput {
   const paginatedInput = validatePaginatedOperationsInput(input);
 
   return {
     ...paginatedInput,
     order_id: input.orderId ? validateOrderId(input.orderId) : undefined,
+    technician_id: input.technicianId
+      ? validateTechnicianId(input.technicianId)
+      : undefined,
   };
 }
 
@@ -72,6 +98,16 @@ export function validateOperationId(
 export function validateOrderId(value: string | string[] | undefined): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new ValidationError('Invalid order id');
+  }
+
+  return value.trim();
+}
+
+export function validateTechnicianId(
+  value: string | string[] | undefined,
+): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new ValidationError('Invalid technician id');
   }
 
   return value.trim();
@@ -114,7 +150,8 @@ function validatePaginatedOperationsInput(input: {
 function isOperationStatus(value: string): value is OperationStatus {
   return (
     value === 'pending' ||
-    value === 'confirmed' ||
+    value === 'scheduled' ||
+    value === 'completed_tech' ||
     value === 'completed' ||
     value === 'cancelled'
   );
@@ -127,6 +164,15 @@ function normalizeNullableDateTime(value: string | null): string | null {
   if (!trimmedValue) return null;
   if (Number.isNaN(Date.parse(trimmedValue))) {
     throw new ValidationError('Invalid scheduled_at datetime');
+  }
+
+  return trimmedValue;
+}
+
+function normalizeRequiredDateTime(value: string, fieldName: string): string {
+  const trimmedValue = value.trim();
+  if (!trimmedValue || Number.isNaN(Date.parse(trimmedValue))) {
+    throw new ValidationError(`Invalid ${fieldName} datetime`);
   }
 
   return trimmedValue;

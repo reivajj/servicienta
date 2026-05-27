@@ -6,8 +6,12 @@ export type {
   ListAdminTechnicianCatalogsResponse,
   ListAdminTechniciansByCatalogItemInput,
   ListAdminTechniciansByCatalogItemResponse,
+  GetCurrentTechnicianProfileResponse,
+  GetAdminTechnicianProfileResponse,
   GetPublicTechnicianProfileResponse,
   ListPublicTechnicianProfileCatalogsResponse,
   ListPublicTechnicianProfilesInput,
   ListPublicTechnicianProfilesResponse,
+  UpdateTechnicianProfileInput,
+  UpdateTechnicianProfileResponse,
 } from '@servicienta/types';

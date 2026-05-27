@@ -7,7 +7,7 @@ import type {
 import { useApiClient } from '../core/api-client-context.js';
 import { userKeys } from './keys.js';
 
-export function useCurrentUser() {
+export function useCurrentUser(options?: { enabled?: boolean }) {
   const apiClient = useApiClient();
 
   return useQuery({
@@ -16,6 +16,7 @@ export function useCurrentUser() {
       const response = await apiClient.users.current.get();
       return response.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

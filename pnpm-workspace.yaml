@@ -1,3 +1,8 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
+
+allowBuilds:
+  esbuild: true
+  supabase: true
+  '@scarf/scarf': false

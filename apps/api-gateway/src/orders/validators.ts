@@ -14,21 +14,29 @@ const ALLOWED_PAGE_SIZES: UsersPageSize[] = [25, 50, 100];
 export function validateCreateOrderInput(
   input: CreateOrderInput,
 ): CreateOrderInput {
+  const technicianPublicSlug = input.technician_public_slug.trim();
+  const zoneSlug = input.zone_slug.trim();
+  const applianceTypeSlug = input.appliance_type_slug.trim();
   const description = input.description.trim();
   const serviceAddressText = input.service_address_text.trim();
   const addressNotes = input.address_notes?.trim() || null;
 
-  if (!isOrderFlowType(input.flow_type)) {
-    throw new ValidationError('Invalid order flow type');
+  if (!technicianPublicSlug) {
+    throw new ValidationError('Technician public slug is required');
   }
-
+  if (!zoneSlug) throw new ValidationError('Zone slug is required');
+  if (!applianceTypeSlug) {
+    throw new ValidationError('Appliance type slug is required');
+  }
   if (!description) throw new ValidationError('Description is required');
   if (!serviceAddressText) {
     throw new ValidationError('Service address is required');
   }
 
   return {
-    flow_type: input.flow_type,
+    technician_public_slug: technicianPublicSlug,
+    zone_slug: zoneSlug,
+    appliance_type_slug: applianceTypeSlug,
     description,
     service_address_text: serviceAddressText,
     service_lat: normalizeNullableNumber(input.service_lat),
@@ -65,6 +73,9 @@ export function validateUpdateAdminOrderInput(
     service_lat: normalizeNullableNumber(input.service_lat),
     service_lng: normalizeNullableNumber(input.service_lng),
     address_notes: addressNotes,
+    technician_id: input.technician_id?.trim() || null,
+    zone_slug: input.zone_slug?.trim() || null,
+    appliance_type_slug: input.appliance_type_slug?.trim() || null,
   };
 }
 
@@ -83,6 +94,7 @@ export function validateListAdminOrdersInput(input: {
   status?: string;
   flowType?: string;
   search?: string;
+  technicianId?: string;
 }): ListAdminOrdersInput {
   const base = validatePaginatedOrdersInput(input);
 
@@ -96,12 +108,25 @@ export function validateListAdminOrdersInput(input: {
       input.flowType && isOrderFlowType(input.flowType)
         ? input.flowType
         : undefined,
+    technician_id: input.technicianId
+      ? validateTechnicianId(input.technicianId)
+      : undefined,
   };
 }
 
 export function validateOrderId(value: string | string[] | undefined): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new ValidationError('Invalid order id');
+  }
+
+  return value.trim();
+}
+
+export function validateTechnicianId(
+  value: string | string[] | undefined,
+): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new ValidationError('Invalid technician id');
   }
 
   return value.trim();
@@ -145,10 +170,12 @@ function validatePaginatedOrdersInput(input: {
 
 function isOrderStatus(value: string): value is OrderStatus {
   return (
-    value === 'open' ||
+    value === 'pending' ||
+    value === 'accepted' ||
+    value === 'cancelled' ||
     value === 'in_progress' ||
-    value === 'en_garantia' ||
-    value === 'closed'
+    value === 'completed_tech' ||
+    value === 'completed'
   );
 }
 

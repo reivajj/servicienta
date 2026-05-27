@@ -14,10 +14,33 @@ export interface CompleteOperationResponse {
   data: Operation;
 }
 
+export interface ScheduleOperationInput {
+  scheduled_at: string;
+  description: string;
+}
+
+export interface ScheduleOperationResponse {
+  data: Operation;
+}
+
+export interface CompleteTechOperationResponse {
+  data: Operation;
+}
+
+export interface ConfirmCompletedOperationResponse {
+  data: Operation;
+}
+
+export interface CancelOperationResponse {
+  data: Operation;
+}
+
 export interface UpdateAdminOperationInput {
   status: OperationStatus;
   scheduled_at: string | null;
+  description: string | null;
   completed_at: string | null;
+  technician_completed_at: string | null;
 }
 
 export interface UpdateAdminOperationResponse {
@@ -33,7 +56,8 @@ export interface ListCurrentOperationsInput {
 export interface PaginatedOperationsSummary {
   totalOperations: number;
   pendingOperations: number;
-  confirmedOperations: number;
+  scheduledOperations: number;
+  completedTechOperations: number;
   completedOperations: number;
   cancelledOperations: number;
 }
@@ -64,6 +88,7 @@ export interface ListAdminOperationsInput {
   pageSize: UsersPageSize;
   status?: OperationStatus;
   order_id?: string;
+  technician_id?: string;
 }
 
 export interface PaginatedAdminOperations {

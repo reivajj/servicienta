@@ -4,10 +4,14 @@ import type {
   ListAdminTechnicianCatalogsResponse,
   ListAdminTechniciansByCatalogItemInput,
   ListAdminTechniciansByCatalogItemResponse,
+  GetCurrentTechnicianProfileResponse,
+  GetAdminTechnicianProfileResponse,
   GetPublicTechnicianProfileResponse,
   ListPublicTechnicianProfileCatalogsResponse,
   ListPublicTechnicianProfilesInput,
   ListPublicTechnicianProfilesResponse,
+  UpdateTechnicianProfileInput,
+  UpdateTechnicianProfileResponse,
 } from '@servicienta/types';
 
 interface TechnicianProfilesApiClientDependencies {
@@ -19,6 +23,17 @@ export interface TechnicianProfilesApiClient {
     listAdmin: (
       input: ListAdminTechnicianProfilesInput,
     ) => Promise<ListAdminTechnicianProfilesResponse>;
+    getAdminById: (
+      technicianId: string,
+    ) => Promise<GetAdminTechnicianProfileResponse>;
+    updateAdminById: (
+      technicianId: string,
+      input: UpdateTechnicianProfileInput,
+    ) => Promise<UpdateTechnicianProfileResponse>;
+    getCurrent: () => Promise<GetCurrentTechnicianProfileResponse>;
+    updateCurrent: (
+      input: UpdateTechnicianProfileInput,
+    ) => Promise<UpdateTechnicianProfileResponse>;
     listPublic: (
       input: ListPublicTechnicianProfilesInput,
     ) => Promise<ListPublicTechnicianProfilesResponse>;
@@ -74,6 +89,30 @@ export function createTechnicianProfilesApiClient({
       listAdmin: (input) =>
         apiFetch<ListAdminTechnicianProfilesResponse>(
           `/api/admin/technician-profiles?${buildAdminTechnicianProfilesListQuery(input)}`,
+        ),
+      getAdminById: (technicianId) =>
+        apiFetch<GetAdminTechnicianProfileResponse>(
+          `/api/admin/technician-profiles/${technicianId}`,
+        ),
+      updateAdminById: (technicianId, input) =>
+        apiFetch<UpdateTechnicianProfileResponse>(
+          `/api/admin/technician-profiles/${technicianId}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify(input),
+          },
+        ),
+      getCurrent: () =>
+        apiFetch<GetCurrentTechnicianProfileResponse>(
+          '/api/technician-profile/me',
+        ),
+      updateCurrent: (input) =>
+        apiFetch<UpdateTechnicianProfileResponse>(
+          '/api/technician-profile/me',
+          {
+            method: 'PATCH',
+            body: JSON.stringify(input),
+          },
         ),
       listPublicCatalogs: () =>
         apiFetch<ListPublicTechnicianProfileCatalogsResponse>(

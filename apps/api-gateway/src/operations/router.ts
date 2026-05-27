@@ -5,12 +5,16 @@ import { asyncHandler } from '../middleware/async-handler.js';
 import { requireAdmin } from '../middleware/require-admin.js';
 import { requireAuth } from '../middleware/require-auth.js';
 import {
+  cancelOperation,
   completeOperation,
+  completeTechOperation,
+  confirmCompletedOperation,
   createOperation,
   getAdminOperationById,
   getCurrentOperationById,
   listAdminOperations,
   listCurrentOperations,
+  scheduleOperation,
   updateAdminOperationById,
 } from './service.js';
 import {
@@ -19,6 +23,7 @@ import {
   validateListCurrentOperationsInput,
   validateOperationId,
   validateOrderId,
+  validateScheduleOperationInput,
 } from './validators.js';
 
 interface OperationsRouterOptions {
@@ -76,6 +81,63 @@ export function operationsRouter(options: OperationsRouterOptions) {
   );
 
   router.post(
+    '/api/operations/:operationId/schedule',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const operation = await scheduleOperation(
+        options.supabase,
+        request.auth!,
+        validateOperationId(request.params.operationId),
+        validateScheduleOperationInput(request.body),
+      );
+
+      ok(response, operation);
+    }),
+  );
+
+  router.post(
+    '/api/operations/:operationId/complete-tech',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const operation = await completeTechOperation(
+        options.supabase,
+        request.auth!,
+        validateOperationId(request.params.operationId),
+      );
+
+      ok(response, operation);
+    }),
+  );
+
+  router.post(
+    '/api/operations/:operationId/confirm-completed',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const operation = await confirmCompletedOperation(
+        options.supabase,
+        request.auth!,
+        validateOperationId(request.params.operationId),
+      );
+
+      ok(response, operation);
+    }),
+  );
+
+  router.post(
+    '/api/operations/:operationId/cancel',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const operation = await cancelOperation(
+        options.supabase,
+        request.auth!,
+        validateOperationId(request.params.operationId),
+      );
+
+      ok(response, operation);
+    }),
+  );
+
+  router.post(
     '/api/operations/:operationId/complete',
     requireAuth({ supabase: options.supabase }),
     asyncHandler(async (request, response) => {
@@ -100,6 +162,7 @@ export function operationsRouter(options: OperationsRouterOptions) {
           pageSize: readQueryParam(request.query.pageSize),
           status: readQueryParam(request.query.status),
           orderId: readQueryParam(request.query.orderId),
+          technicianId: readQueryParam(request.query.technicianId),
         }),
       );
 

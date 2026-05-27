@@ -1,10 +1,17 @@
 import { useDeferredValue, useState } from 'react';
-import { useAdminOrders } from '@servicienta/query-hooks';
+import {
+  useAcceptOrder,
+  useAdminOrders,
+  useCancelOrder,
+  useCurrentOrders,
+  useCurrentUser,
+} from '@servicienta/query-hooks';
 import type {
   OrderFlowType,
   OrderStatus,
   UsersPageSize,
 } from '@servicienta/types';
+import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { OrderDetailDialog } from './OrderDetailDialog';
 
 function formatClientName(name: string | null, surname: string | null) {
@@ -22,6 +29,174 @@ function getStatusBadgeClass(status: OrderStatus) {
 }
 
 export function OrdersListPage() {
+  const { data: currentUser, isLoading, error } = useCurrentUser();
+
+  if (isLoading) {
+    return (
+      <main className="users-page">
+        <section className="users-panel">
+          <p>Cargando usuario...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (error || !currentUser) {
+    return (
+      <main className="users-page">
+        <section className="users-panel">
+          <p className="users-message users-message--error">
+            No se pudo cargar el usuario actual.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  if (currentUser.role === 'admin') return <AdminOrdersListPage />;
+
+  return <CurrentOrdersListPage role={currentUser.role} />;
+}
+
+function CurrentOrdersListPage({ role }: { role: string }) {
+  const [page, setPage] = useState(1);
+  const pageSize: UsersPageSize = 25;
+  const { data, error, isLoading } = useCurrentOrders({ page, pageSize });
+  const cancelOrder = useCancelOrder();
+  const acceptOrder = useAcceptOrder();
+  const items = data?.items ?? [];
+  const pagination = data?.pagination;
+  const errorMessage =
+    error instanceof Error ? error.message : 'No se pudieron cargar tus orders';
+
+  return (
+    <main className="users-page">
+      <section className="users-layout">
+        <header className="users-hero">
+          <div>
+            <p className="users-hero__eyebrow">
+              {role === 'technician' ? 'Technician Orders' : 'Client Orders'}
+            </p>
+            <h1>{role === 'technician' ? 'Solicitudes' : 'Mis órdenes'}</h1>
+            <p className="users-hero__copy">
+              {role === 'technician'
+                ? 'Aceptá solicitudes pendientes para crear la operación vinculada.'
+                : 'Seguí tus solicitudes y cancelá las que todavía no fueron cerradas.'}
+            </p>
+          </div>
+
+          <div className="users-hero__summary">
+            <span>{data?.summary.totalOrders ?? 0} órdenes</span>
+            <span>{data?.summary.pendingOrders ?? 0} pending</span>
+            <span>{data?.summary.acceptedOrders ?? 0} accepted</span>
+            <span>{data?.summary.completedOrders ?? 0} completed</span>
+          </div>
+        </header>
+
+        {isLoading ? (
+          <section className="users-panel">
+            <p>Cargando órdenes...</p>
+          </section>
+        ) : error ? (
+          <section className="users-panel">
+            <p className="users-message users-message--error">{errorMessage}</p>
+          </section>
+        ) : items.length ? (
+          <section className="users-table-wrapper">
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th>Accion</th>
+                  <th>Status</th>
+                  <th>Dirección</th>
+                  <th>Problema</th>
+                  <th>Zona</th>
+                  <th>Rubro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((order) => (
+                  <tr key={order.id}>
+                    <td>
+                      <div className="users-table__actions">
+                        {role === 'technician' && order.status === 'pending' ? (
+                          <button
+                            type="button"
+                            className="users-table__action"
+                            disabled={acceptOrder.isPending}
+                            onClick={() => acceptOrder.mutate(order.id)}
+                          >
+                            Aceptar
+                          </button>
+                        ) : null}
+                        {order.status !== 'completed' &&
+                        order.status !== 'completed_tech' &&
+                        order.status !== 'cancelled' ? (
+                          <button
+                            type="button"
+                            className="users-table__action"
+                            disabled={cancelOrder.isPending}
+                            onClick={() => cancelOrder.mutate(order.id)}
+                          >
+                            Cancelar
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={getStatusBadgeClass(order.status)}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>{order.service_address_text}</td>
+                    <td>{order.description}</td>
+                    <td>{order.zone_slug ?? 'Sin definir'}</td>
+                    <td>{order.appliance_type_slug ?? 'Sin definir'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        ) : (
+          <section className="users-panel">
+            <p>No hay órdenes por ahora.</p>
+          </section>
+        )}
+
+        <section className="users-pagination">
+          <p className="users-pagination__summary">
+            {pagination?.total ?? 0} resultados
+          </p>
+          <div className="users-pagination__controls">
+            <button
+              type="button"
+              className="users-pagination__button"
+              disabled={isLoading || page <= 1}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
+            >
+              Anterior
+            </button>
+            <span className="users-pagination__page">
+              Pagina {pagination?.page ?? page} de {pagination?.totalPages ?? 1}
+            </span>
+            <button
+              type="button"
+              className="users-pagination__button"
+              disabled={isLoading || (pagination?.totalPages ?? 1) <= page}
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+            >
+              Siguiente
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
+
+function AdminOrdersListPage() {
   const MIN_SEARCH_LENGTH = 3;
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<UsersPageSize>(25);
@@ -100,10 +275,11 @@ export function OrdersListPage() {
 
           <div className="users-hero__summary">
             <span>{summary?.totalOrders ?? 0} órdenes</span>
-            <span>{summary?.openOrders ?? 0} open</span>
+            <span>{summary?.pendingOrders ?? 0} pending</span>
+            <span>{summary?.acceptedOrders ?? 0} accepted</span>
             <span>{summary?.inProgressOrders ?? 0} in progress</span>
-            <span>{summary?.enGarantiaOrders ?? 0} en garantía</span>
-            <span>{summary?.closedOrders ?? 0} closed</span>
+            <span>{summary?.completedTechOrders ?? 0} completed tech</span>
+            <span>{summary?.completedOrders ?? 0} completed</span>
           </div>
         </header>
 
@@ -133,10 +309,12 @@ export function OrdersListPage() {
               }
             >
               <option value="all">Todos</option>
-              <option value="open">Open</option>
+              <option value="pending">Pending</option>
+              <option value="accepted">Accepted</option>
+              <option value="cancelled">Cancelled</option>
               <option value="in_progress">In progress</option>
-              <option value="en_garantia">En garantía</option>
-              <option value="closed">Closed</option>
+              <option value="completed_tech">Completed tech</option>
+              <option value="completed">Completed</option>
             </select>
           </label>
 
@@ -248,13 +426,10 @@ export function OrdersListPage() {
                 {items.map((order) => (
                   <tr key={order.id}>
                     <td>
-                      <button
-                        type="button"
-                        className="users-table__action"
+                      <SettingsActionButton
+                        label="Ver y editar order"
                         onClick={() => setSelectedOrderId(order.id)}
-                      >
-                        Ver y editar
-                      </button>
+                      />
                     </td>
                     <td>
                       {formatClientName(

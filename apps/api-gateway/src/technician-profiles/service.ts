@@ -8,6 +8,8 @@ import type {
   PaginatedAdminTechnicianProfiles,
   PublicTechnicianProfileCatalogs,
   PublicTechnicianProfile,
+  AdminTechnicianProfile,
+  UpdateTechnicianProfileInput,
 } from '@servicienta/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { NotFoundError } from '../core/errors.js';
@@ -22,6 +24,7 @@ import {
   mapPublicTechnicianProfileRow,
 } from './mapper.js';
 import type { AdminTechnicianProfileRow } from './types.js';
+import { validateUpdateTechnicianProfileInput } from './validators.js';
 
 export async function listPublicTechnicianProfiles(
   supabase: SupabaseClient,
@@ -228,6 +231,80 @@ export async function listAdminTechnicianProfiles(
   };
 }
 
+export async function getAdminTechnicianProfileById(
+  supabase: SupabaseClient,
+  technicianId: string,
+): Promise<AdminTechnicianProfile> {
+  const { data, error } = await supabase
+    .from('users')
+    .select(
+      `
+        id,
+        email,
+        name,
+        surname,
+        status,
+        technician_profiles!inner(
+          public_slug,
+          available,
+          rating,
+          rating_count,
+          verified_at,
+          bio,
+          phone,
+          whatsapp_phone,
+          preferred_contact_channel,
+          base_address_text,
+          base_lat,
+          base_lng,
+          service_radius_km,
+          created_at,
+          updated_at
+        )
+      `,
+    )
+    .eq('id', technicianId)
+    .eq('role', 'technician')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new NotFoundError('Technician profile not found');
+
+  const profile = mapAdminTechnicianProfileRow(
+    data as AdminTechnicianProfileRow,
+  );
+  if (!profile) throw new NotFoundError('Technician profile not found');
+
+  return profile;
+}
+
+export async function updateAdminTechnicianProfileById(
+  supabase: SupabaseClient,
+  technicianId: string,
+  input: UpdateTechnicianProfileInput,
+): Promise<AdminTechnicianProfile> {
+  await updateTechnicianProfilePayload(supabase, technicianId, input);
+
+  return getAdminTechnicianProfileById(supabase, technicianId);
+}
+
+export async function getCurrentTechnicianProfile(
+  supabase: SupabaseClient,
+  technicianId: string,
+): Promise<AdminTechnicianProfile> {
+  return getAdminTechnicianProfileById(supabase, technicianId);
+}
+
+export async function updateCurrentTechnicianProfile(
+  supabase: SupabaseClient,
+  technicianId: string,
+  input: UpdateTechnicianProfileInput,
+): Promise<AdminTechnicianProfile> {
+  await updateTechnicianProfilePayload(supabase, technicianId, input);
+
+  return getCurrentTechnicianProfile(supabase, technicianId);
+}
+
 export async function listAdminTechniciansByCatalogItem(
   supabase: SupabaseClient,
   input: ListAdminTechniciansByCatalogItemInput,
@@ -312,6 +389,41 @@ export async function listAdminTechniciansByCatalogItem(
   };
 }
 
+async function updateTechnicianProfilePayload(
+  supabase: SupabaseClient,
+  technicianId: string,
+  input: UpdateTechnicianProfileInput,
+) {
+  const payload = validateUpdateTechnicianProfileInput(input);
+
+  const { error: userError } = await supabase
+    .from('users')
+    .update({
+      name: payload.name,
+      surname: payload.surname,
+    })
+    .eq('id', technicianId)
+    .eq('role', 'technician');
+
+  if (userError) throw new Error(userError.message);
+
+  const { error: profileError } = await supabase
+    .from('technician_profiles')
+    .update({
+      bio: payload.bio,
+      phone: payload.phone,
+      whatsapp_phone: payload.whatsapp_phone,
+      preferred_contact_channel: payload.preferred_contact_channel,
+      base_address_text: payload.base_address_text,
+      base_lat: payload.base_lat,
+      base_lng: payload.base_lng,
+      service_radius_km: payload.service_radius_km,
+    })
+    .eq('id', technicianId);
+
+  if (profileError) throw new Error(profileError.message);
+}
+
 function buildAdminTechnicianProfilesQuery(
   supabase: SupabaseClient,
   input: ListAdminTechnicianProfilesInput,
@@ -334,6 +446,13 @@ function buildAdminTechnicianProfilesQuery(
           rating_count,
           verified_at,
           bio,
+          phone,
+          whatsapp_phone,
+          preferred_contact_channel,
+          base_address_text,
+          base_lat,
+          base_lng,
+          service_radius_km,
           created_at,
           updated_at
         )

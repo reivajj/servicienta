@@ -5,6 +5,8 @@ import { asyncHandler } from '../middleware/async-handler.js';
 import { requireAdmin } from '../middleware/require-admin.js';
 import { requireAuth } from '../middleware/require-auth.js';
 import {
+  acceptOrder,
+  cancelOrder,
   createOrder,
   getAdminOrderById,
   getMyOrderById,
@@ -73,6 +75,34 @@ export function ordersRouter(options: OrdersRouterOptions) {
     }),
   );
 
+  router.post(
+    '/api/orders/:orderId/cancel',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const order = await cancelOrder(
+        options.supabase,
+        request.auth!,
+        validateOrderId(request.params.orderId),
+      );
+
+      ok(response, order);
+    }),
+  );
+
+  router.post(
+    '/api/orders/:orderId/accept',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const order = await acceptOrder(
+        options.supabase,
+        request.auth!,
+        validateOrderId(request.params.orderId),
+      );
+
+      ok(response, order);
+    }),
+  );
+
   router.get(
     '/api/admin/orders',
     requireAdmin({ supabase: options.supabase }),
@@ -85,6 +115,7 @@ export function ordersRouter(options: OrdersRouterOptions) {
           status: readQueryParam(request.query.status),
           flowType: readQueryParam(request.query.flowType),
           search: readQueryParam(request.query.search),
+          technicianId: readQueryParam(request.query.technicianId),
         }),
       );
 

@@ -1,7 +1,10 @@
 export type { OperationsApiClient } from './client.js';
 export { createOperationsApiClient } from './client.js';
 export type {
+  CancelOperationResponse,
   CompleteOperationResponse,
+  CompleteTechOperationResponse,
+  ConfirmCompletedOperationResponse,
   CreateOperationInput,
   CreateOperationResponse,
   GetAdminOperationResponse,
@@ -10,6 +13,8 @@ export type {
   ListAdminOperationsResponse,
   ListCurrentOperationsInput,
   ListCurrentOperationsResponse,
+  ScheduleOperationInput,
+  ScheduleOperationResponse,
   UpdateAdminOperationInput,
   UpdateAdminOperationResponse,
 } from '@servicienta/types';

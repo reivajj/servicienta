@@ -415,13 +415,16 @@ paths:
                       items:
                         - id: eaf86abc-ae80-486a-a0cf-6cacbe761111
                           client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
-                          status: open
+                          technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                          status: pending
                           flow_type: client_selects
                           description: Heladera no enfría
                           service_address_text: Calle Falsa 123
                           service_lat: -34.6037
                           service_lng: -58.3816
                           address_notes: Timbre 2, piso 4
+                          zone_slug: caballito
+                          appliance_type_slug: heladeras
                           created_at: '2026-05-03T14:00:00.000Z'
                           updated_at: '2026-05-03T14:00:00.000Z'
                       pagination:
@@ -431,10 +434,12 @@ paths:
                         totalPages: 1
                       summary:
                         totalOrders: 1
-                        openOrders: 1
+                        pendingOrders: 1
+                        acceptedOrders: 0
+                        cancelledOrders: 0
                         inProgressOrders: 0
-                        enGarantiaOrders: 0
-                        closedOrders: 0
+                        completedTechOrders: 0
+                        completedOrders: 0
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -491,6 +496,56 @@ paths:
                     requestId: req_123
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/orders/{orderId}/cancel:
+    post:
+      tags: [Orders]
+      summary: Cancel current order
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders/{orderId}/accept:
+    post:
+      tags: [Orders]
+      summary: Accept assigned order as technician and create pending operation
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/admin/orders:
     get:
       tags: [Orders]
@@ -530,6 +585,7 @@ paths:
                           client_name: Kiara
                           client_surname: Pérez
                           client_status: ACTIVE
+                          technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
                           status: in_progress
                           flow_type: client_selects
                           description: Heladera no enfría
@@ -537,6 +593,8 @@ paths:
                           service_lat: -34.6037
                           service_lng: -58.3816
                           address_notes: Timbre 2, piso 4
+                          zone_slug: caballito
+                          appliance_type_slug: heladeras
                           created_at: '2026-05-03T14:00:00.000Z'
                           updated_at: '2026-05-03T14:05:00.000Z'
                       pagination:
@@ -546,10 +604,12 @@ paths:
                         totalPages: 1
                       summary:
                         totalOrders: 1
-                        openOrders: 0
+                        pendingOrders: 0
+                        acceptedOrders: 0
+                        cancelledOrders: 0
                         inProgressOrders: 1
-                        enGarantiaOrders: 0
-                        closedOrders: 0
+                        completedTechOrders: 0
+                        completedOrders: 0
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -619,7 +679,7 @@ paths:
               examples:
                 invalidState:
                   value:
-                    error: Order is not open for a new operation
+                    error: Order is not accepted for a new operation
                     requestId: req_123
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -679,8 +739,10 @@ paths:
                         - id: d364272c-aa8c-4273-86b0-6fd9999bb222
                           order_id: eaf86abc-ae80-486a-a0cf-6cacbe761111
                           technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
-                          status: confirmed
+                          status: scheduled
                           scheduled_at: '2026-05-04T15:00:00.000Z'
+                          description: Cambio de termostato coordinado
+                          technician_completed_at: null
                           completed_at: null
                           created_at: '2026-05-03T14:05:00.000Z'
                           updated_at: '2026-05-03T14:05:00.000Z'
@@ -692,7 +754,8 @@ paths:
                       summary:
                         totalOperations: 1
                         pendingOperations: 0
-                        confirmedOperations: 1
+                        scheduledOperations: 1
+                        completedTechOperations: 0
                         completedOperations: 0
                         cancelledOperations: 0
         '400':
@@ -754,7 +817,7 @@ paths:
   /api/operations/{operationId}/complete:
     post:
       tags: [Operations]
-      summary: Complete operation as technician
+      summary: Complete operation as technician (legacy alias for complete-tech)
       security:
         - BearerAuth: []
       parameters:
@@ -803,6 +866,112 @@ paths:
                     requestId: req_123
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/operations/{operationId}/schedule:
+    post:
+      tags: [Operations]
+      summary: Schedule pending operation as technician
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleOperationInput'
+      responses:
+        '200':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/operations/{operationId}/complete-tech:
+    post:
+      tags: [Operations]
+      summary: Mark scheduled operation completed by technician
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/operations/{operationId}/confirm-completed:
+    post:
+      tags: [Operations]
+      summary: Confirm technician-completed operation as client
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/operations/{operationId}/cancel:
+    post:
+      tags: [Operations]
+      summary: Cancel pending or scheduled operation as technician
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Operation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/admin/operations:
     get:
       tags: [Operations]
@@ -833,10 +1002,12 @@ paths:
                           technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
                           status: completed
                           scheduled_at: '2026-05-04T15:00:00.000Z'
+                          description: Cambio de termostato
+                          technician_completed_at: '2026-05-04T16:10:00.000Z'
                           completed_at: '2026-05-04T16:30:00.000Z'
                           created_at: '2026-05-03T14:05:00.000Z'
                           updated_at: '2026-05-04T16:30:00.000Z'
-                          order_status: en_garantia
+                          order_status: completed
                           order_flow_type: client_selects
                           service_address_text: Calle Falsa 123
                           client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
@@ -855,7 +1026,8 @@ paths:
                       summary:
                         totalOperations: 1
                         pendingOperations: 0
-                        confirmedOperations: 0
+                        scheduledOperations: 0
+                        completedTechOperations: 0
                         completedOperations: 1
                         cancelledOperations: 0
         '400':
@@ -944,6 +1116,13 @@ paths:
                           rating_count: 18
                           verified_at: '2026-04-20T14:30:00.000Z'
                           bio: Técnico matriculado en refrigeración
+                          phone: '+5491155500001'
+                          whatsapp_phone: '+5491155500001'
+                          preferred_contact_channel: whatsapp
+                          base_address_text: Humboldt 1800, Palermo, CABA
+                          base_lat: -34.58752
+                          base_lng: -58.43011
+                          service_radius_km: 9
                           created_at: '2026-04-10T14:30:00.000Z'
                           updated_at: '2026-05-03T11:00:00.000Z'
                       pagination:
@@ -962,6 +1141,122 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/technician-profile/me:
+    get:
+      tags: [Technician Profiles]
+      summary: Get current technician profile
+      description: Returns the authenticated technician profile. Admins and clients cannot use this endpoint.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminTechnicianProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Technician Profiles]
+      summary: Update current technician profile
+      description: Updates editable fields for the authenticated technician profile.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTechnicianProfileInput'
+            examples:
+              updateCurrentTechnicianProfile:
+                value:
+                  name: Carla
+                  surname: Cardozo technician
+                  bio: Técnica especializada en heladeras y lavarropas.
+                  phone: '+5491155500001'
+                  whatsapp_phone: '+5491155500001'
+                  preferred_contact_channel: whatsapp
+                  base_address_text: Humboldt 1800, Palermo, CABA
+                  base_lat: -34.58752
+                  base_lng: -58.43011
+                  service_radius_km: 9
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminTechnicianProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/admin/technician-profiles/{technicianId}:
+    get:
+      tags: [Technician Profiles]
+      summary: Get technician profile by id for admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TechnicianId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminTechnicianProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Technician Profiles]
+      summary: Update technician profile by id for admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TechnicianId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTechnicianProfileInput'
+            examples:
+              updateTechnicianProfile:
+                value:
+                  name: Carla
+                  surname: Cardozo technician
+                  bio: Técnica especializada en heladeras y lavarropas.
+                  phone: '+5491155500001'
+                  whatsapp_phone: '+5491155500001'
+                  preferred_contact_channel: whatsapp
+                  base_address_text: Humboldt 1800, Palermo, CABA
+                  base_lat: -34.58752
+                  base_lng: -58.43011
+                  service_radius_km: 9
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminTechnicianProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/admin/technician-profiles/catalogs:
@@ -1190,6 +1485,13 @@ components:
       schema:
         type: string
         format: uuid
+    TechnicianId:
+      name: technicianId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     UserResponse:
       description: User response
@@ -1247,13 +1549,16 @@ components:
                 data:
                   id: eaf86abc-ae80-486a-a0cf-6cacbe761111
                   client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
-                  status: open
+                  technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                  status: pending
                   flow_type: client_selects
                   description: Heladera no enfría
                   service_address_text: Calle Falsa 123
                   service_lat: -34.6037
                   service_lng: -58.3816
                   address_notes: Timbre 2, piso 4
+                  zone_slug: caballito
+                  appliance_type_slug: heladeras
                   created_at: '2026-05-03T14:00:00.000Z'
                   updated_at: '2026-05-03T14:00:00.000Z'
     AdminOrderResponse:
@@ -1272,6 +1577,7 @@ components:
                   client_name: Kiara
                   client_surname: Pérez
                   client_status: ACTIVE
+                  technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
                   status: in_progress
                   flow_type: client_selects
                   description: Heladera no enfría
@@ -1279,6 +1585,8 @@ components:
                   service_lat: -34.6037
                   service_lng: -58.3816
                   address_notes: Timbre 2, piso 4
+                  zone_slug: caballito
+                  appliance_type_slug: heladeras
                   created_at: '2026-05-03T14:00:00.000Z'
                   updated_at: '2026-05-03T14:05:00.000Z'
     OperationResponse:
@@ -1294,8 +1602,10 @@ components:
                   id: d364272c-aa8c-4273-86b0-6fd9999bb222
                   order_id: eaf86abc-ae80-486a-a0cf-6cacbe761111
                   technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
-                  status: confirmed
+                  status: scheduled
                   scheduled_at: '2026-05-04T15:00:00.000Z'
+                  description: Cambio de termostato coordinado
+                  technician_completed_at: null
                   completed_at: null
                   created_at: '2026-05-03T14:05:00.000Z'
                   updated_at: '2026-05-03T14:05:00.000Z'
@@ -1314,10 +1624,12 @@ components:
                   technician_id: 0f095605-b76a-45c5-8bd6-0551d3845d22
                   status: completed
                   scheduled_at: '2026-05-04T15:00:00.000Z'
+                  description: Cambio de termostato
+                  technician_completed_at: '2026-05-04T16:10:00.000Z'
                   completed_at: '2026-05-04T16:30:00.000Z'
                   created_at: '2026-05-03T14:05:00.000Z'
                   updated_at: '2026-05-04T16:30:00.000Z'
-                  order_status: en_garantia
+                  order_status: completed
                   order_flow_type: client_selects
                   service_address_text: Calle Falsa 123
                   client_id: 1f0fe2c1-e1ff-4f4a-a965-14bc3cb99631
@@ -1345,6 +1657,36 @@ components:
                   available: true
                   verified_at: '2026-04-20T14:30:00.000Z'
                   created_at: '2026-04-10T14:30:00.000Z'
+    AdminTechnicianProfileResponse:
+      description: Admin technician profile response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminTechnicianProfileResponse'
+          examples:
+            success:
+              value:
+                data:
+                  id: 0f095605-b76a-45c5-8bd6-0551d3845d22
+                  email: technician@example.com
+                  name: Carla
+                  surname: Cardozo technician
+                  status: ACTIVE
+                  public_slug: tech-abc12345
+                  available: true
+                  rating: 4.7
+                  rating_count: 18
+                  verified_at: '2026-04-20T14:30:00.000Z'
+                  bio: Técnica especializada en heladeras y lavarropas.
+                  phone: '+5491155500001'
+                  whatsapp_phone: '+5491155500001'
+                  preferred_contact_channel: whatsapp
+                  base_address_text: Humboldt 1800, Palermo, CABA
+                  base_lat: -34.58752
+                  base_lng: -58.43011
+                  service_radius_km: 9
+                  created_at: '2026-04-10T14:30:00.000Z'
+                  updated_at: '2026-05-03T11:00:00.000Z'
     ValidationError:
       description: Validation error
       content:
@@ -1425,17 +1767,21 @@ components:
       enum: [ACTIVE, DELETED]
     OrderStatus:
       type: string
-      enum: [open, in_progress, en_garantia, closed]
+      enum:
+        [pending, accepted, cancelled, in_progress, completed_tech, completed]
     OrderFlowType:
       type: string
       enum: [client_selects, tech_applies]
     OperationStatus:
       type: string
-      enum: [pending, confirmed, completed, cancelled]
+      enum: [pending, scheduled, completed_tech, completed, cancelled]
     UsersPageSize:
       type: integer
       enum: [25, 50, 100]
     ClientPreferredContactChannel:
+      type: string
+      enum: [phone, whatsapp]
+    TechnicianPreferredContactChannel:
       type: string
       enum: [phone, whatsapp]
     TechnicianCatalogKind:
@@ -1446,8 +1792,7 @@ components:
       enum: [default, rating-desc, rating-asc, name-asc, name-desc]
     User:
       type: object
-      required:
-        [id, email, name, surname, role, status, deleted_at, created_at]
+      required: [id, email, name, surname, role, status, deleted_at, created_at]
       properties:
         id:
           type: string
@@ -1645,6 +1990,7 @@ components:
       required:
         - id
         - client_id
+        - technician_id
         - status
         - flow_type
         - description
@@ -1652,6 +1998,8 @@ components:
         - service_lat
         - service_lng
         - address_notes
+        - zone_slug
+        - appliance_type_slug
         - created_at
         - updated_at
       properties:
@@ -1660,6 +2008,11 @@ components:
           format: uuid
         client_id:
           type: string
+          format: uuid
+        technician_id:
+          type:
+            - string
+            - 'null'
           format: uuid
         status:
           $ref: '#/components/schemas/OrderStatus'
@@ -1678,6 +2031,14 @@ components:
             - number
             - 'null'
         address_notes:
+          type:
+            - string
+            - 'null'
+        zone_slug:
+          type:
+            - string
+            - 'null'
+        appliance_type_slug:
           type:
             - string
             - 'null'
@@ -1725,15 +2086,21 @@ components:
     CreateOrderInput:
       type: object
       required:
-        - flow_type
+        - technician_public_slug
+        - zone_slug
+        - appliance_type_slug
         - description
         - service_address_text
         - service_lat
         - service_lng
         - address_notes
       properties:
-        flow_type:
-          $ref: '#/components/schemas/OrderFlowType'
+        technician_public_slug:
+          type: string
+        zone_slug:
+          type: string
+        appliance_type_slug:
+          type: string
         description:
           type: string
         service_address_text:
@@ -1753,17 +2120,29 @@ components:
     PaginatedOrdersSummary:
       type: object
       required:
-        [totalOrders, openOrders, inProgressOrders, enGarantiaOrders, closedOrders]
+        [
+          totalOrders,
+          pendingOrders,
+          acceptedOrders,
+          cancelledOrders,
+          inProgressOrders,
+          completedTechOrders,
+          completedOrders,
+        ]
       properties:
         totalOrders:
           type: integer
-        openOrders:
+        pendingOrders:
+          type: integer
+        acceptedOrders:
+          type: integer
+        cancelledOrders:
           type: integer
         inProgressOrders:
           type: integer
-        enGarantiaOrders:
+        completedTechOrders:
           type: integer
-        closedOrders:
+        completedOrders:
           type: integer
     PaginatedOrders:
       type: object
@@ -1809,6 +2188,8 @@ components:
         - technician_id
         - status
         - scheduled_at
+        - description
+        - technician_completed_at
         - completed_at
         - created_at
         - updated_at
@@ -1825,6 +2206,15 @@ components:
         status:
           $ref: '#/components/schemas/OperationStatus'
         scheduled_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        description:
+          type:
+            - string
+            - 'null'
+        technician_completed_at:
           type:
             - string
             - 'null'
@@ -1916,16 +2306,36 @@ components:
             - string
             - 'null'
           format: date-time
+    ScheduleOperationInput:
+      type: object
+      required:
+        - scheduled_at
+        - description
+      properties:
+        scheduled_at:
+          type: string
+          format: date-time
+        description:
+          type: string
     PaginatedOperationsSummary:
       type: object
       required:
-        [totalOperations, pendingOperations, confirmedOperations, completedOperations, cancelledOperations]
+        [
+          totalOperations,
+          pendingOperations,
+          scheduledOperations,
+          completedTechOperations,
+          completedOperations,
+          cancelledOperations,
+        ]
       properties:
         totalOperations:
           type: integer
         pendingOperations:
           type: integer
-        confirmedOperations:
+        scheduledOperations:
+          type: integer
+        completedTechOperations:
           type: integer
         completedOperations:
           type: integer
@@ -1998,7 +2408,15 @@ components:
     PublicTechnicianProfile:
       type: object
       required:
-        [public_slug, bio, rating, rating_count, available, verified_at, created_at]
+        [
+          public_slug,
+          bio,
+          rating,
+          rating_count,
+          available,
+          verified_at,
+          created_at,
+        ]
       properties:
         public_slug:
           type: string
@@ -2099,7 +2517,19 @@ components:
     AdminAssociatedTechnician:
       type: object
       required:
-        [id, email, name, surname, status, public_slug, available, rating, rating_count, verified_at, created_at]
+        [
+          id,
+          email,
+          name,
+          surname,
+          status,
+          public_slug,
+          available,
+          rating,
+          rating_count,
+          verified_at,
+          created_at,
+        ]
       properties:
         id:
           type: string
@@ -2136,7 +2566,28 @@ components:
     AdminTechnicianProfile:
       type: object
       required:
-        [id, email, name, surname, status, public_slug, available, rating, rating_count, verified_at, bio, created_at, updated_at]
+        [
+          id,
+          email,
+          name,
+          surname,
+          status,
+          public_slug,
+          available,
+          rating,
+          rating_count,
+          verified_at,
+          bio,
+          phone,
+          whatsapp_phone,
+          preferred_contact_channel,
+          base_address_text,
+          base_lat,
+          base_lng,
+          service_radius_km,
+          created_at,
+          updated_at,
+        ]
       properties:
         id:
           type: string
@@ -2171,16 +2622,103 @@ components:
           type:
             - string
             - 'null'
+        phone:
+          type:
+            - string
+            - 'null'
+        whatsapp_phone:
+          type:
+            - string
+            - 'null'
+        preferred_contact_channel:
+          $ref: '#/components/schemas/TechnicianPreferredContactChannel'
+        base_address_text:
+          type:
+            - string
+            - 'null'
+        base_lat:
+          type:
+            - number
+            - 'null'
+        base_lng:
+          type:
+            - number
+            - 'null'
+        service_radius_km:
+          type:
+            - number
+            - 'null'
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    AdminTechnicianProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdminTechnicianProfile'
+    UpdateTechnicianProfileInput:
+      type: object
+      required:
+        - name
+        - surname
+        - bio
+        - phone
+        - whatsapp_phone
+        - preferred_contact_channel
+        - base_address_text
+        - base_lat
+        - base_lng
+        - service_radius_km
+      properties:
+        name:
+          type: string
+        surname:
+          type:
+            - string
+            - 'null'
+        bio:
+          type:
+            - string
+            - 'null'
+        phone:
+          type:
+            - string
+            - 'null'
+        whatsapp_phone:
+          type:
+            - string
+            - 'null'
+        preferred_contact_channel:
+          $ref: '#/components/schemas/TechnicianPreferredContactChannel'
+        base_address_text:
+          type:
+            - string
+            - 'null'
+        base_lat:
+          type:
+            - number
+            - 'null'
+        base_lng:
+          type:
+            - number
+            - 'null'
+        service_radius_km:
+          type:
+            - number
+            - 'null'
     PaginatedAdminTechnicianProfilesSummary:
       type: object
       required:
-        [totalTechnicians, activeTechnicians, deletedTechnicians, availableTechnicians]
+        [
+          totalTechnicians,
+          activeTechnicians,
+          deletedTechnicians,
+          availableTechnicians,
+        ]
       properties:
         totalTechnicians:
           type: integer

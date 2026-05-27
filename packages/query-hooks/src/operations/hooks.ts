@@ -3,9 +3,11 @@ import type {
   CreateOperationInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
+  ScheduleOperationInput,
   UpdateAdminOperationInput,
 } from '@servicienta/api-client';
 import { useApiClient } from '../core/api-client-context.js';
+import { orderKeys } from '../orders/keys.js';
 import { operationKeys } from './keys.js';
 
 export function useCreateOperation(orderId: string) {
@@ -36,6 +38,91 @@ export function useCompleteOperation() {
   });
 }
 
+export function useScheduleOperation() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      operationId,
+      input,
+    }: {
+      operationId: string;
+      input: ScheduleOperationInput;
+    }) => apiClient.operations.schedule(operationId, input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        operationKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+    },
+  });
+}
+
+export function useCompleteTechOperation() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (operationId: string) =>
+      apiClient.operations.completeTech(operationId),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        operationKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+    },
+  });
+}
+
+export function useConfirmCompletedOperation() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (operationId: string) =>
+      apiClient.operations.confirmCompleted(operationId),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        operationKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+    },
+  });
+}
+
+export function useCancelOperation() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (operationId: string) =>
+      apiClient.operations.cancel(operationId),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        operationKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+    },
+  });
+}
+
 export function useCurrentOperations(input: ListCurrentOperationsInput) {
   const apiClient = useApiClient();
 
@@ -61,7 +148,10 @@ export function useCurrentOperation(operationId: string) {
   });
 }
 
-export function useAdminOperations(input: ListAdminOperationsInput) {
+export function useAdminOperations(
+  input: ListAdminOperationsInput,
+  options?: { enabled?: boolean },
+) {
   const apiClient = useApiClient();
 
   return useQuery({
@@ -70,6 +160,7 @@ export function useAdminOperations(input: ListAdminOperationsInput) {
       const response = await apiClient.operations.admin.list(input);
       return response.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 

@@ -161,6 +161,9 @@ Es la dirección real que reemplaza al experimento `technicians`.
 | `id` | `uuid` | PK = FK → `User.id` |
 | `public_slug` | `string` | identificador público estable para búsqueda, detalle o URLs |
 | `bio` | `string` | descripción pública |
+| `phone` | `string` | teléfono principal de contacto operativo, no público |
+| `whatsapp_phone` | `string` | nullable, si se quiere separar WhatsApp del teléfono principal |
+| `preferred_contact_channel` | `enum/string` | `phone \| whatsapp`, canal operativo preferido |
 | `rating` | `decimal` | promedio calculado o derivado |
 | `rating_count` | `integer` | cantidad de reviews que componen el promedio |
 | `available` | `boolean` | visibilidad / disponibilidad |
@@ -175,6 +178,8 @@ Es la dirección real que reemplaza al experimento `technicians`.
 Notas:
 
 - representa el perfil operativo y público del técnico, no toda su información documental
+- los datos de contacto básicos son internos/admin por ahora; no forman parte de la proyección pública
+- el admin puede editar datos operativos del perfil de cualquier técnico; el técnico puede editar su propio perfil mediante endpoint `me`
 - el técnico tiene una sola dirección base persistida en su perfil
 - la ubicación actual del técnico podría inferirse o reportarse luego como dato temporal, pero no vive por ahora como campo estable del perfil
 - la ubicación exacta del técnico debe tratarse como privada; puede usarse internamente para matching y distancia
@@ -194,6 +199,9 @@ No debe exponer:
 - `base_lat`
 - `base_lng`
 - `service_radius_km`
+- `phone`
+- `whatsapp_phone`
+- `preferred_contact_channel`
 - ningún dato privado interno o administrativo
 
 Debe exponer al menos:
@@ -398,15 +406,23 @@ La crea un cliente.
 |---|---|---|
 | `id` | `uuid` | PK |
 | `client_id` | `uuid` | FK → `User` |
-| `status` | `enum` | `open \| in_progress \| en_garantia \| closed` |
+| `technician_id` | `uuid` | FK → `TechnicianProfile`, nullable para compatibilidad/migraciones |
+| `status` | `enum` | `pending \| accepted \| cancelled \| in_progress \| completed_tech \| completed` |
 | `flow_type` | `enum` | `client_selects \| tech_applies` |
 | `description` | `string` | |
+| `service_address_text` | `string` | snapshot de dirección aproximada del servicio |
+| `service_lat` | `number` | nullable |
+| `service_lng` | `number` | nullable |
+| `address_notes` | `string` | nullable |
+| `zone_slug` | `string` | nullable |
+| `appliance_type_slug` | `string` | nullable |
 | `created_at` | `timestamp` | |
 
 Notas:
 
 - hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks`, `apps/api-gateway` y una primera vista admin en `apps/web`
-- la implementación actual todavía es mínima: snapshot de dirección de servicio, estados base y endpoints/clientes para creación y listado
+- la implementación actual ya cubre el flujo inicial `client_selects`: client crea order `pending` desde búsqueda de técnico, technician acepta, se crea operation `pending`, technician agenda/completa y client confirma cierre
+- `en_garantia` no vive como estado persistido; se calcula en UI/negocio desde `Operation.technician_completed_at`
 - hoy también existe un seed operativo desde cero en `scripts/` para poblar `client_profiles`, `orders`, `operations` y `technician_reviews` con relaciones válidas
 - sigue siendo un modelo provisional: el hecho de que ya exista en runtime no implica que su contrato esté cerrado
 
@@ -422,17 +438,19 @@ una `Order` puede tener múltiples `Operation`, pero una `Operation` corresponde
 | `id` | `uuid` | PK |
 | `order_id` | `uuid` | FK → `Order` |
 | `technician_id` | `uuid` | FK → `TechnicianProfile` |
-| `status` | `enum` | `pending \| confirmed \| completed \| cancelled` |
+| `status` | `enum` | `pending \| scheduled \| completed_tech \| completed \| cancelled` |
 | `scheduled_at` | `timestamp` | nullable |
+| `description` | `string` | nullable, descripción técnica al agendar |
+| `technician_completed_at` | `timestamp` | nullable, base para garantía derivada |
 | `completed_at` | `timestamp` | nullable |
 
 Notas:
 
 - hoy ya existe implementación parcial real en Supabase, `packages/types`, `packages/supabase`, `packages/api-client`, `packages/query-hooks`, `apps/api-gateway` y una primera vista admin en `apps/web`
-- en runtime actual, `Operation` sigue siendo la entidad puente entre `Order` y técnico, y al completarse mueve la `Order` a `en_garantia`
+- en runtime actual, `Operation` es la entidad puente entre `Order` y técnico; al completarse por técnico queda `completed_tech` y solo pasa a `completed` cuando confirma el client
 - el vínculo de `technician_id` se está resolviendo contra `TechnicianProfile.id`, no directamente contra `User.id`
 - hoy también existe un seed operativo desde cero en `scripts/` para poblar `operations` y `reviews` sobre `operations` reales, evitando referencias inventadas
-- la implementación actual no cubre todavía cancelaciones, múltiples operaciones simultáneas por orden ni reglas más finas del flujo `tech_applies`
+- la implementación actual cubre cancelación inicial del flujo `client_selects`; múltiples operaciones simultáneas por orden y reglas finas de `tech_applies` siguen pendientes
 
 ### Payment
 
@@ -513,10 +531,12 @@ Es el flujo prioritario por ahora.
 1. El cliente crea una `Order`
 2. Busca técnicos
 3. Selecciona uno
-4. Se crea una `Operation`
-5. El técnico completa el trabajo
-6. La orden entra en `en_garantia`
-7. Luego pasa a `closed`
+4. La `Order` queda `pending` asociada al técnico elegido
+5. El técnico acepta la solicitud: la `Order` pasa a `accepted` y se crea una `Operation` `pending`
+6. El técnico agenda la `Operation`: la `Operation` pasa a `scheduled` y la `Order` a `in_progress`
+7. El técnico completa su parte: la `Operation` y la `Order` pasan a `completed_tech`, y se setea `technician_completed_at`
+8. El client confirma el cierre: la `Operation` y la `Order` pasan a `completed`
+9. La garantía se muestra como dato derivado desde `technician_completed_at`; no es un status persistido
 
 ### Flujo B: `tech_applies`
 
@@ -573,7 +593,7 @@ Implementado hoy:
 - query hooks
 - integración con Supabase para `users`
 - `User` real con `role`, `status` y `deleted_at`
-- `TechnicianProfile` real en Supabase con `public_slug`, `rating`, `available`, ubicación base y timestamps
+- `TechnicianProfile` real en Supabase con `public_slug`, `rating`, `available`, contacto operativo, ubicación base, cobertura y timestamps
 - `ClientProfile` real en Supabase con datos básicos de contacto y dirección base
 - `Order` real en Supabase con contratos compartidos, endpoints y vista admin inicial
 - `Operation` real en Supabase con contratos compartidos, endpoints y vista admin inicial
@@ -582,6 +602,8 @@ Implementado hoy:
 - relaciones reales de especialidades, marcas, zonas de cobertura, reviews y documentos de técnicos
 - view pública y RPC de búsqueda de técnicos
 - tipos compartidos, cliente HTTP, query hooks y endpoints del gateway para `technician-profiles`
+- vista operativa `/technicians/:technicianId` con detalle completo del técnico, edición admin y edición propia del técnico vía endpoint `me`
+- endpoints admin y current-technician para editar `TechnicianProfile`: `PATCH /api/admin/technician-profiles/:technicianId` y `PATCH /api/technician-profile/me`
 
 No implementado todavía:
 
@@ -596,7 +618,7 @@ No implementado todavía:
 Desalineación a tener presente:
 
 - este documento venía describiendo `TechnicianProfile` como intención futura, pero esa parte ya avanzó bastante en el repo
-- hoy la brecha principal ya no está en perfiles técnicos sino en pagos, reglas de autorización más finas y el cierre funcional de `Order` / `Operation`
+- hoy la brecha principal ya no está en perfiles técnicos básicos sino en permisos por audiencia, datos públicos para clientes, pagos, reglas de autorización más finas y el cierre funcional de `Order` / `Operation`
 - `Order` y `Operation` ya existen en runtime, pero siguen incompletas frente al modelo conceptual
 
 ## Regla práctica para próximas tareas
@@ -623,7 +645,7 @@ salvo que en una conversación futura decidamos otra cosa.
 
 ### Schema
 
-- revisar si faltan campos en `TechnicianProfile` o si ya alcanza para pasar a otras entidades
+- revisar si la v1 de `TechnicianProfile` alcanza o si luego necesita entidades separadas para contacto, horarios o ubicación temporal
 - revisar si la v1 de `ClientProfile` alcanza o si luego necesita entidad separada para múltiples direcciones
 - tipar eventos válidos de `ActivityEvent`
 - definir duración de garantía

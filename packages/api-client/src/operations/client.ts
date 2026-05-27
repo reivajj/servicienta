@@ -1,5 +1,8 @@
 import type {
+  CancelOperationResponse,
   CompleteOperationResponse,
+  CompleteTechOperationResponse,
+  ConfirmCompletedOperationResponse,
   CreateOperationInput,
   CreateOperationResponse,
   GetAdminOperationResponse,
@@ -8,6 +11,8 @@ import type {
   ListAdminOperationsResponse,
   ListCurrentOperationsInput,
   ListCurrentOperationsResponse,
+  ScheduleOperationInput,
+  ScheduleOperationResponse,
   UpdateAdminOperationInput,
   UpdateAdminOperationResponse,
 } from '@servicienta/types';
@@ -28,6 +33,17 @@ export interface OperationsApiClient {
       ) => Promise<ListCurrentOperationsResponse>;
       getById: (operationId: string) => Promise<GetOperationResponse>;
     };
+    schedule: (
+      operationId: string,
+      input: ScheduleOperationInput,
+    ) => Promise<ScheduleOperationResponse>;
+    completeTech: (
+      operationId: string,
+    ) => Promise<CompleteTechOperationResponse>;
+    confirmCompleted: (
+      operationId: string,
+    ) => Promise<ConfirmCompletedOperationResponse>;
+    cancel: (operationId: string) => Promise<CancelOperationResponse>;
     complete: (operationId: string) => Promise<CompleteOperationResponse>;
     admin: {
       list: (
@@ -54,6 +70,9 @@ function buildPaginatedOperationsQuery(
   if ('order_id' in input && input.order_id) {
     searchParams.set('orderId', input.order_id);
   }
+  if ('technician_id' in input && input.technician_id) {
+    searchParams.set('technicianId', input.technician_id);
+  }
 
   return searchParams.toString();
 }
@@ -76,6 +95,29 @@ export function createOperationsApiClient({
         getById: (operationId) =>
           apiFetch<GetOperationResponse>(`/api/operations/${operationId}`),
       },
+      schedule: (operationId, input) =>
+        apiFetch<ScheduleOperationResponse>(
+          `/api/operations/${operationId}/schedule`,
+          {
+            method: 'POST',
+            body: JSON.stringify(input),
+          },
+        ),
+      completeTech: (operationId) =>
+        apiFetch<CompleteTechOperationResponse>(
+          `/api/operations/${operationId}/complete-tech`,
+          { method: 'POST' },
+        ),
+      confirmCompleted: (operationId) =>
+        apiFetch<ConfirmCompletedOperationResponse>(
+          `/api/operations/${operationId}/confirm-completed`,
+          { method: 'POST' },
+        ),
+      cancel: (operationId) =>
+        apiFetch<CancelOperationResponse>(
+          `/api/operations/${operationId}/cancel`,
+          { method: 'POST' },
+        ),
       complete: (operationId) =>
         apiFetch<CompleteOperationResponse>(
           `/api/operations/${operationId}/complete`,

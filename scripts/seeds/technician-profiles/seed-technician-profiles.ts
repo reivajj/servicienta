@@ -190,6 +190,10 @@ function requireLookupId(
   return id;
 }
 
+function buildSeedPhone(index: number) {
+  return `+549115550${String(index + 1).padStart(4, '0')}`;
+}
+
 export async function seedTechnicianProfiles({
   context,
   technicianLimit = 10,
@@ -232,6 +236,9 @@ export async function seedTechnicianProfiles({
           id: technician.id,
           public_slug: publicSlug,
           bio: `${displayName || 'Tecnico'} especializado en ${fixture.applianceSlugs.join(', ')} en CABA.`,
+          phone: buildSeedPhone(index),
+          whatsapp_phone: buildSeedPhone(index),
+          preferred_contact_channel: index % 2 === 0 ? 'whatsapp' : 'phone',
           available: true,
           base_address_text: fixture.baseAddressText,
           base_lat: fixture.baseLat,
@@ -303,25 +310,21 @@ export async function seedTechnicianProfiles({
       is_public: document.isPublic,
     }));
 
-    const [
-      applianceInsert,
-      brandInsert,
-      zoneInsert,
-      documentInsert,
-    ] = await Promise.all([
-      context.supabase
-        .from('technician_appliance_specialties')
-        .insert(applianceRows),
-      brandRows.length > 0
-        ? context.supabase
-            .from('technician_brand_specialties')
-            .insert(brandRows)
-        : Promise.resolve({ error: null }),
-      context.supabase.from('technician_coverage_zones').insert(zoneRows),
-      documentRows.length > 0
-        ? context.supabase.from('technician_documents').insert(documentRows)
-        : Promise.resolve({ error: null }),
-    ]);
+    const [applianceInsert, brandInsert, zoneInsert, documentInsert] =
+      await Promise.all([
+        context.supabase
+          .from('technician_appliance_specialties')
+          .insert(applianceRows),
+        brandRows.length > 0
+          ? context.supabase
+              .from('technician_brand_specialties')
+              .insert(brandRows)
+          : Promise.resolve({ error: null }),
+        context.supabase.from('technician_coverage_zones').insert(zoneRows),
+        documentRows.length > 0
+          ? context.supabase.from('technician_documents').insert(documentRows)
+          : Promise.resolve({ error: null }),
+      ]);
 
     const insertErrors = [
       applianceInsert.error,

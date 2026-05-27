@@ -19,6 +19,10 @@ export const technicianProfileKeys = {
   adminLists: () => [...technicianProfileKeys.admin(), 'list'] as const,
   adminList: (input: ListAdminTechnicianProfilesInput) =>
     [...technicianProfileKeys.adminLists(), input] as const,
+  adminDetails: () => [...technicianProfileKeys.admin(), 'detail'] as const,
+  adminDetail: (technicianId: string) =>
+    [...technicianProfileKeys.adminDetails(), technicianId] as const,
+  current: () => [...technicianProfileKeys.all, 'current'] as const,
   adminCatalogs: () => [...technicianProfileKeys.admin(), 'catalogs'] as const,
   adminCatalogItemTechnicians: () =>
     [...technicianProfileKeys.admin(), 'catalog-item-technicians'] as const,

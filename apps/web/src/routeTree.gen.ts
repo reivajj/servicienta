@@ -20,6 +20,7 @@ import { Route as TechnicianCatalogsIndexRouteImport } from './routes/technician
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as OperationsIndexRouteImport } from './routes/operations.index'
 import { Route as ClientProfilesIndexRouteImport } from './routes/client-profiles.index'
+import { Route as TechniciansTechnicianIdRouteImport } from './routes/technicians.$technicianId'
 import { Route as DevSupabaseRouteImport } from './routes/dev.supabase'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -77,6 +78,11 @@ const ClientProfilesIndexRoute = ClientProfilesIndexRouteImport.update({
   path: '/client-profiles/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TechniciansTechnicianIdRoute = TechniciansTechnicianIdRouteImport.update({
+  id: '/technicians/$technicianId',
+  path: '/technicians/$technicianId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevSupabaseRoute = DevSupabaseRouteImport.update({
   id: '/dev/supabase',
   path: '/dev/supabase',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
   '/client-profiles/': typeof ClientProfilesIndexRoute
   '/operations/': typeof OperationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
   '/client-profiles': typeof ClientProfilesIndexRoute
   '/operations': typeof OperationsIndexRoute
   '/orders': typeof OrdersIndexRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
   '/client-profiles/': typeof ClientProfilesIndexRoute
   '/operations/': typeof OperationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/technicians/$technicianId'
     | '/client-profiles/'
     | '/operations/'
     | '/orders/'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/technicians/$technicianId'
     | '/client-profiles'
     | '/operations'
     | '/orders'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dev/supabase'
+    | '/technicians/$technicianId'
     | '/client-profiles/'
     | '/operations/'
     | '/orders/'
@@ -177,6 +189,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   DevSupabaseRoute: typeof DevSupabaseRoute
+  TechniciansTechnicianIdRoute: typeof TechniciansTechnicianIdRoute
   ClientProfilesIndexRoute: typeof ClientProfilesIndexRoute
   OperationsIndexRoute: typeof OperationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientProfilesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/technicians/$technicianId': {
+      id: '/technicians/$technicianId'
+      path: '/technicians/$technicianId'
+      fullPath: '/technicians/$technicianId'
+      preLoaderRoute: typeof TechniciansTechnicianIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/supabase': {
       id: '/dev/supabase'
       path: '/dev/supabase'
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   DevSupabaseRoute: DevSupabaseRoute,
+  TechniciansTechnicianIdRoute: TechniciansTechnicianIdRoute,
   ClientProfilesIndexRoute: ClientProfilesIndexRoute,
   OperationsIndexRoute: OperationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,

@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ListAdminTechnicianProfilesInput,
   ListAdminTechniciansByCatalogItemInput,
   ListPublicTechnicianProfilesInput,
+  UpdateTechnicianProfileInput,
 } from '@servicienta/api-client';
 import { useApiClient } from '../core/api-client-context.js';
 import { technicianProfileKeys } from './keys.js';
@@ -76,6 +77,80 @@ export function useAdminTechnicianProfiles(
     queryFn: async () => {
       const response = await apiClient.technicianProfiles.listAdmin(input);
       return response.data;
+    },
+  });
+}
+
+export function useAdminTechnicianProfile(
+  technicianId: string,
+  options?: { enabled?: boolean },
+) {
+  const apiClient = useApiClient();
+
+  return useQuery({
+    queryKey: technicianProfileKeys.adminDetail(technicianId),
+    queryFn: async () => {
+      const response =
+        await apiClient.technicianProfiles.getAdminById(technicianId);
+      return response.data;
+    },
+    enabled: Boolean(technicianId) && (options?.enabled ?? true),
+  });
+}
+
+export function useCurrentTechnicianProfile(options?: { enabled?: boolean }) {
+  const apiClient = useApiClient();
+
+  return useQuery({
+    queryKey: technicianProfileKeys.current(),
+    queryFn: async () => {
+      const response = await apiClient.technicianProfiles.getCurrent();
+      return response.data;
+    },
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useUpdateAdminTechnicianProfile() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      technicianId,
+      input,
+    }: {
+      technicianId: string;
+      input: UpdateTechnicianProfileInput;
+    }) => apiClient.technicianProfiles.updateAdminById(technicianId, input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        technicianProfileKeys.adminDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({
+        queryKey: technicianProfileKeys.adminLists(),
+      });
+    },
+  });
+}
+
+export function useUpdateCurrentTechnicianProfile() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateTechnicianProfileInput) =>
+      apiClient.technicianProfiles.updateCurrent(input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(technicianProfileKeys.current(), response.data);
+      queryClient.setQueryData(
+        technicianProfileKeys.adminDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({
+        queryKey: technicianProfileKeys.adminLists(),
+      });
     },
   });
 }

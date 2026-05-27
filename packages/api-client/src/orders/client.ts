@@ -1,4 +1,6 @@
 import type {
+  AcceptOrderResponse,
+  CancelOrderResponse,
   CreateOrderInput,
   CreateOrderResponse,
   GetAdminOrderResponse,
@@ -22,6 +24,8 @@ export interface OrdersApiClient {
       list: (input: ListMyOrdersInput) => Promise<ListMyOrdersResponse>;
       getById: (orderId: string) => Promise<GetOrderResponse>;
     };
+    cancel: (orderId: string) => Promise<CancelOrderResponse>;
+    accept: (orderId: string) => Promise<AcceptOrderResponse>;
     admin: {
       list: (input: ListAdminOrdersInput) => Promise<ListAdminOrdersResponse>;
       getById: (orderId: string) => Promise<GetAdminOrderResponse>;
@@ -46,6 +50,9 @@ function buildPaginatedOrdersQuery(
   if ('flow_type' in input && input.flow_type) {
     searchParams.set('flowType', input.flow_type);
   }
+  if ('technician_id' in input && input.technician_id) {
+    searchParams.set('technicianId', input.technician_id);
+  }
 
   return searchParams.toString();
 }
@@ -68,6 +75,14 @@ export function createOrdersApiClient({
         getById: (orderId) =>
           apiFetch<GetOrderResponse>(`/api/orders/${orderId}`),
       },
+      cancel: (orderId) =>
+        apiFetch<CancelOrderResponse>(`/api/orders/${orderId}/cancel`, {
+          method: 'POST',
+        }),
+      accept: (orderId) =>
+        apiFetch<AcceptOrderResponse>(`/api/orders/${orderId}/accept`, {
+          method: 'POST',
+        }),
       admin: {
         list: (input) =>
           apiFetch<ListAdminOrdersResponse>(

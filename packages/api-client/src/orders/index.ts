@@ -1,6 +1,8 @@
 export type { OrdersApiClient } from './client.js';
 export { createOrdersApiClient } from './client.js';
 export type {
+  AcceptOrderResponse,
+  CancelOrderResponse,
   CreateOrderInput,
   CreateOrderResponse,
   GetAdminOrderResponse,

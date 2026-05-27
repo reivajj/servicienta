@@ -64,6 +64,10 @@ export function OperationDetailDialog({
       input: {
         status: (formData.get('status') as OperationStatus | null) ?? 'pending',
         scheduled_at: toIsoDateTime(formData.get('scheduled_at')),
+        description: String(formData.get('description') ?? '') || null,
+        technician_completed_at: toIsoDateTime(
+          formData.get('technician_completed_at'),
+        ),
         completed_at: toIsoDateTime(formData.get('completed_at')),
       },
     });
@@ -166,7 +170,8 @@ export function OperationDetailDialog({
                   <span>Status</span>
                   <select name="status" defaultValue={operation.status}>
                     <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed_tech">Completed tech</option>
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
@@ -178,6 +183,26 @@ export function OperationDetailDialog({
                     name="scheduled_at"
                     type="datetime-local"
                     defaultValue={toDateTimeLocal(operation.scheduled_at)}
+                  />
+                </label>
+
+                <label className="auth-form__field">
+                  <span>Descripción técnica</span>
+                  <input
+                    name="description"
+                    type="text"
+                    defaultValue={operation.description ?? ''}
+                  />
+                </label>
+
+                <label className="auth-form__field">
+                  <span>Completada por técnico</span>
+                  <input
+                    name="technician_completed_at"
+                    type="datetime-local"
+                    defaultValue={toDateTimeLocal(
+                      operation.technician_completed_at,
+                    )}
                   />
                 </label>
 

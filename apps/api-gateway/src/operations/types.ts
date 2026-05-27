@@ -4,7 +4,9 @@ export interface OperationRow {
   technician_id: string;
   status: string;
   scheduled_at: string | null;
+  description: string | null;
   completed_at: string | null;
+  technician_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }

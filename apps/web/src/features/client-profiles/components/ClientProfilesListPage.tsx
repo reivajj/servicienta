@@ -1,6 +1,7 @@
 import { useDeferredValue, useState } from 'react';
 import { useClientProfiles } from '@servicienta/query-hooks';
 import type { UserStatus, UsersPageSize } from '@servicienta/types';
+import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { ClientProfileDetailDialog } from './ClientProfileDetailDialog';
 
 function formatClientName(name: string | null, surname: string | null) {
@@ -210,15 +211,12 @@ export function ClientProfilesListPage() {
                 {items.map((clientProfile) => (
                   <tr key={clientProfile.id}>
                     <td>
-                      <button
-                        type="button"
-                        className="users-table__action"
+                      <SettingsActionButton
+                        label="Ver y editar client profile"
                         onClick={() =>
                           setSelectedClientProfileId(clientProfile.id)
                         }
-                      >
-                        Ver y editar
-                      </button>
+                      />
                     </td>
                     <td>
                       {formatClientName(

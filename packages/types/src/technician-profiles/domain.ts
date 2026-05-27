@@ -1,7 +1,12 @@
+export type TechnicianPreferredContactChannel = 'phone' | 'whatsapp';
+
 export interface TechnicianProfile {
   id: string;
   public_slug: string;
   bio: string | null;
+  phone: string | null;
+  whatsapp_phone: string | null;
+  preferred_contact_channel: TechnicianPreferredContactChannel;
   rating: number;
   rating_count: number;
   available: boolean;
@@ -76,6 +81,13 @@ export interface AdminTechnicianProfile {
   rating_count: number;
   verified_at: string | null;
   bio: string | null;
+  phone: string | null;
+  whatsapp_phone: string | null;
+  preferred_contact_channel: TechnicianPreferredContactChannel;
+  base_address_text: string | null;
+  base_lat: number | null;
+  base_lng: number | null;
+  service_radius_km: number | null;
   created_at: string;
   updated_at: string;
 }

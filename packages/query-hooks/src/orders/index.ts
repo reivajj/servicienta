@@ -1,6 +1,8 @@
 export {
+  useAcceptOrder,
   useAdminOrder,
   useAdminOrders,
+  useCancelOrder,
   useCreateOrder,
   useCurrentOrder,
   useCurrentOrders,

@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import type { AdminOperation } from '@servicienta/types';
+import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 
 function formatFullName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -18,13 +19,6 @@ function formatDateTime(value: string | null) {
 
 function getStatusBadgeClass(status: string) {
   return `status-badge status-badge--${status}`;
-}
-
-function getReviewPreview(comment: string | null) {
-  if (!comment) return 'Sin comentario';
-  if (comment.length <= 72) return comment;
-
-  return `${comment.slice(0, 72)}...`;
 }
 
 export function AdminOperationsTable({
@@ -64,13 +58,10 @@ export function AdminOperationsTable({
                 <tr>
                   {onSelectOperation ? (
                     <td>
-                      <button
-                        type="button"
-                        className="users-table__action"
+                      <SettingsActionButton
+                        label="Ver y editar operation"
                         onClick={() => onSelectOperation(operation.id)}
-                      >
-                        Ver y editar
-                      </button>
+                      />
                     </td>
                   ) : null}
                   <td>
@@ -111,9 +102,6 @@ export function AdminOperationsTable({
                       >
                         <span className="operation-review__rating">
                           {review.rating}/5
-                        </span>
-                        <span className="operation-review__preview">
-                          {getReviewPreview(review.comment)}
                         </span>
                       </button>
                     ) : (

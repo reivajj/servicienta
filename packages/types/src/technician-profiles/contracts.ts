@@ -5,6 +5,7 @@ import type {
   AdminTechnicianCatalogs,
   PublicTechnicianProfileCatalogs,
   PublicTechnicianProfile,
+  TechnicianPreferredContactChannel,
   TechnicianCatalogKind,
 } from './domain.js';
 import type { UserStatus } from '../users/domain.js';
@@ -70,6 +71,31 @@ export interface PaginatedAdminTechnicianProfiles {
 
 export interface ListAdminTechnicianProfilesResponse {
   data: PaginatedAdminTechnicianProfiles;
+}
+
+export interface GetAdminTechnicianProfileResponse {
+  data: AdminTechnicianProfile;
+}
+
+export interface GetCurrentTechnicianProfileResponse {
+  data: AdminTechnicianProfile;
+}
+
+export interface UpdateTechnicianProfileInput {
+  name: string;
+  surname: string | null;
+  bio: string | null;
+  phone: string | null;
+  whatsapp_phone: string | null;
+  preferred_contact_channel: TechnicianPreferredContactChannel;
+  base_address_text: string | null;
+  base_lat: number | null;
+  base_lng: number | null;
+  service_radius_km: number | null;
+}
+
+export interface UpdateTechnicianProfileResponse {
+  data: AdminTechnicianProfile;
 }
 
 export interface ListAdminTechniciansByCatalogItemInput {

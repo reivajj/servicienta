@@ -7,7 +7,9 @@ import type {
 } from './domain.js';
 
 export interface CreateOrderInput {
-  flow_type: OrderFlowType;
+  technician_public_slug: string;
+  zone_slug: string;
+  appliance_type_slug: string;
   description: string;
   service_address_text: string;
   service_lat: number | null;
@@ -27,10 +29,21 @@ export interface UpdateAdminOrderInput {
   service_lat: number | null;
   service_lng: number | null;
   address_notes: string | null;
+  technician_id: string | null;
+  zone_slug: string | null;
+  appliance_type_slug: string | null;
 }
 
 export interface UpdateAdminOrderResponse {
   data: AdminOrder;
+}
+
+export interface CancelOrderResponse {
+  data: Order;
+}
+
+export interface AcceptOrderResponse {
+  data: Order;
 }
 
 export interface ListMyOrdersInput {
@@ -42,10 +55,12 @@ export interface ListMyOrdersInput {
 
 export interface PaginatedOrdersSummary {
   totalOrders: number;
-  openOrders: number;
+  pendingOrders: number;
+  acceptedOrders: number;
+  cancelledOrders: number;
   inProgressOrders: number;
-  enGarantiaOrders: number;
-  closedOrders: number;
+  completedTechOrders: number;
+  completedOrders: number;
 }
 
 export interface PaginatedOrdersPagination {
@@ -75,6 +90,7 @@ export interface ListAdminOrdersInput {
   status?: OrderStatus;
   flow_type?: OrderFlowType;
   search?: string;
+  technician_id?: string;
 }
 
 export interface PaginatedAdminOrders {

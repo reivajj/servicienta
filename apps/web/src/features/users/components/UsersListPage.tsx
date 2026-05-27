@@ -1,6 +1,7 @@
 import { useDeferredValue, useState } from 'react';
 import { useUsers } from '@servicienta/query-hooks';
 import type { UserRole, UserStatus, UsersPageSize } from '@servicienta/types';
+import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { UserDetailDialog } from './UserDetailDialog';
 
 function formatUserName(name: string | null, surname: string | null) {
@@ -241,13 +242,10 @@ export function UsersListPage() {
                 {items.map((user) => (
                   <tr key={user.id}>
                     <td>
-                      <button
-                        type="button"
-                        className="users-table__action"
+                      <SettingsActionButton
+                        label="Ver y editar user"
                         onClick={() => setSelectedUserId(user.id)}
-                      >
-                        Ver y editar
-                      </button>
+                      />
                     </td>
                     <td>{formatUserName(user.name, user.surname)}</td>
                     <td>{user.email}</td>
