@@ -116,6 +116,7 @@ export function ordersRouter(options: OrdersRouterOptions) {
           flowType: readQueryParam(request.query.flowType),
           search: readQueryParam(request.query.search),
           technicianId: readQueryParam(request.query.technicianId),
+          clientId: readQueryParam(request.query.clientId),
         }),
       );
 
@@ -142,6 +143,7 @@ export function ordersRouter(options: OrdersRouterOptions) {
     asyncHandler(async (request, response) => {
       const order = await updateAdminOrderById(
         options.supabase,
+        request.auth!,
         validateOrderId(request.params.orderId),
         request.body,
       );

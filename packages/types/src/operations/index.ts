@@ -2,6 +2,7 @@ export type {
   AdminOperation,
   AdminOperationTechnicianReview,
   Operation,
+  OperationTechnicianReview,
   OperationStatus,
 } from './domain.js';
 export type {
@@ -11,6 +12,8 @@ export type {
   ConfirmCompletedOperationResponse,
   CreateOperationInput,
   CreateOperationResponse,
+  CreateTechnicianReviewInput,
+  CreateTechnicianReviewResponse,
   GetAdminOperationResponse,
   GetOperationResponse,
   ListAdminOperationsInput,

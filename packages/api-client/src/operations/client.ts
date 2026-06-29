@@ -5,6 +5,8 @@ import type {
   ConfirmCompletedOperationResponse,
   CreateOperationInput,
   CreateOperationResponse,
+  CreateTechnicianReviewInput,
+  CreateTechnicianReviewResponse,
   GetAdminOperationResponse,
   GetOperationResponse,
   ListAdminOperationsInput,
@@ -45,6 +47,10 @@ export interface OperationsApiClient {
     ) => Promise<ConfirmCompletedOperationResponse>;
     cancel: (operationId: string) => Promise<CancelOperationResponse>;
     complete: (operationId: string) => Promise<CompleteOperationResponse>;
+    createReview: (
+      operationId: string,
+      input: CreateTechnicianReviewInput,
+    ) => Promise<CreateTechnicianReviewResponse>;
     admin: {
       list: (
         input: ListAdminOperationsInput,
@@ -72,6 +78,9 @@ function buildPaginatedOperationsQuery(
   }
   if ('technician_id' in input && input.technician_id) {
     searchParams.set('technicianId', input.technician_id);
+  }
+  if ('client_id' in input && input.client_id) {
+    searchParams.set('clientId', input.client_id);
   }
 
   return searchParams.toString();
@@ -117,6 +126,14 @@ export function createOperationsApiClient({
         apiFetch<CancelOperationResponse>(
           `/api/operations/${operationId}/cancel`,
           { method: 'POST' },
+        ),
+      createReview: (operationId, input) =>
+        apiFetch<CreateTechnicianReviewResponse>(
+          `/api/operations/${operationId}/review`,
+          {
+            method: 'POST',
+            body: JSON.stringify(input),
+          },
         ),
       complete: (operationId) =>
         apiFetch<CompleteOperationResponse>(

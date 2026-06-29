@@ -597,6 +597,9 @@ Implementado hoy:
 - `ClientProfile` real en Supabase con datos básicos de contacto y dirección base
 - `Order` real en Supabase con contratos compartidos, endpoints y vista admin inicial
 - `Operation` real en Supabase con contratos compartidos, endpoints y vista admin inicial
+- `ActivityEvent` real en Supabase con endpoint admin y registro de eventos principales del flujo operativo
+- onboarding público inicial para clientes desde búsqueda de técnicos, con registro/login inline antes de crear `Order`
+- creación de `TechnicianReview` desde UI de cliente sobre `Operation` completada o cancelada
 - escenario de seed `orders-operations-realistic` que resetea dataset seeded y reconstruye `users`, `client_profiles`, `technician_profiles`, `orders`, `operations` y `technician_reviews` con integridad válida
 - catálogos reales de `ApplianceType`, `Brand` y `Zone`
 - relaciones reales de especialidades, marcas, zonas de cobertura, reviews y documentos de técnicos
@@ -610,7 +613,7 @@ No implementado todavía:
 - `Subscription`
 - `Payment`
 - `Payout`
-- `ActivityEvent`
+- moderación de reviews
 - RLS completo y consistente por rol en todas las entidades
 - microservicios reales
 - landing SSR funcional
@@ -647,7 +650,6 @@ salvo que en una conversación futura decidamos otra cosa.
 
 - revisar si la v1 de `TechnicianProfile` alcanza o si luego necesita entidades separadas para contacto, horarios o ubicación temporal
 - revisar si la v1 de `ClientProfile` alcanza o si luego necesita entidad separada para múltiples direcciones
-- tipar eventos válidos de `ActivityEvent`
 - definir duración de garantía
 - decidir si además del radio y zonas habrá otros mecanismos de cobertura
 - definir si la ubicación temporal del técnico se modela luego como entidad/evento aparte

@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react';
 import type { AdminOperation } from '@servicienta/types';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
+import { ViewOperationActionLink } from '../../shared/components/ViewOperationActionLink';
 
 function formatFullName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -58,10 +59,13 @@ export function AdminOperationsTable({
                 <tr>
                   {onSelectOperation ? (
                     <td>
-                      <SettingsActionButton
-                        label="Ver y editar operation"
-                        onClick={() => onSelectOperation(operation.id)}
-                      />
+                      <div className="users-table__actions">
+                        <ViewOperationActionLink operationId={operation.id} />
+                        <SettingsActionButton
+                          label="Ver y editar operation"
+                          onClick={() => onSelectOperation(operation.id)}
+                        />
+                      </div>
                     </td>
                   ) : null}
                   <td>

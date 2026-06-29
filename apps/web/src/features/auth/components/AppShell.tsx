@@ -14,6 +14,7 @@ interface NavItem {
     | '/operations'
     | '/technician-search'
     | '/technician-catalogs'
+    | '/activity-events'
     | '/login'
     | '/dev/supabase';
   label: string;
@@ -48,6 +49,11 @@ const navItems: NavItem[] = [
   {
     to: '/technician-catalogs',
     label: 'Technician Catalogs',
+    roles: ['admin'],
+  },
+  {
+    to: '/activity-events',
+    label: 'Activity Events',
     roles: ['admin'],
   },
   { to: '/login', label: 'Login', publicOnly: true },

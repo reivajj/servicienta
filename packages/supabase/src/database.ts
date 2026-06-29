@@ -1,5 +1,6 @@
 import type {
   AdminClientProfile,
+  ActivityEvent,
   ApplianceType,
   Brand,
   ClientProfile,
@@ -128,6 +129,11 @@ export interface Database {
         Update: Updatable<
           Omit<TechnicianDocument, 'id' | 'technician_id' | 'uploaded_at'>
         >;
+      };
+      activity_events: {
+        Row: ActivityEvent;
+        Insert: Insertable<ActivityEvent>;
+        Update: Updatable<Omit<ActivityEvent, 'id' | 'created_at'>>;
       };
     };
     Views: {

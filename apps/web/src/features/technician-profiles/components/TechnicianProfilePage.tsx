@@ -15,6 +15,7 @@ import type {
   UpdateTechnicianProfileInput,
 } from '@servicienta/types';
 import { AdminOperationsTable } from '../../operations/components/AdminOperationsTable';
+import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
 import { TechnicianProfileEditCard } from './TechnicianProfileEditCard';
 
 function formatTechnicianName(name: string | null, surname: string | null) {
@@ -60,6 +61,7 @@ function TechnicianOrdersTable({ orders }: { orders: AdminOrder[] }) {
       <table className="users-table">
         <thead>
           <tr>
+            <th>Accion</th>
             <th>Cliente</th>
             <th>Email</th>
             <th>Flujo</th>
@@ -72,6 +74,9 @@ function TechnicianOrdersTable({ orders }: { orders: AdminOrder[] }) {
         <tbody>
           {orders.map((order) => (
             <tr key={order.id}>
+              <td>
+                <ViewOrderActionLink orderId={order.id} />
+              </td>
               <td>
                 {formatTechnicianName(order.client_name, order.client_surname)}
               </td>

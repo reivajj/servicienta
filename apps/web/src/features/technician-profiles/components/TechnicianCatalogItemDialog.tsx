@@ -3,6 +3,7 @@ import type {
   AdminTechnicianCatalogItem,
   TechnicianCatalogKind,
 } from '@servicienta/types';
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 
 function formatTechnicianName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -27,6 +28,7 @@ export function TechnicianCatalogItemDialog({
   };
   onClose: () => void;
 }) {
+  const modalRef = useEscapeKey<HTMLDivElement>(onClose);
   const { data, error, isLoading } = useAdminTechniciansByCatalogItem({
     kind: selectedItem.kind,
     slug: selectedItem.item.slug,
@@ -38,6 +40,8 @@ export function TechnicianCatalogItemDialog({
 
   return (
     <div
+      ref={modalRef}
+      data-escape-modal="true"
       className="users-modal"
       role="dialog"
       aria-modal="true"

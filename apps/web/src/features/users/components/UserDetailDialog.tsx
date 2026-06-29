@@ -6,6 +6,7 @@ import {
 } from '@servicienta/query-hooks';
 import type { UserRole, UserStatus } from '@servicienta/types';
 import { useAuth } from '../../auth/components/AuthProvider';
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 
 function formatUserName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -24,6 +25,7 @@ export function UserDetailDialog({
   currentStatusFilter: UserStatus | 'all';
   onUserRemovedFromFilteredPage: () => void;
 }) {
+  const modalRef = useEscapeKey<HTMLDivElement>(onClose);
   const { user: authUser } = useAuth();
   const { data: user, error, isLoading } = useUser(userId);
   const updateUser = useUpdateUser();
@@ -86,6 +88,8 @@ export function UserDetailDialog({
 
   return (
     <div
+      ref={modalRef}
+      data-escape-modal="true"
       className="users-modal"
       role="dialog"
       aria-modal="true"

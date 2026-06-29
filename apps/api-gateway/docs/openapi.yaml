@@ -1990,7 +1990,15 @@ components:
       required:
         - id
         - client_id
+        - client_name
+        - client_surname
+        - client_phone
+        - client_whatsapp_phone
         - technician_id
+        - technician_name
+        - technician_surname
+        - technician_phone
+        - technician_whatsapp_phone
         - status
         - flow_type
         - description
@@ -2009,11 +2017,43 @@ components:
         client_id:
           type: string
           format: uuid
+        client_name:
+          type:
+            - string
+            - 'null'
+        client_surname:
+          type:
+            - string
+            - 'null'
+        client_phone:
+          type:
+            - string
+            - 'null'
+        client_whatsapp_phone:
+          type:
+            - string
+            - 'null'
         technician_id:
           type:
             - string
             - 'null'
           format: uuid
+        technician_name:
+          type:
+            - string
+            - 'null'
+        technician_surname:
+          type:
+            - string
+            - 'null'
+        technician_phone:
+          type:
+            - string
+            - 'null'
+        technician_whatsapp_phone:
+          type:
+            - string
+            - 'null'
         status:
           $ref: '#/components/schemas/OrderStatus'
         flow_type:
@@ -2185,14 +2225,30 @@ components:
       required:
         - id
         - order_id
+        - client_id
         - technician_id
         - status
+        - client_name
+        - client_surname
+        - client_phone
+        - client_whatsapp_phone
+        - technician_name
+        - technician_surname
+        - technician_phone
+        - technician_whatsapp_phone
+        - order_status
+        - order_flow_type
+        - service_address_text
+        - address_notes
+        - zone_slug
+        - appliance_type_slug
         - scheduled_at
         - description
         - technician_completed_at
         - completed_at
         - created_at
         - updated_at
+        - technician_review
       properties:
         id:
           type: string
@@ -2200,11 +2256,70 @@ components:
         order_id:
           type: string
           format: uuid
+        client_id:
+          type: string
+          format: uuid
         technician_id:
           type: string
           format: uuid
         status:
           $ref: '#/components/schemas/OperationStatus'
+        client_name:
+          type:
+            - string
+            - 'null'
+        client_surname:
+          type:
+            - string
+            - 'null'
+        client_phone:
+          type:
+            - string
+            - 'null'
+        client_whatsapp_phone:
+          type:
+            - string
+            - 'null'
+        technician_name:
+          type:
+            - string
+            - 'null'
+        technician_surname:
+          type:
+            - string
+            - 'null'
+        technician_phone:
+          type:
+            - string
+            - 'null'
+        technician_whatsapp_phone:
+          type:
+            - string
+            - 'null'
+        order_status:
+          anyOf:
+            - $ref: '#/components/schemas/OrderStatus'
+            - type: 'null'
+        order_flow_type:
+          anyOf:
+            - $ref: '#/components/schemas/OrderFlowType'
+            - type: 'null'
+        service_address_text:
+          type:
+            - string
+            - 'null'
+        address_notes:
+          type:
+            - string
+            - 'null'
+        zone_slug:
+          type:
+            - string
+            - 'null'
+        appliance_type_slug:
+          type:
+            - string
+            - 'null'
         scheduled_at:
           type:
             - string
@@ -2228,6 +2343,32 @@ components:
           type: string
           format: date-time
         updated_at:
+          type: string
+          format: date-time
+        technician_review:
+          anyOf:
+            - $ref: '#/components/schemas/TechnicianReview'
+            - type: 'null'
+    TechnicianReview:
+      type: object
+      required:
+        - id
+        - rating
+        - comment
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type:
+            - string
+            - 'null'
+        created_at:
           type: string
           format: date-time
     AdminOperation:

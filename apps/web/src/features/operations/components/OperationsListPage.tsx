@@ -4,6 +4,7 @@ import {
   useCancelOperation,
   useCompleteTechOperation,
   useConfirmCompletedOperation,
+  useCreateTechnicianReview,
   useCurrentOperations,
   useCurrentUser,
   useScheduleOperation,
@@ -13,6 +14,9 @@ import type {
   OperationStatus,
   UsersPageSize,
 } from '@servicienta/types';
+import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
+import { ViewOperationActionLink } from '../../shared/components/ViewOperationActionLink';
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 import { AdminOperationsTable } from './AdminOperationsTable';
 import { OperationDetailDialog } from './OperationDetailDialog';
 
@@ -44,6 +48,40 @@ function toIsoDateTime(value: FormDataEntryValue | null) {
   if (!rawValue) return '';
 
   return new Date(rawValue).toISOString();
+}
+
+function OperationIconActionButton({
+  label,
+  onClick,
+  disabled = false,
+  tone = 'default',
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: 'default' | 'success' | 'danger';
+  children: React.ReactNode;
+}) {
+  const toneClass =
+    tone === 'success'
+      ? 'operations-table__icon-action--success'
+      : tone === 'danger'
+        ? 'operations-table__icon-action--danger'
+        : '';
+
+  return (
+    <button
+      type="button"
+      className={`users-table__action users-table__action--icon operations-table__icon-action ${toneClass}`.trim()}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+    >
+      {children}
+    </button>
+  );
 }
 
 export function OperationsListPage() {
@@ -78,14 +116,27 @@ export function OperationsListPage() {
 
 function CurrentOperationsListPage({ role }: { role: string }) {
   const [page, setPage] = useState(1);
+  const [selectedOperationId, setSelectedOperationId] = useState<string | null>(
+    null,
+  );
   const [scheduleOperation, setScheduleOperation] = useState<Operation | null>(
     null,
+  );
+  const [reviewOperation, setReviewOperation] = useState<Operation | null>(
+    null,
+  );
+  const scheduleModalRef = useEscapeKey<HTMLDivElement>(() =>
+    setScheduleOperation(null),
+  );
+  const reviewModalRef = useEscapeKey<HTMLDivElement>(() =>
+    setReviewOperation(null),
   );
   const pageSize: UsersPageSize = 25;
   const { data, error, isLoading } = useCurrentOperations({ page, pageSize });
   const scheduleMutation = useScheduleOperation();
   const completeTechMutation = useCompleteTechOperation();
   const confirmCompletedMutation = useConfirmCompletedOperation();
+  const createReviewMutation = useCreateTechnicianReview();
   const cancelOperation = useCancelOperation();
   const items = data?.items ?? [];
   const pagination = data?.pagination;
@@ -109,6 +160,23 @@ function CurrentOperationsListPage({ role }: { role: string }) {
     });
 
     setScheduleOperation(null);
+  }
+
+  async function handleReviewSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!reviewOperation) return;
+
+    const formData = new FormData(event.currentTarget);
+
+    await createReviewMutation.mutateAsync({
+      operationId: reviewOperation.id,
+      input: {
+        rating: Number(formData.get('rating') ?? 5),
+        comment: String(formData.get('comment') ?? '') || null,
+      },
+    });
+
+    setReviewOperation(null);
   }
 
   return (
@@ -158,6 +226,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                   <th>Terminada técnico</th>
                   <th>Completada</th>
                   <th>Descripción</th>
+                  <th>Review</th>
                 </tr>
               </thead>
               <tbody>
@@ -165,40 +234,111 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                   <tr key={operation.id}>
                     <td>
                       <div className="users-table__actions">
+                        <ViewOperationActionLink operationId={operation.id} />
+                        {role === 'technician' ? (
+                          <SettingsActionButton
+                            label="Ver y gestionar operation"
+                            onClick={() => setSelectedOperationId(operation.id)}
+                          />
+                        ) : null}
                         {role === 'technician' &&
                         operation.status === 'pending' ? (
-                          <button
-                            type="button"
-                            className="users-table__action"
+                          <OperationIconActionButton
+                            label="Agendar operation"
                             onClick={() => setScheduleOperation(operation)}
                           >
-                            Agendar
-                          </button>
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              className="users-table__action-icon"
+                            >
+                              <rect
+                                x="4"
+                                y="5"
+                                width="16"
+                                height="15"
+                                rx="3"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                              />
+                              <path
+                                d="M8 3.5v3M16 3.5v3M4 9.5h16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                              />
+                              <path
+                                d="M8 13h3M8 16.5h5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </OperationIconActionButton>
                         ) : null}
                         {role === 'technician' &&
                         operation.status === 'scheduled' ? (
-                          <button
-                            type="button"
-                            className="users-table__action"
+                          <OperationIconActionButton
+                            label="Completar operation"
+                            tone="success"
                             disabled={completeTechMutation.isPending}
                             onClick={() =>
                               completeTechMutation.mutate(operation.id)
                             }
                           >
-                            Completar técnico
-                          </button>
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              className="users-table__action-icon"
+                            >
+                              <path
+                                d="M9.5 12.5 11.7 14.7 16.8 9.6"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <rect
+                                x="5"
+                                y="4.5"
+                                width="14"
+                                height="15"
+                                rx="2.5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                              />
+                            </svg>
+                          </OperationIconActionButton>
                         ) : null}
                         {role === 'technician' &&
                         (operation.status === 'pending' ||
                           operation.status === 'scheduled') ? (
-                          <button
-                            type="button"
-                            className="users-table__action"
+                          <OperationIconActionButton
+                            label="Cancelar operation"
+                            tone="danger"
                             disabled={cancelOperation.isPending}
                             onClick={() => cancelOperation.mutate(operation.id)}
                           >
-                            Cancelar
-                          </button>
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              className="users-table__action-icon"
+                            >
+                              <path
+                                d="M6.5 7.5h11M9.5 7.5V5.8c0-.7.6-1.3 1.3-1.3h2.4c.7 0 1.3.6 1.3 1.3v1.7M8.2 10.2v6.3M12 10.2v6.3M15.8 10.2v6.3M7.4 7.5l.7 10.3c.1 1 .9 1.7 1.9 1.7h4c1 0 1.8-.7 1.9-1.7l.7-10.3"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </OperationIconActionButton>
                         ) : null}
                         {role === 'client' &&
                         operation.status === 'completed_tech' ? (
@@ -213,6 +353,18 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                             Confirmar cierre
                           </button>
                         ) : null}
+                        {role === 'client' &&
+                        (operation.status === 'completed' ||
+                          operation.status === 'cancelled') &&
+                        !operation.technician_review ? (
+                          <button
+                            type="button"
+                            className="users-table__action"
+                            onClick={() => setReviewOperation(operation)}
+                          >
+                            Dejar review
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                     <td>
@@ -224,6 +376,17 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                     <td>{formatDateTime(operation.technician_completed_at)}</td>
                     <td>{formatDateTime(operation.completed_at)}</td>
                     <td>{operation.description ?? 'Sin definir'}</td>
+                    <td>
+                      {operation.technician_review ? (
+                        <span className="operation-review">
+                          {operation.technician_review.rating}/5
+                        </span>
+                      ) : (
+                        <span className="operation-review operation-review--empty">
+                          Sin review
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -267,6 +430,8 @@ function CurrentOperationsListPage({ role }: { role: string }) {
 
       {scheduleOperation ? (
         <div
+          ref={scheduleModalRef}
+          data-escape-modal="true"
           className="users-modal"
           role="dialog"
           aria-modal="true"
@@ -314,6 +479,74 @@ function CurrentOperationsListPage({ role }: { role: string }) {
             </form>
           </section>
         </div>
+      ) : null}
+
+      {reviewOperation ? (
+        <div
+          ref={reviewModalRef}
+          data-escape-modal="true"
+          className="users-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-operation-title"
+          onClick={() => setReviewOperation(null)}
+        >
+          <section
+            className="users-modal__panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="users-modal__header">
+              <div>
+                <p className="users-hero__eyebrow">Technician Review</p>
+                <h2 id="review-operation-title">Dejar review</h2>
+              </div>
+              <button
+                type="button"
+                className="users-modal__close"
+                onClick={() => setReviewOperation(null)}
+              >
+                Cerrar
+              </button>
+            </header>
+            <form className="auth-form" onSubmit={handleReviewSubmit}>
+              <label className="auth-form__field">
+                <span>Rating</span>
+                <select name="rating" defaultValue="5">
+                  <option value="5">5</option>
+                  <option value="4">4</option>
+                  <option value="3">3</option>
+                  <option value="2">2</option>
+                  <option value="1">1</option>
+                </select>
+              </label>
+              <label className="auth-form__field">
+                <span>Comentario</span>
+                <textarea
+                  name="comment"
+                  placeholder="Contá cómo fue la experiencia"
+                />
+              </label>
+              <button type="submit" disabled={createReviewMutation.isPending}>
+                {createReviewMutation.isPending ? 'Enviando...' : 'Enviar review'}
+              </button>
+              {createReviewMutation.error ? (
+                <p className="users-message users-message--error">
+                  {createReviewMutation.error instanceof Error
+                    ? createReviewMutation.error.message
+                    : 'No se pudo crear la review'}
+                </p>
+              ) : null}
+            </form>
+          </section>
+        </div>
+      ) : null}
+
+      {selectedOperationId ? (
+        <OperationDetailDialog
+          operationId={selectedOperationId}
+          mode="current"
+          onClose={() => setSelectedOperationId(null)}
+        />
       ) : null}
     </main>
   );

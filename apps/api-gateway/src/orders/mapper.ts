@@ -7,10 +7,33 @@ import type {
 import type { AdminOrderRow, OrderRow } from './types.js';
 
 export function mapOrderRow(row: OrderRow): Order {
+  const client = Array.isArray(row.client) ? row.client[0] : row.client;
+  const clientProfile = client
+    ? Array.isArray(client.client_profile)
+      ? client.client_profile[0]
+      : client.client_profile
+    : null;
+  const technician = Array.isArray(row.technician)
+    ? row.technician[0]
+    : row.technician;
+  const technicianUser = technician
+    ? Array.isArray(technician.user)
+      ? technician.user[0]
+      : technician.user
+    : null;
+
   return {
     id: row.id,
     client_id: row.client_id,
+    client_name: client?.name ?? null,
+    client_surname: client?.surname ?? null,
+    client_phone: clientProfile?.phone ?? null,
+    client_whatsapp_phone: clientProfile?.whatsapp_phone ?? null,
     technician_id: row.technician_id,
+    technician_name: technicianUser?.name ?? null,
+    technician_surname: technicianUser?.surname ?? null,
+    technician_phone: technician?.phone ?? null,
+    technician_whatsapp_phone: technician?.whatsapp_phone ?? null,
     status: normalizeOrderStatus(row.status),
     flow_type: normalizeOrderFlowType(row.flow_type),
     description: row.description,
@@ -27,6 +50,14 @@ export function mapOrderRow(row: OrderRow): Order {
 
 export function mapAdminOrderRow(row: AdminOrderRow): AdminOrder | null {
   const client = Array.isArray(row.client) ? row.client[0] : row.client;
+  const technician = Array.isArray(row.technician)
+    ? row.technician[0]
+    : row.technician;
+  const technicianUser = technician
+    ? Array.isArray(technician.user)
+      ? technician.user[0]
+      : technician.user
+    : null;
 
   if (!client) return null;
 
@@ -36,6 +67,12 @@ export function mapAdminOrderRow(row: AdminOrderRow): AdminOrder | null {
     client_name: client.name,
     client_surname: client.surname,
     client_status: client.status === 'DELETED' ? 'DELETED' : 'ACTIVE',
+    technician_email: technicianUser?.email ?? null,
+    technician_status: technicianUser
+      ? technicianUser.status === 'DELETED'
+        ? 'DELETED'
+        : 'ACTIVE'
+      : null,
   };
 }
 

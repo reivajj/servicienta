@@ -1,5 +1,20 @@
-import { useClientProfile, useUpdateClientProfile } from '@servicienta/query-hooks';
-import type { ClientPreferredContactChannel } from '@servicienta/types';
+import { useState } from 'react';
+import {
+  useAdminOperations,
+  useAdminOrders,
+  useClientProfile,
+  useCurrentUser,
+  useUpdateClientProfile,
+} from '@servicienta/query-hooks';
+import type {
+  AdminOrder,
+  ClientPreferredContactChannel,
+  OrderFlowType,
+  OrderStatus,
+} from '@servicienta/types';
+import { AdminOperationsTable } from '../../operations/components/AdminOperationsTable';
+import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 
 function formatClientName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -15,21 +30,124 @@ function normalizeNullableFormValue(
   return normalized ? normalized : null;
 }
 
-export function ClientProfileDetailDialog({
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function formatFlowType(flowType: OrderFlowType) {
+  return flowType === 'client_selects' ? 'Client selects' : 'Tech applies';
+}
+
+function getStatusBadgeClass(status: OrderStatus) {
+  return `status-badge status-badge--${status}`;
+}
+
+function ClientOrdersTable({ orders }: { orders: AdminOrder[] }) {
+  return (
+    <section className="users-table-wrapper">
+      <table className="users-table">
+        <thead>
+          <tr>
+            <th>Accion</th>
+            <th>Técnico</th>
+            <th>Email</th>
+            <th>Flujo</th>
+            <th>Status</th>
+            <th>Dirección</th>
+            <th>Descripción</th>
+            <th>Creada</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => (
+            <tr key={order.id}>
+              <td>
+                <ViewOrderActionLink orderId={order.id} />
+              </td>
+              <td>
+                {formatClientName(
+                  order.technician_name,
+                  order.technician_surname,
+                )}
+              </td>
+              <td>{order.technician_email ?? 'Sin asignar'}</td>
+              <td>{formatFlowType(order.flow_type)}</td>
+              <td>
+                <span className={getStatusBadgeClass(order.status)}>
+                  {order.status}
+                </span>
+              </td>
+              <td>{order.service_address_text}</td>
+              <td>{order.description}</td>
+              <td>{formatDateTime(order.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function ClientProfileDetailView({
   clientProfileId,
+  titleId,
+  showCloseButton = false,
   onClose,
 }: {
   clientProfileId: string;
-  onClose: () => void;
+  titleId: string;
+  showCloseButton?: boolean;
+  onClose?: () => void;
 }) {
+  const [showOperations, setShowOperations] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
+  const { data: currentUser, isLoading: isCurrentUserLoading } =
+    useCurrentUser();
   const { data: clientProfile, error, isLoading } =
     useClientProfile(clientProfileId);
   const updateClientProfile = useUpdateClientProfile();
+  const canViewRelatedRecords =
+    !showCloseButton && currentUser?.role === 'admin';
+  const {
+    data: operationsData,
+    error: operationsError,
+    isLoading: isOperationsLoading,
+  } = useAdminOperations(
+    {
+      page: 1,
+      pageSize: 25,
+      client_id: clientProfileId,
+    },
+    { enabled: canViewRelatedRecords },
+  );
+  const {
+    data: ordersData,
+    error: ordersError,
+    isLoading: isOrdersLoading,
+  } = useAdminOrders(
+    {
+      page: 1,
+      pageSize: 25,
+      client_id: clientProfileId,
+    },
+    { enabled: canViewRelatedRecords },
+  );
 
   const errorMessage =
     error instanceof Error
       ? error.message
       : 'No se pudo cargar el perfil del cliente';
+  const operationsErrorMessage =
+    operationsError instanceof Error
+      ? operationsError.message
+      : 'No se pudieron cargar las operations';
+  const ordersErrorMessage =
+    ordersError instanceof Error
+      ? ordersError.message
+      : 'No se pudieron cargar las orders';
   const updateMessage =
     updateClientProfile.error instanceof Error
       ? updateClientProfile.error.message
@@ -37,6 +155,8 @@ export function ClientProfileDetailDialog({
   const feedbackMessage =
     updateMessage ||
     (updateClientProfile.isSuccess ? 'Perfil de cliente actualizado' : '');
+  const operations = operationsData?.items ?? [];
+  const orders = ordersData?.items ?? [];
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,23 +186,20 @@ export function ClientProfileDetailDialog({
   const isMutating = updateClientProfile.isPending;
 
   return (
-    <div
-      className="users-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="client-profile-detail-title"
-      onClick={onClose}
-    >
-      <section
-        className="users-modal__panel"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="users-modal__header">
-          <div>
-            <p className="users-hero__eyebrow">Client Profile</p>
-            <h2 id="client-profile-detail-title">Ver y editar cliente</h2>
-          </div>
+    <>
+      <header className={showCloseButton ? 'users-modal__header' : 'users-hero'}>
+        <div>
+          <p className="users-hero__eyebrow">Client Profile</p>
+          <h2 id={titleId}>Ver y editar cliente</h2>
+          {!showCloseButton ? (
+            <p className="users-hero__copy">
+              Vista detallada del cliente con datos de contacto, dirección base
+              y edición administrativa.
+            </p>
+          ) : null}
+        </div>
 
+        {showCloseButton && onClose ? (
           <button
             type="button"
             className="users-modal__close"
@@ -91,24 +208,29 @@ export function ClientProfileDetailDialog({
           >
             Cerrar
           </button>
-        </header>
+        ) : null}
+      </header>
 
-        {isLoading ? (
-          <section className="users-panel">
-            <p>Cargando cliente...</p>
-          </section>
-        ) : error || !clientProfile ? (
-          <section className="users-panel">
-            <p className="users-message users-message--error">{errorMessage}</p>
-          </section>
-        ) : (
+      {isLoading || (!showCloseButton && isCurrentUserLoading) ? (
+        <section className="users-panel">
+          <p>Cargando cliente...</p>
+        </section>
+      ) : error || !clientProfile ? (
+        <section className="users-panel">
+          <p className="users-message users-message--error">{errorMessage}</p>
+        </section>
+      ) : (
+        <>
           <section className="users-detail-grid">
             <article className="users-panel">
               <div className="user-card__header">
                 <div>
                   <p className="user-card__label">Identidad</p>
                   <h3>
-                    {formatClientName(clientProfile.name, clientProfile.surname)}
+                    {formatClientName(
+                      clientProfile.name,
+                      clientProfile.surname,
+                    )}
                   </h3>
                 </div>
 
@@ -154,11 +276,11 @@ export function ClientProfileDetailDialog({
                 </div>
                 <div>
                   <dt>User created at</dt>
-                  <dd>{new Date(clientProfile.user_created_at).toLocaleString()}</dd>
+                  <dd>{formatDateTime(clientProfile.user_created_at)}</dd>
                 </div>
                 <div>
                   <dt>Profile updated at</dt>
-                  <dd>{new Date(clientProfile.updated_at).toLocaleString()}</dd>
+                  <dd>{formatDateTime(clientProfile.updated_at)}</dd>
                 </div>
               </dl>
             </article>
@@ -239,8 +361,131 @@ export function ClientProfileDetailDialog({
               </p>
             </article>
           </section>
-        )}
+
+          {canViewRelatedRecords ? (
+            <section className="users-grid technician-profile-sections">
+              <article className="users-panel technician-profile-collapsible-card">
+                <div className="user-card__header">
+                  <div>
+                    <p className="user-card__label">Operations</p>
+                    <h2>Operaciones del cliente</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="users-table__action"
+                    onClick={() => setShowOperations((current) => !current)}
+                  >
+                    {showOperations ? 'Ocultar' : 'Operaciones'}
+                  </button>
+                </div>
+
+                {showOperations ? (
+                  <div className="technician-profile-collapsible-card__content">
+                    {isOperationsLoading ? (
+                      <p className="users-message">Cargando operations...</p>
+                    ) : operationsError ? (
+                      <p className="users-message users-message--error">
+                        {operationsErrorMessage}
+                      </p>
+                    ) : operations.length ? (
+                      <AdminOperationsTable operations={operations} />
+                    ) : (
+                      <p className="users-message">
+                        No hay operations para este cliente.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+              </article>
+
+              <article className="users-panel technician-profile-collapsible-card">
+                <div className="user-card__header">
+                  <div>
+                    <p className="user-card__label">Orders</p>
+                    <h2>Órdenes del cliente</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="users-table__action"
+                    onClick={() => setShowOrders((current) => !current)}
+                  >
+                    {showOrders ? 'Ocultar' : 'Ordenes'}
+                  </button>
+                </div>
+
+                {showOrders ? (
+                  <div className="technician-profile-collapsible-card__content">
+                    {isOrdersLoading ? (
+                      <p className="users-message">Cargando orders...</p>
+                    ) : ordersError ? (
+                      <p className="users-message users-message--error">
+                        {ordersErrorMessage}
+                      </p>
+                    ) : orders.length ? (
+                      <ClientOrdersTable orders={orders} />
+                    ) : (
+                      <p className="users-message">
+                        No hay orders para este cliente.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+              </article>
+            </section>
+          ) : null}
+        </>
+      )}
+    </>
+  );
+}
+
+export function ClientProfileDetailDialog({
+  clientProfileId,
+  onClose,
+}: {
+  clientProfileId: string;
+  onClose: () => void;
+}) {
+  const modalRef = useEscapeKey<HTMLDivElement>(onClose);
+
+  return (
+    <div
+      ref={modalRef}
+      data-escape-modal="true"
+      className="users-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="client-profile-detail-title"
+      onClick={onClose}
+    >
+      <section
+        className="users-modal__panel"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <ClientProfileDetailView
+          clientProfileId={clientProfileId}
+          titleId="client-profile-detail-title"
+          showCloseButton
+          onClose={onClose}
+        />
       </section>
     </div>
+  );
+}
+
+export function ClientProfilePage({
+  clientProfileId,
+}: {
+  clientProfileId: string;
+}) {
+  return (
+    <main className="users-page">
+      <section className="users-layout">
+        <ClientProfileDetailView
+          clientProfileId={clientProfileId}
+          titleId="client-profile-page-title"
+        />
+      </section>
+    </main>
   );
 }

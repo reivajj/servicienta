@@ -10,6 +10,7 @@ import {
   completeTechOperation,
   confirmCompletedOperation,
   createOperation,
+  createTechnicianReview,
   getAdminOperationById,
   getCurrentOperationById,
   listAdminOperations,
@@ -19,6 +20,7 @@ import {
 } from './service.js';
 import {
   validateCreateOperationInput,
+  validateCreateTechnicianReviewInput,
   validateListAdminOperationsInput,
   validateListCurrentOperationsInput,
   validateOperationId,
@@ -138,6 +140,21 @@ export function operationsRouter(options: OperationsRouterOptions) {
   );
 
   router.post(
+    '/api/operations/:operationId/review',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const operation = await createTechnicianReview(
+        options.supabase,
+        request.auth!,
+        validateOperationId(request.params.operationId),
+        validateCreateTechnicianReviewInput(request.body),
+      );
+
+      ok(response, operation, 201);
+    }),
+  );
+
+  router.post(
     '/api/operations/:operationId/complete',
     requireAuth({ supabase: options.supabase }),
     asyncHandler(async (request, response) => {
@@ -163,6 +180,7 @@ export function operationsRouter(options: OperationsRouterOptions) {
           status: readQueryParam(request.query.status),
           orderId: readQueryParam(request.query.orderId),
           technicianId: readQueryParam(request.query.technicianId),
+          clientId: readQueryParam(request.query.clientId),
         }),
       );
 
@@ -189,6 +207,7 @@ export function operationsRouter(options: OperationsRouterOptions) {
     asyncHandler(async (request, response) => {
       const operation = await updateAdminOperationById(
         options.supabase,
+        request.auth!,
         validateOperationId(request.params.operationId),
         request.body,
       );

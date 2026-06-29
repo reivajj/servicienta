@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateOperationInput,
+  CreateTechnicianReviewInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
   ScheduleOperationInput,
@@ -119,6 +120,29 @@ export function useCancelOperation() {
       void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
       void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
       void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+    },
+  });
+}
+
+export function useCreateTechnicianReview() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      operationId,
+      input,
+    }: {
+      operationId: string;
+      input: CreateTechnicianReviewInput;
+    }) => apiClient.operations.createReview(operationId, input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        operationKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
     },
   });
 }

@@ -13,7 +13,15 @@ export type OrderFlowType = 'client_selects' | 'tech_applies';
 export interface Order {
   id: string;
   client_id: string;
+  client_name: string | null;
+  client_surname: string | null;
+  client_phone: string | null;
+  client_whatsapp_phone: string | null;
   technician_id: string | null;
+  technician_name: string | null;
+  technician_surname: string | null;
+  technician_phone: string | null;
+  technician_whatsapp_phone: string | null;
   status: OrderStatus;
   flow_type: OrderFlowType;
   description: string;
@@ -32,4 +40,6 @@ export interface AdminOrder extends Order {
   client_name: string | null;
   client_surname: string | null;
   client_status: UserStatus;
+  technician_email: string | null;
+  technician_status: UserStatus | null;
 }

@@ -1,6 +1,8 @@
 import cors from 'cors';
 import express from 'express';
+import { activityEventsRouter } from './activity-events/router.js';
 import { createServiceSupabaseClient } from './core/supabase.js';
+import { clientOnboardingRouter } from './client-onboarding/router.js';
 import { clientProfilesRouter } from './client-profiles/router.js';
 import type { ApiGatewayEnv } from './env.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -25,6 +27,8 @@ export function createApp(env: ApiGatewayEnv) {
 
   app.use(apiDocsRouter({ supabase }));
   app.use(healthRouter);
+  app.use(activityEventsRouter({ supabase }));
+  app.use(clientOnboardingRouter({ supabase }));
   app.use(operationsRouter({ supabase }));
   app.use(ordersRouter({ supabase }));
   app.use(clientProfilesRouter({ supabase }));

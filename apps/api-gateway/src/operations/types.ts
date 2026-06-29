@@ -3,6 +3,110 @@ export interface OperationRow {
   order_id: string;
   technician_id: string;
   status: string;
+  order?:
+    | {
+        status: string;
+        flow_type: string;
+        service_address_text: string;
+        address_notes: string | null;
+        zone_slug: string | null;
+        appliance_type_slug: string | null;
+        client_id: string;
+        client?:
+          | {
+              name: string | null;
+              surname: string | null;
+              client_profile?:
+                | {
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }
+                | Array<{
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }>
+                | null;
+            }
+          | Array<{
+              name: string | null;
+              surname: string | null;
+              client_profile?:
+                | {
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }
+                | Array<{
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }>
+                | null;
+            }>;
+      }
+    | Array<{
+        status: string;
+        flow_type: string;
+        service_address_text: string;
+        address_notes: string | null;
+        zone_slug: string | null;
+        appliance_type_slug: string | null;
+        client_id: string;
+        client?:
+          | {
+              name: string | null;
+              surname: string | null;
+              client_profile?:
+                | {
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }
+                | Array<{
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }>
+                | null;
+            }
+          | Array<{
+              name: string | null;
+              surname: string | null;
+              client_profile?:
+                | {
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }
+                | Array<{
+                    phone: string | null;
+                    whatsapp_phone: string | null;
+                  }>
+                | null;
+            }>;
+      }>;
+  technician?:
+    | {
+        phone: string | null;
+        whatsapp_phone: string | null;
+        user:
+          | {
+              name: string | null;
+              surname: string | null;
+            }
+          | Array<{
+              name: string | null;
+              surname: string | null;
+            }>;
+      }
+    | Array<{
+        phone: string | null;
+        whatsapp_phone: string | null;
+        user:
+          | {
+              name: string | null;
+              surname: string | null;
+            }
+          | Array<{
+              name: string | null;
+              surname: string | null;
+            }>;
+      }>;
   scheduled_at: string | null;
   description: string | null;
   completed_at: string | null;
@@ -17,6 +121,9 @@ export interface AdminOperationRow extends OperationRow {
         status: string;
         flow_type: string;
         service_address_text: string;
+        address_notes: string | null;
+        zone_slug: string | null;
+        appliance_type_slug: string | null;
         client_id: string;
         client:
           | {
@@ -34,6 +141,9 @@ export interface AdminOperationRow extends OperationRow {
         status: string;
         flow_type: string;
         service_address_text: string;
+        address_notes: string | null;
+        zone_slug: string | null;
+        appliance_type_slug: string | null;
         client_id: string;
         client:
           | {
@@ -50,6 +160,8 @@ export interface AdminOperationRow extends OperationRow {
   technician:
     | {
         public_slug: string;
+        phone: string | null;
+        whatsapp_phone: string | null;
         user:
           | {
               email: string;
@@ -64,6 +176,8 @@ export interface AdminOperationRow extends OperationRow {
       }
     | Array<{
         public_slug: string;
+        phone: string | null;
+        whatsapp_phone: string | null;
         user:
           | {
               email: string;

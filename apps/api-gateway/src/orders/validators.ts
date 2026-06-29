@@ -95,6 +95,7 @@ export function validateListAdminOrdersInput(input: {
   flowType?: string;
   search?: string;
   technicianId?: string;
+  clientId?: string;
 }): ListAdminOrdersInput {
   const base = validatePaginatedOrdersInput(input);
 
@@ -111,6 +112,7 @@ export function validateListAdminOrdersInput(input: {
     technician_id: input.technicianId
       ? validateTechnicianId(input.technicianId)
       : undefined,
+    client_id: input.clientId ? validateClientId(input.clientId) : undefined,
   };
 }
 
@@ -127,6 +129,14 @@ export function validateTechnicianId(
 ): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new ValidationError('Invalid technician id');
+  }
+
+  return value.trim();
+}
+
+export function validateClientId(value: string | string[] | undefined): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new ValidationError('Invalid client id');
   }
 
   return value.trim();

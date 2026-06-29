@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import type {
   AdminTechnicianProfile,
   TechnicianPreferredContactChannel,
@@ -77,12 +77,6 @@ export function TechnicianProfileEditCard({
     buildFormState(profile),
   );
   const [formError, setFormError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isEditing) return;
-
-    setFormState(buildFormState(profile));
-  }, [isEditing, profile]);
 
   function updateFormField<K extends keyof TechnicianProfileFormState>(
     key: K,

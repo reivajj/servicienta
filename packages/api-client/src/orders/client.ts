@@ -53,6 +53,9 @@ function buildPaginatedOrdersQuery(
   if ('technician_id' in input && input.technician_id) {
     searchParams.set('technicianId', input.technician_id);
   }
+  if ('client_id' in input && input.client_id) {
+    searchParams.set('clientId', input.client_id);
+  }
 
   return searchParams.toString();
 }

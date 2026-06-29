@@ -11,6 +11,14 @@ import {
   type ClientProfilesApiClient,
 } from '../client-profiles/client.js';
 import {
+  createClientOnboardingApiClient,
+  type ClientOnboardingApiClient,
+} from '../client-onboarding/client.js';
+import {
+  createActivityEventsApiClient,
+  type ActivityEventsApiClient,
+} from '../activity-events/client.js';
+import {
   createOperationsApiClient,
   type OperationsApiClient,
 } from '../operations/client.js';
@@ -21,6 +29,8 @@ import {
 } from '../technician-profiles/client.js';
 
 export interface ApiClient {
+  activityEvents: ActivityEventsApiClient['activityEvents'];
+  clientOnboarding: ClientOnboardingApiClient['clientOnboarding'];
   users: UsersApiClient['users'];
   clientProfiles: ClientProfilesApiClient['clientProfiles'];
   operations: OperationsApiClient['operations'];
@@ -58,7 +68,9 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
   }
 
   return {
+    ...createActivityEventsApiClient({ apiFetch }),
     ...createUsersApiClient({ apiFetch }),
+    ...createClientOnboardingApiClient({ apiFetch }),
     ...createClientProfilesApiClient({ apiFetch }),
     ...createOperationsApiClient({ apiFetch }),
     ...createOrdersApiClient({ apiFetch }),

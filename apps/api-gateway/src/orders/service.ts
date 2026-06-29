@@ -13,6 +13,7 @@ import {
   ValidationError,
 } from '../core/errors.js';
 import type { RequestAuth } from '../core/http.js';
+import { recordActivityEvent } from '../activity-events/service.js';
 import { mapAdminOrderRow, mapOrderRow } from './mapper.js';
 import type { AdminOrderRow, OrderRow } from './types.js';
 import {
@@ -22,6 +23,39 @@ import {
 
 const ORDER_SELECT =
   'id, client_id, technician_id, status, flow_type, description, service_address_text, service_lat, service_lng, address_notes, zone_slug, appliance_type_slug, created_at, updated_at';
+
+const ORDER_DETAIL_SELECT = `
+  id,
+  client_id,
+  client:users!orders_client_id_fkey(
+    name,
+    surname,
+    client_profile:client_profiles!client_profiles_id_fkey(
+      phone,
+      whatsapp_phone
+    )
+  ),
+  technician_id,
+  status,
+  flow_type,
+  description,
+  service_address_text,
+  service_lat,
+  service_lng,
+  address_notes,
+  zone_slug,
+  appliance_type_slug,
+  created_at,
+  updated_at,
+  technician:technician_profiles!orders_technician_id_fkey(
+    phone,
+    whatsapp_phone,
+    user:users!technician_profiles_id_fkey(
+      name,
+      surname
+    )
+  )
+`;
 
 const ADMIN_ORDER_SELECT = `
   id,
@@ -43,6 +77,17 @@ const ADMIN_ORDER_SELECT = `
     name,
     surname,
     status
+  ),
+  technician:technician_profiles!orders_technician_id_fkey(
+    public_slug,
+    phone,
+    whatsapp_phone,
+    user:users!technician_profiles_id_fkey(
+      email,
+      name,
+      surname,
+      status
+    )
   )
 `;
 
@@ -78,7 +123,22 @@ export async function createOrder(
 
   if (error) throw new Error(error.message);
 
-  return mapOrderRow(data as OrderRow);
+  const order = mapOrderRow(data as OrderRow);
+
+  await recordActivityEvent(supabase, {
+    actorId: auth.id,
+    entityType: 'order',
+    entityId: order.id,
+    eventType: 'order.created',
+    payload: {
+      technician_id: technicianId,
+      technician_public_slug: payload.technician_public_slug,
+      zone_slug: payload.zone_slug,
+      appliance_type_slug: payload.appliance_type_slug,
+    },
+  });
+
+  return order;
 }
 
 export async function listMyOrders(
@@ -101,7 +161,10 @@ export async function getMyOrderById(
   auth: RequestAuth,
   orderId: string,
 ) {
-  let query = supabase.from('orders').select(ORDER_SELECT).eq('id', orderId);
+  let query = supabase
+    .from('orders')
+    .select(ORDER_DETAIL_SELECT)
+    .eq('id', orderId);
 
   if (auth.role === 'client') query = query.eq('client_id', auth.id);
   else if (auth.role === 'technician')
@@ -240,6 +303,7 @@ export async function getAdminOrderById(
 
 export async function updateAdminOrderById(
   supabase: SupabaseClient,
+  auth: RequestAuth,
   orderId: string,
   input: UpdateAdminOrderInput,
 ) {
@@ -270,6 +334,18 @@ export async function updateAdminOrderById(
   const order = mapAdminOrderRow(data as AdminOrderRow);
   if (!order) throw new NotFoundError('Order not found');
 
+  await recordActivityEvent(supabase, {
+    actorId: auth.id,
+    entityType: 'order',
+    entityId: order.id,
+    eventType: 'admin.order_updated',
+    payload: {
+      status: payload.status,
+      flow_type: payload.flow_type,
+      technician_id: payload.technician_id,
+    },
+  });
+
   return order;
 }
 
@@ -284,6 +360,15 @@ export async function cancelOrder(
     throw new ValidationError('Completed orders cannot be cancelled');
   }
 
+  const { data: relatedOperations, error: relatedOperationsError } =
+    await supabase
+      .from('operations')
+      .select('id, status')
+      .eq('order_id', order.id)
+      .neq('status', 'completed');
+
+  if (relatedOperationsError) throw new Error(relatedOperationsError.message);
+
   const { data, error } = await supabase
     .from('orders')
     .update({ status: 'cancelled', updated_at: new Date().toISOString() })
@@ -293,13 +378,41 @@ export async function cancelOrder(
 
   if (error) throw new Error(error.message);
 
-  await supabase
+  const { error: operationsError } = await supabase
     .from('operations')
     .update({ status: 'cancelled', updated_at: new Date().toISOString() })
     .eq('order_id', order.id)
     .neq('status', 'completed');
 
-  return mapOrderRow(data as OrderRow);
+  if (operationsError) throw new Error(operationsError.message);
+
+  const cancelledOrder = mapOrderRow(data as OrderRow);
+
+  await recordActivityEvent(supabase, {
+    actorId: auth.id,
+    entityType: 'order',
+    entityId: cancelledOrder.id,
+    eventType: 'order.cancelled',
+    payload: {
+      previous_status: order.status,
+    },
+  });
+
+  for (const operation of relatedOperations ?? []) {
+    await recordActivityEvent(supabase, {
+      actorId: auth.id,
+      entityType: 'operation',
+      entityId: operation.id,
+      eventType: 'operation.cancelled',
+      payload: {
+        order_id: order.id,
+        previous_status: operation.status,
+        source: 'order.cancel',
+      },
+    });
+  }
+
+  return cancelledOrder;
 }
 
 export async function acceptOrder(
@@ -330,13 +443,40 @@ export async function acceptOrder(
 
   if (updateError) throw new Error(updateError.message);
 
-  const { error: operationError } = await supabase.from('operations').insert({
-    order_id: orderId,
-    technician_id: auth.id,
-    status: 'pending',
-  });
+  const { data: operation, error: operationError } = await supabase
+    .from('operations')
+    .insert({
+      order_id: orderId,
+      technician_id: auth.id,
+      status: 'pending',
+    })
+    .select('id')
+    .single();
 
   if (operationError) throw new Error(operationError.message);
+
+  await recordActivityEvent(supabase, {
+    actorId: auth.id,
+    entityType: 'order',
+    entityId: orderId,
+    eventType: 'order.accepted',
+    payload: {
+      technician_id: auth.id,
+      operation_id: operation.id,
+    },
+  });
+
+  await recordActivityEvent(supabase, {
+    actorId: auth.id,
+    entityType: 'operation',
+    entityId: operation.id,
+    eventType: 'operation.created',
+    payload: {
+      order_id: orderId,
+      technician_id: auth.id,
+      source: 'order.accept',
+    },
+  });
 
   return getMyOrderById(supabase, auth, orderId);
 }
@@ -547,6 +687,7 @@ function buildAdminOrdersQuery(
   if (input.technician_id) {
     query = query.eq('technician_id', input.technician_id);
   }
+  if (input.client_id) query = query.eq('client_id', input.client_id);
   if (input.search) query = applyAdminOrderSearch(query, input.search);
 
   return query;
@@ -566,6 +707,7 @@ function buildAdminOrdersCountQuery(
   if (input.technician_id) {
     query = query.eq('technician_id', input.technician_id);
   }
+  if (input.client_id) query = query.eq('client_id', input.client_id);
   if (input.search) query = applyAdminOrderSearch(query, input.search);
 
   return query;
@@ -594,6 +736,7 @@ function buildOrdersStatusCountQuery(
   if (input.technician_id) {
     query = query.eq('technician_id', input.technician_id);
   }
+  if (input.client_id) query = query.eq('client_id', input.client_id);
   if (input.search) query = applyAdminOrderSearch(query, input.search);
 
   return query;

@@ -1,5 +1,6 @@
 import type {
   CreateOperationInput,
+  CreateTechnicianReviewInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
   OperationStatus,
@@ -21,6 +22,22 @@ export function validateCreateOperationInput(
   return {
     technician_id: technicianId,
     scheduled_at: normalizeNullableDateTime(input.scheduled_at),
+  };
+}
+
+export function validateCreateTechnicianReviewInput(
+  input: CreateTechnicianReviewInput,
+): CreateTechnicianReviewInput {
+  const rating = Number(input.rating);
+  const comment = normalizeNullableText(input.comment);
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    throw new ValidationError('Rating must be between 1 and 5');
+  }
+
+  return {
+    rating,
+    comment,
   };
 }
 
@@ -73,6 +90,7 @@ export function validateListAdminOperationsInput(input: {
   status?: string;
   orderId?: string;
   technicianId?: string;
+  clientId?: string;
 }): ListAdminOperationsInput {
   const paginatedInput = validatePaginatedOperationsInput(input);
 
@@ -82,6 +100,7 @@ export function validateListAdminOperationsInput(input: {
     technician_id: input.technicianId
       ? validateTechnicianId(input.technicianId)
       : undefined,
+    client_id: input.clientId ? validateClientId(input.clientId) : undefined,
   };
 }
 
@@ -108,6 +127,14 @@ export function validateTechnicianId(
 ): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new ValidationError('Invalid technician id');
+  }
+
+  return value.trim();
+}
+
+export function validateClientId(value: string | string[] | undefined): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new ValidationError('Invalid client id');
   }
 
   return value.trim();
@@ -167,6 +194,12 @@ function normalizeNullableDateTime(value: string | null): string | null {
   }
 
   return trimmedValue;
+}
+
+function normalizeNullableText(value: string | null): string | null {
+  const normalized = value?.trim();
+
+  return normalized ? normalized : null;
 }
 
 function normalizeRequiredDateTime(value: string, fieldName: string): string {

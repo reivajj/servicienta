@@ -20,8 +20,12 @@ import { Route as TechnicianCatalogsIndexRouteImport } from './routes/technician
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as OperationsIndexRouteImport } from './routes/operations.index'
 import { Route as ClientProfilesIndexRouteImport } from './routes/client-profiles.index'
+import { Route as ActivityEventsIndexRouteImport } from './routes/activity-events.index'
 import { Route as TechniciansTechnicianIdRouteImport } from './routes/technicians.$technicianId'
+import { Route as OrdersOrderIdRouteImport } from './routes/orders.$orderId'
+import { Route as OperationsOperationIdRouteImport } from './routes/operations.$operationId'
 import { Route as DevSupabaseRouteImport } from './routes/dev.supabase'
+import { Route as ClientProfilesClientProfileIdRouteImport } from './routes/client-profiles.$clientProfileId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -78,9 +82,24 @@ const ClientProfilesIndexRoute = ClientProfilesIndexRouteImport.update({
   path: '/client-profiles/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ActivityEventsIndexRoute = ActivityEventsIndexRouteImport.update({
+  id: '/activity-events/',
+  path: '/activity-events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TechniciansTechnicianIdRoute = TechniciansTechnicianIdRouteImport.update({
   id: '/technicians/$technicianId',
   path: '/technicians/$technicianId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
+  id: '/orders/$orderId',
+  path: '/orders/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperationsOperationIdRoute = OperationsOperationIdRouteImport.update({
+  id: '/operations/$operationId',
+  path: '/operations/$operationId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevSupabaseRoute = DevSupabaseRouteImport.update({
@@ -88,14 +107,24 @@ const DevSupabaseRoute = DevSupabaseRouteImport.update({
   path: '/dev/supabase',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClientProfilesClientProfileIdRoute =
+  ClientProfilesClientProfileIdRouteImport.update({
+    id: '/client-profiles/$clientProfileId',
+    path: '/client-profiles/$clientProfileId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/client-profiles/$clientProfileId': typeof ClientProfilesClientProfileIdRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/operations/$operationId': typeof OperationsOperationIdRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
+  '/activity-events/': typeof ActivityEventsIndexRoute
   '/client-profiles/': typeof ClientProfilesIndexRoute
   '/operations/': typeof OperationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -109,8 +138,12 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/client-profiles/$clientProfileId': typeof ClientProfilesClientProfileIdRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/operations/$operationId': typeof OperationsOperationIdRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
+  '/activity-events': typeof ActivityEventsIndexRoute
   '/client-profiles': typeof ClientProfilesIndexRoute
   '/operations': typeof OperationsIndexRoute
   '/orders': typeof OrdersIndexRoute
@@ -125,8 +158,12 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/client-profiles/$clientProfileId': typeof ClientProfilesClientProfileIdRoute
   '/dev/supabase': typeof DevSupabaseRoute
+  '/operations/$operationId': typeof OperationsOperationIdRoute
+  '/orders/$orderId': typeof OrdersOrderIdRoute
   '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
+  '/activity-events/': typeof ActivityEventsIndexRoute
   '/client-profiles/': typeof ClientProfilesIndexRoute
   '/operations/': typeof OperationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -142,8 +179,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/client-profiles/$clientProfileId'
     | '/dev/supabase'
+    | '/operations/$operationId'
+    | '/orders/$orderId'
     | '/technicians/$technicianId'
+    | '/activity-events/'
     | '/client-profiles/'
     | '/operations/'
     | '/orders/'
@@ -157,8 +198,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/client-profiles/$clientProfileId'
     | '/dev/supabase'
+    | '/operations/$operationId'
+    | '/orders/$orderId'
     | '/technicians/$technicianId'
+    | '/activity-events'
     | '/client-profiles'
     | '/operations'
     | '/orders'
@@ -172,8 +217,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/client-profiles/$clientProfileId'
     | '/dev/supabase'
+    | '/operations/$operationId'
+    | '/orders/$orderId'
     | '/technicians/$technicianId'
+    | '/activity-events/'
     | '/client-profiles/'
     | '/operations/'
     | '/orders/'
@@ -188,8 +237,12 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ClientProfilesClientProfileIdRoute: typeof ClientProfilesClientProfileIdRoute
   DevSupabaseRoute: typeof DevSupabaseRoute
+  OperationsOperationIdRoute: typeof OperationsOperationIdRoute
+  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   TechniciansTechnicianIdRoute: typeof TechniciansTechnicianIdRoute
+  ActivityEventsIndexRoute: typeof ActivityEventsIndexRoute
   ClientProfilesIndexRoute: typeof ClientProfilesIndexRoute
   OperationsIndexRoute: typeof OperationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
@@ -278,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientProfilesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/activity-events/': {
+      id: '/activity-events/'
+      path: '/activity-events'
+      fullPath: '/activity-events/'
+      preLoaderRoute: typeof ActivityEventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/technicians/$technicianId': {
       id: '/technicians/$technicianId'
       path: '/technicians/$technicianId'
@@ -285,11 +345,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TechniciansTechnicianIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders/$orderId': {
+      id: '/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof OrdersOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operations/$operationId': {
+      id: '/operations/$operationId'
+      path: '/operations/$operationId'
+      fullPath: '/operations/$operationId'
+      preLoaderRoute: typeof OperationsOperationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/supabase': {
       id: '/dev/supabase'
       path: '/dev/supabase'
       fullPath: '/dev/supabase'
       preLoaderRoute: typeof DevSupabaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/client-profiles/$clientProfileId': {
+      id: '/client-profiles/$clientProfileId'
+      path: '/client-profiles/$clientProfileId'
+      fullPath: '/client-profiles/$clientProfileId'
+      preLoaderRoute: typeof ClientProfilesClientProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -300,8 +381,12 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ClientProfilesClientProfileIdRoute: ClientProfilesClientProfileIdRoute,
   DevSupabaseRoute: DevSupabaseRoute,
+  OperationsOperationIdRoute: OperationsOperationIdRoute,
+  OrdersOrderIdRoute: OrdersOrderIdRoute,
   TechniciansTechnicianIdRoute: TechniciansTechnicianIdRoute,
+  ActivityEventsIndexRoute: ActivityEventsIndexRoute,
   ClientProfilesIndexRoute: ClientProfilesIndexRoute,
   OperationsIndexRoute: OperationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,

@@ -35,6 +35,15 @@ export interface CancelOperationResponse {
   data: Operation;
 }
 
+export interface CreateTechnicianReviewInput {
+  rating: number;
+  comment: string | null;
+}
+
+export interface CreateTechnicianReviewResponse {
+  data: Operation;
+}
+
 export interface UpdateAdminOperationInput {
   status: OperationStatus;
   scheduled_at: string | null;
@@ -89,6 +98,7 @@ export interface ListAdminOperationsInput {
   status?: OperationStatus;
   order_id?: string;
   technician_id?: string;
+  client_id?: string;
 }
 
 export interface PaginatedAdminOperations {

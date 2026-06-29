@@ -1,15 +1,28 @@
 import {
+  useCompleteClientOnboarding,
   useCreateOrder,
+  useCurrentUser,
   usePublicTechnicianProfileCatalogs,
   usePublicTechnicianProfiles,
 } from '@servicienta/query-hooks';
+import { useNavigate } from '@tanstack/react-router';
 import type {
+  CreateOrderInput,
   ListPublicTechnicianProfilesInput,
   PublicTechnicianProfile,
 } from '@servicienta/types';
 import { useState } from 'react';
+import { getSupabaseBrowserClient } from '../../../lib/supabase';
+import { useAuth } from '../../auth/components/AuthProvider';
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
+
+type AuthMode = 'signup' | 'login';
 
 export function TechnicianSearchPage() {
+  const navigate = useNavigate();
+  const supabase = getSupabaseBrowserClient();
+  const { session } = useAuth();
+  const { data: currentUser } = useCurrentUser({ enabled: Boolean(session) });
   const {
     data: catalogs,
     error: catalogsError,
@@ -21,7 +34,14 @@ export function TechnicianSearchPage() {
     useState<ListPublicTechnicianProfilesInput | null>(null);
   const [selectedTechnician, setSelectedTechnician] =
     useState<PublicTechnicianProfile | null>(null);
+  const [pendingOrderDraft, setPendingOrderDraft] =
+    useState<CreateOrderInput | null>(null);
+  const [isAuthStepOpen, setIsAuthStepOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('signup');
+  const [orderMessage, setOrderMessage] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
   const createOrder = useCreateOrder();
+  const completeClientOnboarding = useCompleteClientOnboarding();
   const {
     data: profiles,
     error: profilesError,
@@ -36,6 +56,11 @@ export function TechnicianSearchPage() {
     profilesError instanceof Error
       ? profilesError.message
       : 'No se pudieron cargar los técnicos';
+  const orderModalRef = useEscapeKey<HTMLDivElement>(handleCloseOrderFlow);
+  const authModalRef = useEscapeKey<HTMLDivElement>(() => {
+    setIsAuthStepOpen(false);
+    setAuthMessage('');
+  });
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,13 +73,14 @@ export function TechnicianSearchPage() {
     });
   }
 
-  async function handleCreateOrder(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function buildCreateOrderInput(
+    form: HTMLFormElement,
+  ): CreateOrderInput | undefined {
     if (!selectedTechnician || !submittedInput) return;
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
 
-    await createOrder.mutateAsync({
+    return {
       technician_public_slug: selectedTechnician.public_slug,
       zone_slug: submittedInput.zoneSlug,
       appliance_type_slug: submittedInput.applianceTypeSlug,
@@ -63,9 +89,116 @@ export function TechnicianSearchPage() {
       service_lat: null,
       service_lng: null,
       address_notes: String(formData.get('address_notes') ?? '') || null,
-    });
+    };
+  }
 
+  async function handleCreateOrder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedTechnician || !submittedInput) return;
+
+    setOrderMessage('');
+
+    const orderInput = buildCreateOrderInput(event.currentTarget);
+    if (!orderInput) return;
+
+    if (session && currentUser && currentUser.role !== 'client') {
+      setOrderMessage('La solicitud debe crearla un usuario cliente.');
+      return;
+    }
+
+    if (!session) {
+      setPendingOrderDraft(orderInput);
+      setAuthMode('signup');
+      setAuthMessage('');
+      setIsAuthStepOpen(true);
+      return;
+    }
+
+    await createOrder.mutateAsync(orderInput);
+
+    handleCloseOrderFlow();
+    await navigate({ to: '/orders' });
+  }
+
+  async function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pendingOrderDraft) return;
+
+    setAuthMessage('');
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get('email') ?? '').trim();
+    const password = String(formData.get('password') ?? '');
+    const name = String(formData.get('name') ?? '').trim();
+    const surname = String(formData.get('surname') ?? '').trim();
+
+    if (!email || !password) {
+      setAuthMessage('Email y password son obligatorios.');
+      return;
+    }
+
+    if (authMode === 'signup') {
+      if (!name || !surname) {
+        setAuthMessage('Nombre y apellido son obligatorios.');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            surname,
+            role: 'client',
+          },
+        },
+      });
+
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+
+      if (!data.session) {
+        setAuthMessage(
+          'La cuenta se creó, pero Supabase requiere confirmar email antes de continuar.',
+        );
+        return;
+      }
+
+      await completeClientOnboarding.mutateAsync({
+        name,
+        surname,
+        phone: null,
+        whatsapp_phone: null,
+        default_address_text: null,
+        address_notes: null,
+        preferred_contact_channel: 'phone',
+      });
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+    }
+
+    await createOrder.mutateAsync(pendingOrderDraft);
+    handleCloseOrderFlow();
+    await navigate({ to: '/orders' });
+  }
+
+  function handleCloseOrderFlow() {
     setSelectedTechnician(null);
+    setPendingOrderDraft(null);
+    setIsAuthStepOpen(false);
+    setOrderMessage('');
+    setAuthMessage('');
   }
 
   return (
@@ -233,11 +366,13 @@ export function TechnicianSearchPage() {
 
       {selectedTechnician ? (
         <div
+          ref={orderModalRef}
+          data-escape-modal="true"
           className="users-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-order-title"
-          onClick={() => setSelectedTechnician(null)}
+          onClick={handleCloseOrderFlow}
         >
           <section
             className="users-modal__panel"
@@ -251,67 +386,209 @@ export function TechnicianSearchPage() {
               <button
                 type="button"
                 className="users-modal__close"
-                onClick={() => setSelectedTechnician(null)}
+                onClick={handleCloseOrderFlow}
               >
                 Cerrar
               </button>
             </header>
 
-            <form className="auth-form" onSubmit={handleCreateOrder}>
-              <label className="auth-form__field">
-                <span>Técnico</span>
-                <input
-                  type="text"
-                  value={selectedTechnician.public_slug}
-                  readOnly
-                />
-              </label>
+            <div className="technician-order-modal">
+              <form className="auth-form technician-order-form" onSubmit={handleCreateOrder}>
+                <label className="auth-form__field">
+                  <span>Técnico</span>
+                  <input
+                    type="text"
+                    value={selectedTechnician.public_slug}
+                    readOnly
+                  />
+                </label>
 
-              <label className="auth-form__field">
-                <span>Problema</span>
-                <textarea
-                  name="description"
-                  placeholder="Contá qué está pasando con el equipo"
-                  required
-                />
-              </label>
+                <label className="auth-form__field">
+                  <span>Problema</span>
+                  <textarea
+                    name="description"
+                    placeholder="Contá qué está pasando con el equipo"
+                    required
+                  />
+                </label>
 
-              <label className="auth-form__field">
-                <span>Dirección aproximada</span>
-                <input
-                  name="service_address_text"
-                  type="text"
-                  placeholder="Calle, altura aproximada, barrio"
-                  required
-                />
-              </label>
+                <label className="auth-form__field">
+                  <span>Dirección aproximada</span>
+                  <input
+                    name="service_address_text"
+                    type="text"
+                    placeholder="Calle, altura aproximada, barrio"
+                    required
+                  />
+                </label>
 
-              <label className="auth-form__field">
-                <span>Notas de dirección</span>
-                <input
-                  name="address_notes"
-                  type="text"
-                  placeholder="Piso, referencias, horarios posibles"
-                />
-              </label>
+                <label className="auth-form__field">
+                  <span>Notas de dirección</span>
+                  <input
+                    name="address_notes"
+                    type="text"
+                    placeholder="Piso, referencias, horarios posibles"
+                  />
+                </label>
 
-              <div className="users-message">
-                Imágenes: placeholder visual. El upload real se modelará en una
-                próxima pasada.
-              </div>
+                {session && currentUser && currentUser.role !== 'client' ? (
+                  <p className="users-message users-message--error">
+                    La solicitud debe crearla un usuario cliente. Cerrá sesión e
+                    ingresá con una cuenta cliente.
+                  </p>
+                ) : null}
 
-              <button type="submit" disabled={createOrder.isPending}>
-                {createOrder.isPending ? 'Creando...' : 'Crear order pending'}
-              </button>
-              {createOrder.error ? (
-                <p className="users-message users-message--error">
-                  {createOrder.error instanceof Error
-                    ? createOrder.error.message
-                    : 'No se pudo crear la order'}
-                </p>
-              ) : null}
-            </form>
+                <article className="technician-order-step-card">
+                  <div>
+                    <p className="user-card__label">Siguiente paso</p>
+                    <h3>{session ? 'Enviar solicitud' : 'Continuar con tu cuenta'}</h3>
+                    <p className="technician-order-step-card__copy">
+                      {session
+                        ? 'Vamos a crear la order y dejarla pending para que el técnico la revise.'
+                        : 'Guardamos esta solicitud en memoria y te pedimos registrarte o ingresar en el paso siguiente.'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={
+                      createOrder.isPending ||
+                      (Boolean(session) &&
+                        Boolean(currentUser) &&
+                        currentUser?.role !== 'client')
+                    }
+                  >
+                    {createOrder.isPending
+                      ? 'Creando...'
+                      : session
+                        ? 'Crear order pending'
+                        : 'Continuar'}
+                  </button>
+                </article>
+
+                {orderMessage || createOrder.error ? (
+                  <p className="users-message users-message--error">
+                    {orderMessage ||
+                      (createOrder.error instanceof Error
+                        ? createOrder.error.message
+                        : 'No se pudo crear la order')}
+                  </p>
+                ) : null}
+              </form>
+            </div>
           </section>
+
+          {isAuthStepOpen ? (
+            <div
+              ref={authModalRef}
+              data-escape-modal="true"
+              className="users-modal users-modal--stacked"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="auth-step-title"
+              onClick={() => {
+                setIsAuthStepOpen(false);
+                setAuthMessage('');
+              }}
+            >
+              <section
+                className="users-modal__panel users-modal__panel--compact"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <header className="users-modal__header">
+                  <div>
+                    <p className="users-hero__eyebrow">Acceso</p>
+                    <h2 id="auth-step-title">
+                      {authMode === 'signup'
+                        ? 'Registrate para enviar la solicitud'
+                        : 'Ingresá para enviar la solicitud'}
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="users-modal__close"
+                    onClick={() => {
+                      setIsAuthStepOpen(false);
+                      setAuthMessage('');
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </header>
+
+                <form className="auth-form" onSubmit={handleAuthSubmit}>
+                  <div className="auth-form__tabs" role="tablist">
+                    <button
+                      type="button"
+                      className={
+                        authMode === 'signup'
+                          ? 'auth-form__tab auth-form__tab--active'
+                          : 'auth-form__tab'
+                      }
+                      onClick={() => setAuthMode('signup')}
+                    >
+                      Registrarme
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        authMode === 'login'
+                          ? 'auth-form__tab auth-form__tab--active'
+                          : 'auth-form__tab'
+                      }
+                      onClick={() => setAuthMode('login')}
+                    >
+                      Ya tengo cuenta
+                    </button>
+                  </div>
+
+                  <label className="auth-form__field">
+                    <span>Email</span>
+                    <input name="email" type="email" required />
+                  </label>
+
+                  <label className="auth-form__field">
+                    <span>Password</span>
+                    <input name="password" type="password" required />
+                  </label>
+
+                  {authMode === 'signup' ? (
+                    <>
+                      <label className="auth-form__field">
+                        <span>Nombre</span>
+                        <input name="name" type="text" required />
+                      </label>
+
+                      <label className="auth-form__field">
+                        <span>Apellido</span>
+                        <input name="surname" type="text" required />
+                      </label>
+                    </>
+                  ) : null}
+
+                  <button
+                    type="submit"
+                    className="auth-form__primary-action"
+                    disabled={
+                      createOrder.isPending || completeClientOnboarding.isPending
+                    }
+                  >
+                    {createOrder.isPending || completeClientOnboarding.isPending
+                      ? 'Creando...'
+                      : authMode === 'signup'
+                        ? 'Registrarme y crear order'
+                        : 'Ingresar y crear order'}
+                  </button>
+
+                  {authMessage ? (
+                    <p className="users-message users-message--error">
+                      {authMessage}
+                    </p>
+                  ) : null}
+                </form>
+              </section>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </main>

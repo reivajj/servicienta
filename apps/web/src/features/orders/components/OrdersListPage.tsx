@@ -2,7 +2,6 @@ import { useDeferredValue, useState } from 'react';
 import {
   useAcceptOrder,
   useAdminOrders,
-  useCancelOrder,
   useCurrentOrders,
   useCurrentUser,
 } from '@servicienta/query-hooks';
@@ -11,7 +10,9 @@ import type {
   OrderStatus,
   UsersPageSize,
 } from '@servicienta/types';
+import { AcceptOrderActionButton } from '../../shared/components/AcceptOrderActionButton';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
+import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
 import { OrderDetailDialog } from './OrderDetailDialog';
 
 function formatClientName(name: string | null, surname: string | null) {
@@ -60,9 +61,9 @@ export function OrdersListPage() {
 
 function CurrentOrdersListPage({ role }: { role: string }) {
   const [page, setPage] = useState(1);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const pageSize: UsersPageSize = 25;
   const { data, error, isLoading } = useCurrentOrders({ page, pageSize });
-  const cancelOrder = useCancelOrder();
   const acceptOrder = useAcceptOrder();
   const items = data?.items ?? [];
   const pagination = data?.pagination;
@@ -119,27 +120,19 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                   <tr key={order.id}>
                     <td>
                       <div className="users-table__actions">
+                        <ViewOrderActionLink orderId={order.id} />
+
+                        <SettingsActionButton
+                          label="Ver y gestionar order"
+                          onClick={() => setSelectedOrderId(order.id)}
+                        />
+
                         {role === 'technician' && order.status === 'pending' ? (
-                          <button
-                            type="button"
-                            className="users-table__action"
+                          <AcceptOrderActionButton
+                            label="Aceptar order"
                             disabled={acceptOrder.isPending}
                             onClick={() => acceptOrder.mutate(order.id)}
-                          >
-                            Aceptar
-                          </button>
-                        ) : null}
-                        {order.status !== 'completed' &&
-                        order.status !== 'completed_tech' &&
-                        order.status !== 'cancelled' ? (
-                          <button
-                            type="button"
-                            className="users-table__action"
-                            disabled={cancelOrder.isPending}
-                            onClick={() => cancelOrder.mutate(order.id)}
-                          >
-                            Cancelar
-                          </button>
+                          />
                         ) : null}
                       </div>
                     </td>
@@ -191,6 +184,14 @@ function CurrentOrdersListPage({ role }: { role: string }) {
             </button>
           </div>
         </section>
+
+        {selectedOrderId ? (
+          <OrderDetailDialog
+            orderId={selectedOrderId}
+            mode="current"
+            onClose={() => setSelectedOrderId(null)}
+          />
+        ) : null}
       </section>
     </main>
   );
@@ -426,10 +427,14 @@ function AdminOrdersListPage() {
                 {items.map((order) => (
                   <tr key={order.id}>
                     <td>
-                      <SettingsActionButton
-                        label="Ver y editar order"
-                        onClick={() => setSelectedOrderId(order.id)}
-                      />
+                      <div className="users-table__actions">
+                        <SettingsActionButton
+                          label="Ver y editar order"
+                          onClick={() => setSelectedOrderId(order.id)}
+                        />
+
+                        <ViewOrderActionLink orderId={order.id} />
+                      </div>
                     </td>
                     <td>
                       {formatClientName(

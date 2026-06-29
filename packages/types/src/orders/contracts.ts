@@ -91,6 +91,7 @@ export interface ListAdminOrdersInput {
   flow_type?: OrderFlowType;
   search?: string;
   technician_id?: string;
+  client_id?: string;
 }
 
 export interface PaginatedAdminOrders {
