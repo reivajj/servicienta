@@ -33,6 +33,7 @@ export function mapOperationRow(row: OperationRow): Operation {
     order_id: row.order_id,
     client_id: order?.client_id ?? '',
     technician_id: row.technician_id,
+    technician_public_slug: technician?.public_slug ?? null,
     status: normalizeOperationStatus(row.status),
     client_name: client?.name ?? null,
     client_surname: client?.surname ?? null,

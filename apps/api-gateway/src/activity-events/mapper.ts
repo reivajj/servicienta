@@ -25,7 +25,9 @@ function normalizeEntityType(value: string): ActivityEventEntityType {
     value === 'user' ||
     value === 'order' ||
     value === 'operation' ||
-    value === 'technician_review'
+    value === 'technician_review' ||
+    value === 'chat_conversation' ||
+    value === 'chat_message'
   ) {
     return value;
   }
@@ -45,6 +47,9 @@ function normalizeEventType(value: string): ActivityEventType {
     value === 'operation.completed_by_client' ||
     value === 'operation.cancelled' ||
     value === 'technician_review.created' ||
+    value === 'chat.message_created' ||
+    value === 'chat.admin_joined' ||
+    value === 'chat.operation_scheduled_from_chat' ||
     value === 'admin.order_updated' ||
     value === 'admin.operation_updated'
   ) {

@@ -496,6 +496,69 @@ Capa transversal para auditoría, analytics y eventos de sistema.
 | `payload` | `json` | nullable |
 | `created_at` | `timestamp` | |
 
+### ChatConversation
+
+Hilo de chat interno entre usuarios de la app.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `conversation_type` | `enum` | `order \| direct` |
+| `order_id` | `uuid` | FK → `Order`, nullable para conversaciones direct futuras |
+| `status` | `enum` | `open \| closed \| archived` |
+| `created_by` | `uuid` | FK → `User` |
+| `last_message_at` | `timestamp` | nullable |
+| `created_at` | `timestamp` | |
+| `updated_at` | `timestamp` | |
+
+Notas:
+
+- la v1 implementa chats `order`, uno por `Order`
+- `direct` queda reservado para conversaciones futuras admin-user sin `Order`
+- el chat usa Supabase Realtime para lectura en vivo, pero las escrituras pasan
+  por API Gateway
+
+### ChatConversationParticipant
+
+Participante de una conversacion interna.
+
+| campo | tipo | notas |
+|---|---|---|
+| `conversation_id` | `uuid` | FK → `ChatConversation` |
+| `user_id` | `uuid` | FK → `User` |
+| `participant_role` | `enum` | `client \| technician \| admin` |
+| `joined_at` | `timestamp` | |
+| `last_read_at` | `timestamp` | nullable |
+
+Notas:
+
+- client y technician se derivan de la `Order`
+- admin puede sumarse al hilo
+- `last_read_at` permite calcular unread count
+
+### ChatMessage
+
+Mensaje dentro de una conversacion.
+
+| campo | tipo | notas |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `conversation_id` | `uuid` | FK → `ChatConversation` |
+| `sender_id` | `uuid` | FK → `User`, nullable para mensajes de sistema |
+| `message_type` | `enum` | `text \| system \| action` |
+| `body` | `string` | texto visible |
+| `action_type` | `string` | nullable |
+| `action_payload` | `jsonb` | nullable |
+| `related_order_id` | `uuid` | nullable |
+| `related_operation_id` | `uuid` | nullable |
+| `created_at` | `timestamp` | |
+
+Notas:
+
+- los mensajes `action` registran resultados de acciones hechas desde el chat
+- en v1 existe la accion de agendar `Operation`
+- no se implementan archivos, presencia ni edicion/borrado de mensajes todavia
+
 ## Relaciones provisionales
 
 ```txt
@@ -520,6 +583,9 @@ Subscription  1 → N    Payment
 Payment       1 → 0..1 Payout
 User (tech)   1 → N    Payout
 User          1 → N    ActivityEvent
+Order         1 → 0..1 ChatConversation
+ChatConversation 1 → N ChatMessage
+ChatConversation 1 → N ChatConversationParticipant
 ```
 
 ## Flujos de negocio provisionales

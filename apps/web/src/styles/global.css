@@ -657,7 +657,8 @@ p {
 }
 
 .users-detail-grid {
-  grid-template-columns: minmax(280px, 380px) minmax(320px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .users-panel,
@@ -912,8 +913,22 @@ p {
 
 .orders-dialog__content {
   display: grid;
+  gap: 18px;
+}
+
+.orders-dialog__current-content {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.orders-dialog__admin-content {
+  grid-template-columns: 1fr;
+}
+
+.orders-dialog__primary-grid {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+  align-items: start;
 }
 
 .orders-dialog__meta-strip {
@@ -922,7 +937,7 @@ p {
 
 .orders-dialog__meta-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
   margin-top: 0;
 }
@@ -935,6 +950,47 @@ p {
   display: grid;
   gap: 18px;
   align-content: start;
+}
+
+.orders-dialog__edit-card {
+  align-self: start;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.orders-dialog__edit-form {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.orders-dialog__edit-form-body {
+  display: grid;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.orders-dialog__edit-actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 16px;
+  padding-top: 14px;
+  background: var(--surface);
+  border-top: 1px solid rgba(33, 28, 24, 0.08);
+}
+
+.users-modal__panel .orders-dialog__edit-actions {
+  position: static;
+  margin-top: 18px;
+  padding-top: 0;
+  background: transparent;
+  border-top: 0;
 }
 
 .orders-dialog__icon-actions {
@@ -998,6 +1054,299 @@ p {
   margin-top: 18px;
 }
 
+.date-time-picker {
+  position: relative;
+}
+
+.date-time-picker__shell {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(214, 98, 43, 0.16);
+  border-radius: 18px;
+  background: #fffaf2;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 18px 40px rgba(79, 54, 34, 0.08);
+}
+
+.date-time-picker__trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 58px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  font: inherit;
+  line-height: 1;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.date-time-picker__trigger--active {
+  border-color: rgba(214, 98, 43, 0.28);
+  box-shadow: 0 0 0 3px rgba(214, 98, 43, 0.08);
+}
+
+.date-time-picker__trigger-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.date-time-picker__trigger-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+}
+
+.date-time-picker__trigger-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.date-time-picker__trigger-text--placeholder {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.date-time-picker__popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  z-index: 30;
+  width: min(560px, calc(100vw - 72px));
+  border-radius: 20px;
+  background: #fffaf2;
+  box-shadow: 0 24px 60px rgba(79, 54, 34, 0.2);
+}
+
+.date-time-picker__header,
+.date-time-picker__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.date-time-picker__eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.date-time-picker__month {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.date-time-picker__month-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.date-time-picker__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(214, 98, 43, 0.18);
+  border-radius: 999px;
+  background: rgba(214, 98, 43, 0.08);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.date-time-picker__nav svg {
+  width: 18px;
+  height: 18px;
+}
+
+.date-time-picker__weekdays,
+.date-time-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.date-time-picker__weekdays span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.date-time-picker__day {
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.date-time-picker__day:hover {
+  transform: translateY(-1px);
+  border-color: rgba(214, 98, 43, 0.18);
+  background: rgba(214, 98, 43, 0.1);
+}
+
+.date-time-picker__day:disabled,
+.date-time-picker__time-chip:disabled {
+  cursor: not-allowed;
+}
+
+.date-time-picker__day--outside {
+  color: rgba(101, 88, 79, 0.48);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.date-time-picker__day--disabled {
+  color: rgba(101, 88, 79, 0.36);
+  background: rgba(255, 255, 255, 0.34);
+  border-color: transparent;
+  transform: none;
+}
+
+.date-time-picker__day--disabled:hover {
+  background: rgba(255, 255, 255, 0.34);
+  border-color: transparent;
+}
+
+.date-time-picker__day--today {
+  border-color: rgba(47, 122, 80, 0.28);
+  color: #2f7a50;
+}
+
+.date-time-picker__day--selected {
+  border-color: rgba(214, 98, 43, 0.24);
+  background: var(--accent);
+  color: #fff7f0;
+  box-shadow: 0 12px 24px rgba(214, 98, 43, 0.18);
+}
+
+.date-time-picker__time-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(33, 28, 24, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.date-time-picker__time-copy {
+  margin: 0;
+  color: var(--muted);
+}
+
+.date-time-picker__time-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.date-time-picker__time-column {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.date-time-picker__time-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(214, 98, 43, 0.18);
+  border-radius: 14px;
+  background: rgba(214, 98, 43, 0.08);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.date-time-picker__time-nav svg {
+  width: 20px;
+  height: 20px;
+}
+
+.date-time-picker__time-nav:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.date-time-picker__time-value {
+  display: grid;
+  place-items: center;
+  width: 86px;
+  min-height: 78px;
+  border: 1px solid rgba(33, 28, 24, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.date-time-picker__time-separator {
+  align-self: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.date-time-picker__clear,
+.date-time-picker__apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.date-time-picker__clear {
+  color: #b44418;
+  background: rgba(180, 68, 24, 0.08);
+  border-color: rgba(180, 68, 24, 0.14);
+  border: 1px solid rgba(180, 68, 24, 0.14);
+}
+
+.date-time-picker__apply {
+  border: 0;
+  background: var(--accent);
+  color: #fff7f0;
+}
+
 .operations-table__icon-action {
   color: var(--accent);
 }
@@ -1043,6 +1392,176 @@ p {
 
 .operation-detail-review {
   grid-column: 1 / -1;
+}
+
+.operation-admin-warning-card {
+  grid-column: 1 / -1;
+  border-color: rgba(180, 68, 24, 0.18);
+  background: rgba(255, 248, 244, 0.88);
+}
+
+.operation-admin-edit-card {
+  grid-column: 1 / -1;
+}
+
+.operation-admin-edit-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(320px, 1.4fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.operation-admin-edit-form__status,
+.operation-admin-edit-form__description {
+  margin: 0;
+}
+
+.operation-admin-edit-form__dates {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.operation-admin-edit-form > button,
+.operation-admin-edit-form > .users-message {
+  grid-column: 1 / -1;
+}
+
+.operation-admin-warning-list {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  color: #8d3a19;
+}
+
+.operation-admin-warning-list li + li {
+  margin-top: 8px;
+}
+
+.operation-admin-override-copy {
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.chat-dialog {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-thread {
+  display: grid;
+  grid-template-rows: auto minmax(260px, 1fr) auto;
+  gap: 16px;
+  min-height: 0;
+}
+
+.chat-thread__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 260px;
+  max-height: min(52vh, 520px);
+  overflow-y: auto;
+  padding: 4px 8px 4px 0;
+}
+
+.chat-message {
+  width: min(82%, 520px);
+  padding: 12px 14px;
+  border: 1px solid rgba(33, 28, 24, 0.08);
+  border-radius: 18px 18px 18px 6px;
+  background: rgba(255, 250, 242, 0.92);
+  box-shadow: 0 12px 30px rgba(33, 28, 24, 0.06);
+}
+
+.chat-message--own {
+  align-self: flex-end;
+  border-radius: 18px 18px 6px 18px;
+  background: rgba(214, 98, 43, 0.12);
+  border-color: rgba(214, 98, 43, 0.2);
+}
+
+.chat-message--system,
+.chat-message--action {
+  align-self: center;
+  width: min(100%, 560px);
+  border-radius: 16px;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.16);
+}
+
+.chat-message--action {
+  background: rgba(63, 130, 92, 0.1);
+  border-color: rgba(63, 130, 92, 0.18);
+}
+
+.chat-message__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.chat-message p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.chat-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.chat-composer__field {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.chat-composer__field textarea {
+  width: 100%;
+  min-height: 78px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text);
+  font: inherit;
+}
+
+.chat-action-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 18px;
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.chat-action-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chat-action-card__header h3 {
+  margin: 0;
+}
+
+.chat-action-card__form {
+  gap: 12px;
 }
 
 .technician-profile-sections {
@@ -1532,8 +2051,27 @@ p {
     grid-template-columns: 1fr;
   }
 
+  .orders-dialog__current-content,
+  .orders-dialog__admin-content {
+    grid-template-columns: 1fr;
+  }
+
+  .orders-dialog__primary-grid {
+    grid-template-columns: 1fr;
+  }
+
   .orders-dialog__summary {
     grid-template-columns: 1fr;
+  }
+
+  .orders-dialog__edit-card,
+  .orders-dialog__edit-form {
+    height: auto;
+  }
+
+  .orders-dialog__edit-form-body {
+    overflow: visible;
+    padding-right: 0;
   }
 
   .orders-dialog__meta-list {
@@ -1586,6 +2124,32 @@ p {
 
   .users-modal__panel {
     max-height: calc(100vh - 36px);
+  }
+
+  .date-time-picker__header,
+  .date-time-picker__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-time-picker__month-actions {
+    align-self: flex-start;
+  }
+
+  .date-time-picker__popover {
+    width: min(100%, calc(100vw - 36px));
+  }
+
+  .date-time-picker__time-stepper {
+    justify-content: space-between;
+  }
+
+  .operation-admin-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-admin-edit-form__dates {
+    grid-template-columns: 1fr;
   }
 
   .technician-order-step-card {

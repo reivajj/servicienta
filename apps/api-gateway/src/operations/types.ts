@@ -82,6 +82,7 @@ export interface OperationRow {
       }>;
   technician?:
     | {
+        public_slug: string;
         phone: string | null;
         whatsapp_phone: string | null;
         user:
@@ -95,6 +96,7 @@ export interface OperationRow {
             }>;
       }
     | Array<{
+        public_slug: string;
         phone: string | null;
         whatsapp_phone: string | null;
         user:

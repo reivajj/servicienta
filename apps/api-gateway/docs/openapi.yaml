@@ -18,6 +18,7 @@ tags:
   - name: Client Profiles
   - name: Orders
   - name: Operations
+  - name: Chat
   - name: Technician Profiles
 paths:
   /health:
@@ -1438,6 +1439,159 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/chat/conversations/current:
+    get:
+      tags: [Chat]
+      summary: List current user's chat conversations
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          $ref: '#/components/responses/ChatConversationsResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/chat/conversations/orders/{orderId}:
+    get:
+      tags: [Chat]
+      summary: Get or create the chat conversation for an order
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/ChatConversationResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/chat/conversations/{conversationId}/messages:
+    get:
+      tags: [Chat]
+      summary: List messages for a chat conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          $ref: '#/components/responses/ChatMessagesResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Chat]
+      summary: Create a text message in a chat conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatMessageInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/ChatMessageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/chat/conversations/{conversationId}/read:
+    post:
+      tags: [Chat]
+      summary: Mark a chat conversation as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/ChatConversationResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/chat/conversations/{conversationId}/actions/schedule-operation:
+    post:
+      tags: [Chat]
+      summary: Schedule an operation from a chat conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleOperationFromChatInput'
+      responses:
+        '200':
+          $ref: '#/components/responses/ScheduleOperationFromChatResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   securitySchemes:
     BearerAuth:
@@ -1687,6 +1841,36 @@ components:
                   service_radius_km: 9
                   created_at: '2026-04-10T14:30:00.000Z'
                   updated_at: '2026-05-03T11:00:00.000Z'
+    ChatConversationResponse:
+      description: Chat conversation response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChatConversationResponse'
+    ChatConversationsResponse:
+      description: Paginated chat conversations response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaginatedChatConversationsResponse'
+    ChatMessageResponse:
+      description: Chat message response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChatMessageResponse'
+    ChatMessagesResponse:
+      description: Paginated chat messages response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaginatedChatMessagesResponse'
+    ScheduleOperationFromChatResponse:
+      description: Chat action response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScheduleOperationFromChatResponse'
     ValidationError:
       description: Validation error
       content:
@@ -1775,6 +1959,210 @@ components:
     OperationStatus:
       type: string
       enum: [pending, scheduled, completed_tech, completed, cancelled]
+    ChatConversationType:
+      type: string
+      enum: [order, direct]
+    ChatConversationStatus:
+      type: string
+      enum: [open, closed, archived]
+    ChatMessageType:
+      type: string
+      enum: [text, system, action]
+    ChatConversation:
+      type: object
+      required:
+        [
+          id,
+          conversation_type,
+          order_id,
+          status,
+          created_by,
+          created_at,
+          updated_at,
+          last_message_at,
+          participant_count,
+          unread_count,
+          last_message,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_type:
+          $ref: '#/components/schemas/ChatConversationType'
+        order_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ChatConversationStatus'
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_message_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        participant_count:
+          type: integer
+        unread_count:
+          type: integer
+        last_message:
+          oneOf:
+            - $ref: '#/components/schemas/ChatMessagePreview'
+            - type: 'null'
+    ChatMessagePreview:
+      type: object
+      required: [id, message_type, body, sender_id, sender_email, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        message_type:
+          $ref: '#/components/schemas/ChatMessageType'
+        body:
+          type: string
+        sender_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        sender_email:
+          type:
+            - string
+            - 'null'
+        sender_name:
+          type:
+            - string
+            - 'null'
+        sender_surname:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
+    ChatMessage:
+      allOf:
+        - $ref: '#/components/schemas/ChatMessagePreview'
+        - type: object
+          required:
+            [
+              conversation_id,
+              sender_role,
+              action_type,
+              action_payload,
+              related_order_id,
+              related_operation_id,
+            ]
+          properties:
+            conversation_id:
+              type: string
+              format: uuid
+            sender_role:
+              oneOf:
+                - $ref: '#/components/schemas/UserRole'
+                - type: 'null'
+            action_type:
+              type:
+                - string
+                - 'null'
+            action_payload:
+              type:
+                - object
+                - 'null'
+            related_order_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            related_operation_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+    ChatConversationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ChatConversation'
+    ChatMessageResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ChatMessage'
+    PaginatedChatConversations:
+      type: object
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatConversation'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    PaginatedChatConversationsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedChatConversations'
+    PaginatedChatMessages:
+      type: object
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    PaginatedChatMessagesResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PaginatedChatMessages'
+    CreateChatMessageInput:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+    ScheduleOperationFromChatInput:
+      type: object
+      required: [operation_id, scheduled_at, description]
+      properties:
+        operation_id:
+          type: string
+          format: uuid
+        scheduled_at:
+          type: string
+          format: date-time
+        description:
+          type: string
+    ScheduleOperationFromChatResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [conversation, message]
+          properties:
+            conversation:
+              $ref: '#/components/schemas/ChatConversation'
+            message:
+              $ref: '#/components/schemas/ChatMessage'
     UsersPageSize:
       type: integer
       enum: [25, 50, 100]

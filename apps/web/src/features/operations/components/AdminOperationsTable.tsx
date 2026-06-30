@@ -82,11 +82,15 @@ export function AdminOperationsTable({
                   </td>
                   <td>{operation.technician_public_slug}</td>
                   <td>
-                    <span
-                      className={getStatusBadgeClass(operation.order_status)}
-                    >
-                      {operation.order_status}
-                    </span>
+                    {operation.order_status ? (
+                      <span
+                        className={getStatusBadgeClass(operation.order_status)}
+                      >
+                        {operation.order_status}
+                      </span>
+                    ) : (
+                      'Sin definir'
+                    )}
                   </td>
                   <td>
                     <span className={getStatusBadgeClass(operation.status)}>

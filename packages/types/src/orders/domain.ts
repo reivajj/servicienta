@@ -18,6 +18,7 @@ export interface Order {
   client_phone: string | null;
   client_whatsapp_phone: string | null;
   technician_id: string | null;
+  technician_public_slug: string | null;
   technician_name: string | null;
   technician_surname: string | null;
   technician_phone: string | null;

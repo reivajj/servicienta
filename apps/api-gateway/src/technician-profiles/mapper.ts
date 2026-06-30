@@ -14,8 +14,12 @@ import type {
 export function mapPublicTechnicianProfileRow(
   row: PublicTechnicianProfileRow,
 ): PublicTechnicianProfile {
+  const user = Array.isArray(row.user) ? row.user[0] : row.user;
+
   return {
     public_slug: row.public_slug,
+    name: row.name ?? user?.name ?? null,
+    surname: row.surname ?? user?.surname ?? null,
     bio: row.bio,
     rating: Number(row.rating),
     rating_count: row.rating_count,

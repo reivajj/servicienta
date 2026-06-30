@@ -18,11 +18,15 @@ import {
   createActivityEventsApiClient,
   type ActivityEventsApiClient,
 } from '../activity-events/client.js';
+import { createChatApiClient, type ChatApiClient } from '../chat/client.js';
 import {
   createOperationsApiClient,
   type OperationsApiClient,
 } from '../operations/client.js';
-import { createOrdersApiClient, type OrdersApiClient } from '../orders/client.js';
+import {
+  createOrdersApiClient,
+  type OrdersApiClient,
+} from '../orders/client.js';
 import {
   createTechnicianProfilesApiClient,
   type TechnicianProfilesApiClient,
@@ -30,6 +34,7 @@ import {
 
 export interface ApiClient {
   activityEvents: ActivityEventsApiClient['activityEvents'];
+  chat: ChatApiClient['chat'];
   clientOnboarding: ClientOnboardingApiClient['clientOnboarding'];
   users: UsersApiClient['users'];
   clientProfiles: ClientProfilesApiClient['clientProfiles'];
@@ -69,6 +74,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
 
   return {
     ...createActivityEventsApiClient({ apiFetch }),
+    ...createChatApiClient({ apiFetch }),
     ...createUsersApiClient({ apiFetch }),
     ...createClientOnboardingApiClient({ apiFetch }),
     ...createClientProfilesApiClient({ apiFetch }),

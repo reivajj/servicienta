@@ -49,9 +49,21 @@ export async function getPublicTechnicianProfileBySlug(
   publicSlug: string,
 ): Promise<PublicTechnicianProfile> {
   const { data, error } = await supabase
-    .from('public_technician_profiles')
+    .from('technician_profiles')
     .select(
-      'public_slug, bio, rating, rating_count, available, verified_at, created_at',
+      `
+        public_slug,
+        bio,
+        rating,
+        rating_count,
+        available,
+        verified_at,
+        created_at,
+        user:users!technician_profiles_id_fkey(
+          name,
+          surname
+        )
+      `,
     )
     .eq('public_slug', publicSlug)
     .maybeSingle();

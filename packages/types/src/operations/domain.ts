@@ -1,3 +1,5 @@
+export const OPERATION_SCHEDULE_STEP_MINUTES = 10;
+
 export type OperationStatus =
   | 'pending'
   | 'scheduled'
@@ -10,6 +12,7 @@ export interface Operation {
   order_id: string;
   client_id: string;
   technician_id: string;
+  technician_public_slug: string | null;
   status: OperationStatus;
   client_name: string | null;
   client_surname: string | null;

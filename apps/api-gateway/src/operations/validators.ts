@@ -1,3 +1,6 @@
+import {
+  OPERATION_SCHEDULE_STEP_MINUTES,
+} from '@servicienta/types';
 import type {
   CreateOperationInput,
   CreateTechnicianReviewInput,
@@ -48,14 +51,37 @@ export function validateUpdateAdminOperationInput(
     throw new ValidationError('Invalid operation status');
   }
 
+  const scheduledAt = normalizeNullableDateTime(input.scheduled_at);
+  const completedAt = normalizeNullableDateTime(input.completed_at);
+  const technicianCompletedAt = normalizeNullableDateTime(
+    input.technician_completed_at,
+  );
+
+  validateDateOrder({
+    earlierValue: scheduledAt,
+    earlierField: 'scheduled_at',
+    laterValue: technicianCompletedAt,
+    laterField: 'technician_completed_at',
+  });
+  validateDateOrder({
+    earlierValue: scheduledAt,
+    earlierField: 'scheduled_at',
+    laterValue: completedAt,
+    laterField: 'completed_at',
+  });
+  validateDateOrder({
+    earlierValue: technicianCompletedAt,
+    earlierField: 'technician_completed_at',
+    laterValue: completedAt,
+    laterField: 'completed_at',
+  });
+
   return {
     status: input.status,
-    scheduled_at: normalizeNullableDateTime(input.scheduled_at),
+    scheduled_at: scheduledAt,
     description: input.description?.trim() || null,
-    completed_at: normalizeNullableDateTime(input.completed_at),
-    technician_completed_at: normalizeNullableDateTime(
-      input.technician_completed_at,
-    ),
+    completed_at: completedAt,
+    technician_completed_at: technicianCompletedAt,
   };
 }
 
@@ -69,6 +95,14 @@ export function validateScheduleOperationInput(
   );
 
   if (!description) throw new ValidationError('Description is required');
+  if (isPastDateTime(scheduledAt)) {
+    throw new ValidationError('scheduled_at must be in the future');
+  }
+  if (!isAlignedToStep(scheduledAt, OPERATION_SCHEDULE_STEP_MINUTES)) {
+    throw new ValidationError(
+      `scheduled_at must use ${OPERATION_SCHEDULE_STEP_MINUTES}-minute increments`,
+    );
+  }
 
   return {
     scheduled_at: scheduledAt,
@@ -209,4 +243,35 @@ function normalizeRequiredDateTime(value: string, fieldName: string): string {
   }
 
   return trimmedValue;
+}
+
+function isPastDateTime(value: string) {
+  return new Date(value).getTime() < Date.now();
+}
+
+function isAlignedToStep(value: string, stepMinutes: number) {
+  const date = new Date(value);
+
+  return (
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0 &&
+    date.getUTCMinutes() % stepMinutes === 0
+  );
+}
+
+function validateDateOrder({
+  earlierValue,
+  earlierField,
+  laterValue,
+  laterField,
+}: {
+  earlierValue: string | null;
+  earlierField: string;
+  laterValue: string | null;
+  laterField: string;
+}) {
+  if (!earlierValue || !laterValue) return;
+  if (new Date(earlierValue).getTime() <= new Date(laterValue).getTime()) return;
+
+  throw new ValidationError(`${earlierField} must be before or equal to ${laterField}`);
 }

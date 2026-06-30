@@ -5,6 +5,7 @@ export type {
   OperationTechnicianReview,
   OperationStatus,
 } from './domain.js';
+export { OPERATION_SCHEDULE_STEP_MINUTES } from './domain.js';
 export type {
   CompleteOperationResponse,
   CompleteTechOperationResponse,

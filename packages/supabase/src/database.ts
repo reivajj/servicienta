@@ -3,6 +3,9 @@ import type {
   ActivityEvent,
   ApplianceType,
   Brand,
+  ChatConversation,
+  ChatMessage,
+  ChatParticipant,
   ClientProfile,
   Operation,
   Order,
@@ -134,6 +137,25 @@ export interface Database {
         Row: ActivityEvent;
         Insert: Insertable<ActivityEvent>;
         Update: Updatable<Omit<ActivityEvent, 'id' | 'created_at'>>;
+      };
+      chat_conversations: {
+        Row: ChatConversation;
+        Insert: Insertable<ChatConversation>;
+        Update: Updatable<
+          Omit<ChatConversation, 'id' | 'created_by' | 'created_at'>
+        >;
+      };
+      chat_conversation_participants: {
+        Row: ChatParticipant;
+        Insert: Insertable<ChatParticipant>;
+        Update: Updatable<
+          Omit<ChatParticipant, 'conversation_id' | 'user_id' | 'joined_at'>
+        >;
+      };
+      chat_messages: {
+        Row: ChatMessage;
+        Insert: Insertable<ChatMessage>;
+        Update: Updatable<Omit<ChatMessage, 'id' | 'created_at'>>;
       };
     };
     Views: {

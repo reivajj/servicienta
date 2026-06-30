@@ -9,6 +9,7 @@ export type { ApiClientConfig } from './core/http.js';
 export { createApiClient } from './core/client.js';
 export { ApiClientError } from './core/http.js';
 export * from './activity-events/index.js';
+export * from './chat/index.js';
 export * from './client-onboarding/index.js';
 export * from './client-profiles/index.js';
 export * from './operations/index.js';

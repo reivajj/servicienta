@@ -48,6 +48,7 @@ const ORDER_DETAIL_SELECT = `
   created_at,
   updated_at,
   technician:technician_profiles!orders_technician_id_fkey(
+    public_slug,
     phone,
     whatsapp_phone,
     user:users!technician_profiles_id_fkey(

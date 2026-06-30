@@ -1,7 +1,9 @@
 export function InternalChatActionButton({
   label = 'Chat interno próximamente',
+  onClick,
 }: {
   label?: string;
+  onClick?: () => void;
 }) {
   return (
     <button
@@ -9,7 +11,8 @@ export function InternalChatActionButton({
       className="users-table__action users-table__action--icon users-table__action--chat"
       aria-label={label}
       title={label}
-      disabled
+      disabled={!onClick}
+      onClick={onClick}
     >
       <svg
         viewBox="0 0 24 24"

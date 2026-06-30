@@ -21,6 +21,8 @@ export interface TechnicianProfile {
 
 export interface PublicTechnicianProfile {
   public_slug: string;
+  name: string | null;
+  surname: string | null;
   bio: string | null;
   rating: number;
   rating_count: number;

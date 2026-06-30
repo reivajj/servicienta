@@ -30,6 +30,7 @@ export function mapOrderRow(row: OrderRow): Order {
     client_phone: clientProfile?.phone ?? null,
     client_whatsapp_phone: clientProfile?.whatsapp_phone ?? null,
     technician_id: row.technician_id,
+    technician_public_slug: technician?.public_slug ?? null,
     technician_name: technicianUser?.name ?? null,
     technician_surname: technicianUser?.surname ?? null,
     technician_phone: technician?.phone ?? null,

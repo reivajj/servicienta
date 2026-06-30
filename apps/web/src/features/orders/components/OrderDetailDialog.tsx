@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   useAdminOperations,
   useAdminOrder,
@@ -10,12 +10,12 @@ import {
   useUpdateAdminOrder,
 } from '@servicienta/query-hooks';
 import type {
-  AdminOrder,
   Order,
   OrderFlowType,
   OrderStatus,
   UsersPageSize,
 } from '@servicienta/types';
+import { ChatDialog } from '../../chat/components/ChatDialog';
 import { AdminOperationsTable } from '../../operations/components/AdminOperationsTable';
 import { OperationDetailDialog } from '../../operations/components/OperationDetailDialog';
 import { InternalChatActionButton } from '../../shared/components/InternalChatActionButton';
@@ -35,11 +35,12 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-function formatFlowType(value: OrderFlowType) {
-  return value === 'client_selects' ? 'Client selects' : 'Tech applies';
-}
-
-function formatTechnicianLabel(order: Pick<Order, 'technician_id' | 'technician_name' | 'technician_surname'>) {
+function formatTechnicianLabel(
+  order: Pick<
+    Order,
+    'technician_id' | 'technician_name' | 'technician_surname'
+  >,
+) {
   if (!order.technician_id) return 'Sin técnico asignado';
 
   return formatPersonName(order.technician_name, order.technician_surname);
@@ -84,6 +85,7 @@ function buildWhatsAppUrl(phone: string | null) {
 function CoordinationCard({
   role,
   order,
+  onOpenChat,
 }: {
   role: 'client' | 'technician';
   order: Pick<
@@ -93,11 +95,13 @@ function CoordinationCard({
     | 'client_phone'
     | 'client_whatsapp_phone'
     | 'technician_id'
+    | 'technician_public_slug'
     | 'technician_name'
     | 'technician_surname'
     | 'technician_phone'
     | 'technician_whatsapp_phone'
   >;
+  onOpenChat?: () => void;
 }) {
   const isClient = role === 'client';
   const counterpartName = isClient
@@ -121,7 +125,10 @@ function CoordinationCard({
           <h2>Coordiná la visita</h2>
         </div>
 
-          <InternalChatActionButton />
+        <InternalChatActionButton
+          label="Abrir chat interno"
+          onClick={onOpenChat}
+        />
       </div>
 
       <p className="orders-dialog__coordination-copy">
@@ -177,10 +184,13 @@ function TechnicianInfoCard({
   technicianEmail,
   technicianStatus,
   showTechnicianLink = false,
+  usePublicTechnicianLink = false,
+  onOpenChat,
 }: {
   order: Pick<
     Order,
     | 'technician_id'
+    | 'technician_public_slug'
     | 'technician_name'
     | 'technician_surname'
     | 'technician_phone'
@@ -189,10 +199,15 @@ function TechnicianInfoCard({
   technicianEmail?: string | null;
   technicianStatus?: 'ACTIVE' | 'DELETED' | null;
   showTechnicianLink?: boolean;
+  usePublicTechnicianLink?: boolean;
+  onOpenChat?: () => void;
 }) {
   const whatsAppUrl = buildWhatsAppUrl(
     order.technician_whatsapp_phone ?? order.technician_phone,
   );
+  const technicianLinkParam = usePublicTechnicianLink
+    ? order.technician_public_slug
+    : order.technician_id;
 
   return (
     <article className="users-panel">
@@ -203,13 +218,16 @@ function TechnicianInfoCard({
         </div>
 
         <div className="orders-dialog__icon-actions">
-          <InternalChatActionButton />
+          <InternalChatActionButton
+            label="Abrir chat interno"
+            onClick={onOpenChat}
+          />
 
-          {showTechnicianLink && order.technician_id ? (
+          {showTechnicianLink && technicianLinkParam ? (
             <Link
               className="users-table__action users-table__action--icon"
               to="/technicians/$technicianId"
-              params={{ technicianId: order.technician_id }}
+              params={{ technicianId: technicianLinkParam }}
               aria-label="Ver técnico"
               title="Ver técnico"
             >
@@ -248,7 +266,10 @@ function TechnicianInfoCard({
           <dt>Nombre</dt>
           <dd>
             {order.technician_id
-              ? formatPersonName(order.technician_name, order.technician_surname)
+              ? formatPersonName(
+                  order.technician_name,
+                  order.technician_surname,
+                )
               : 'Sin asignar'}
           </dd>
         </div>
@@ -314,6 +335,7 @@ function CurrentOrderDetailView({
   showCloseButton?: boolean;
   onClose?: () => void;
 }) {
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const { data: order, error, isLoading } = useCurrentOrder(orderId);
   const acceptOrder = useAcceptOrder();
@@ -335,7 +357,9 @@ function CurrentOrderDetailView({
 
   return (
     <>
-      <header className={showCloseButton ? 'users-modal__header' : 'users-hero'}>
+      <header
+        className={showCloseButton ? 'users-modal__header' : 'users-hero'}
+      >
         <div>
           <p className="users-hero__eyebrow">Order Detail</p>
           <h1>Detalle de order</h1>
@@ -370,6 +394,7 @@ function CurrentOrderDetailView({
           order={order}
           role={currentUser?.role === 'technician' ? 'technician' : 'client'}
           showTechnicianInfo={currentUser?.role !== 'technician'}
+          onOpenChat={() => setIsChatOpen(true)}
           actionSlot={
             isTechnician && canAcceptOrder(order.status) ? (
               <>
@@ -449,6 +474,9 @@ function CurrentOrderDetailView({
           }
         />
       )}
+      {isChatOpen && order ? (
+        <ChatDialog orderId={order.id} onClose={() => setIsChatOpen(false)} />
+      ) : null}
     </>
   );
 }
@@ -457,11 +485,13 @@ function CurrentOrderContent({
   order,
   role,
   showTechnicianInfo = true,
+  onOpenChat,
   actionSlot,
 }: {
   order: Order;
   role: 'client' | 'technician';
   showTechnicianInfo?: boolean;
+  onOpenChat?: () => void;
   actionSlot?: ReactNode;
 }) {
   return (
@@ -480,42 +510,29 @@ function CurrentOrderContent({
             <dt>Updated at</dt>
             <dd>{formatDateTime(order.updated_at)}</dd>
           </div>
+          <div>
+            <dt>Status</dt>
+            <dd>
+              <span className={getStatusBadgeClass(order.status)}>
+                {order.status}
+              </span>
+            </dd>
+          </div>
         </dl>
       </article>
 
-      <section className="orders-dialog__content">
-        <article className="users-panel">
-          <div className="user-card__header">
-            <div>
-              <p className="user-card__label">Order</p>
-              <h2>Estado y flujo</h2>
-            </div>
-
-            <span className={getStatusBadgeClass(order.status)}>
-              {order.status}
-            </span>
-          </div>
-
-          <dl className="user-card__meta">
-            <div>
-              <dt>Flow type</dt>
-              <dd>{formatFlowType(order.flow_type)}</dd>
-            </div>
-            <div>
-              <dt>Zona</dt>
-              <dd>{order.zone_slug ?? 'Sin definir'}</dd>
-            </div>
-            <div>
-              <dt>Rubro</dt>
-              <dd>{order.appliance_type_slug ?? 'Sin definir'}</dd>
-            </div>
-          </dl>
-        </article>
-
-        {showTechnicianInfo ? <TechnicianInfoCard order={order} /> : null}
+      <section className="orders-dialog__content orders-dialog__current-content">
+        {showTechnicianInfo ? (
+          <TechnicianInfoCard
+            order={order}
+            showTechnicianLink
+            usePublicTechnicianLink={role === 'client'}
+            onOpenChat={onOpenChat}
+          />
+        ) : null}
 
         {order.status === 'accepted' ? (
-          <CoordinationCard order={order} role={role} />
+          <CoordinationCard order={order} role={role} onOpenChat={onOpenChat} />
         ) : null}
 
         <article className="users-panel">
@@ -536,12 +553,22 @@ function CurrentOrderContent({
               <dd>{order.description}</dd>
             </div>
             <div>
+              <dt>Zona</dt>
+              <dd>{order.zone_slug ?? 'Sin definir'}</dd>
+            </div>
+            <div>
+              <dt>Rubro</dt>
+              <dd>{order.appliance_type_slug ?? 'Sin definir'}</dd>
+            </div>
+            <div>
               <dt>Notas</dt>
               <dd>{order.address_notes ?? 'Sin notas'}</dd>
             </div>
           </dl>
 
-          {actionSlot ? <div className="orders-dialog__actions">{actionSlot}</div> : null}
+          {actionSlot ? (
+            <div className="orders-dialog__actions">{actionSlot}</div>
+          ) : null}
         </article>
       </section>
     </>
@@ -647,6 +674,9 @@ function AdminOrderDetailView({
   onClose?: () => void;
 }) {
   const [showOperations, setShowOperations] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const summaryRef = useRef<HTMLElement | null>(null);
+  const [editCardHeight, setEditCardHeight] = useState<number | null>(null);
   const { data: order, error, isLoading } = useAdminOrder(orderId);
   const updateOrder = useUpdateAdminOrder();
   const errorMessage =
@@ -703,9 +733,44 @@ function AdminOrderDetailView({
     });
   }
 
+  useEffect(() => {
+    if (!order) return;
+
+    function updateEditCardHeight() {
+      if (!summaryRef.current) return;
+
+      if (window.innerWidth <= 640) {
+        setEditCardHeight(null);
+        return;
+      }
+
+      setEditCardHeight(summaryRef.current.getBoundingClientRect().height);
+    }
+
+    updateEditCardHeight();
+
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => updateEditCardHeight())
+        : null;
+
+    if (summaryRef.current && resizeObserver) {
+      resizeObserver.observe(summaryRef.current);
+    }
+
+    window.addEventListener('resize', updateEditCardHeight);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', updateEditCardHeight);
+    };
+  }, [order]);
+
   return (
     <>
-      <header className={showCloseButton ? 'users-modal__header' : 'users-hero'}>
+      <header
+        className={showCloseButton ? 'users-modal__header' : 'users-hero'}
+      >
         <div>
           <p className="users-hero__eyebrow">Order Detail</p>
           <h1 id={titleId}>Ver y editar order</h1>
@@ -753,221 +818,258 @@ function AdminOrderDetailView({
                 <dt>Updated at</dt>
                 <dd>{formatDateTime(order.updated_at)}</dd>
               </div>
-            </dl>
-          </article>
-
-          <section className="orders-dialog__content">
-            <section className="orders-dialog__summary">
-            <article className="users-panel">
-              <div className="user-card__header">
-                <div>
-                  <p className="user-card__label">Cliente</p>
-                  <h2>
-                    {formatPersonName(order.client_name, order.client_surname)}
-                  </h2>
-                </div>
-
-                <div className="orders-dialog__icon-actions">
+              <div>
+                <dt>Status</dt>
+                <dd>
                   <span className={getStatusBadgeClass(order.status)}>
                     {order.status}
                   </span>
-                  <InternalChatActionButton label="Chat interno cliente próximamente" />
-                  <ViewClientProfileActionLink
-                    clientProfileId={order.client_id}
-                    label="Ver cliente"
-                  />
-                </div>
+                </dd>
               </div>
+            </dl>
+          </article>
 
-              <dl className="user-card__meta">
-                <div>
-                  <dt>Email</dt>
-                  <dd>{order.client_email}</dd>
-                </div>
-                <div>
-                  <dt>Client ID</dt>
-                  <dd>{order.client_id}</dd>
-                </div>
-                <div>
-                  <dt>Client status</dt>
-                  <dd>
-                    <span className={getUserStatusBadgeClass(order.client_status)}>
-                      {order.client_status}
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Flow type</dt>
-                  <dd>{order.flow_type}</dd>
-                </div>
-              </dl>
-            </article>
+          <section className="orders-dialog__content orders-dialog__admin-content">
+            <section className="orders-dialog__primary-grid">
+              <section ref={summaryRef} className="orders-dialog__summary">
+                <article className="users-panel">
+                  <div className="user-card__header">
+                    <div>
+                      <p className="user-card__label">Cliente</p>
+                      <h2>
+                        {formatPersonName(
+                          order.client_name,
+                          order.client_surname,
+                        )}
+                      </h2>
+                    </div>
 
-            <TechnicianInfoCard
-              order={order}
-              technicianEmail={order.technician_email}
-              technicianStatus={order.technician_status}
-              showTechnicianLink
-            />
-          </section>
+                    <div className="orders-dialog__icon-actions">
+                      <InternalChatActionButton
+                        label="Abrir chat interno"
+                        onClick={() => setIsChatOpen(true)}
+                      />
+                      <ViewClientProfileActionLink
+                        clientProfileId={order.client_id}
+                        label="Ver cliente"
+                        icon="person"
+                      />
+                    </div>
+                  </div>
 
-          <article className="users-panel">
-            <p className="user-card__label">Editar Order</p>
-            <h3>Patch admin</h3>
+                  <dl className="user-card__meta">
+                    <div>
+                      <dt>Email</dt>
+                      <dd>{order.client_email}</dd>
+                    </div>
+                    <div>
+                      <dt>Client ID</dt>
+                      <dd>{order.client_id}</dd>
+                    </div>
+                    <div>
+                      <dt>Client status</dt>
+                      <dd>
+                        <span
+                          className={getUserStatusBadgeClass(
+                            order.client_status,
+                          )}
+                        >
+                          {order.client_status}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Flow type</dt>
+                      <dd>{order.flow_type}</dd>
+                    </div>
+                  </dl>
+                </article>
 
-            <form
-              key={`${order.id}:${order.status}:${order.flow_type}:${order.updated_at}`}
-              className="auth-form"
-              onSubmit={handleSubmit}
-            >
-              <input
-                name="technician_id"
-                type="hidden"
-                value={order.technician_id ?? ''}
-                readOnly
-              />
-
-              <label className="auth-form__field">
-                <span>Status</span>
-                <select name="status" defaultValue={order.status}>
-                  <option value="pending">Pending</option>
-                  <option value="accepted">Accepted</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="in_progress">In progress</option>
-                  <option value="completed_tech">Completed tech</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </label>
-
-              <label className="auth-form__field">
-                <span>Flujo</span>
-                <select name="flow_type" defaultValue={order.flow_type}>
-                  <option value="client_selects">Client selects</option>
-                  <option value="tech_applies">Tech applies</option>
-                </select>
-              </label>
-
-              <label className="auth-form__field">
-                <span>Descripción</span>
-                <input
-                  name="description"
-                  type="text"
-                  defaultValue={order.description}
+                <TechnicianInfoCard
+                  order={order}
+                  technicianEmail={order.technician_email}
+                  technicianStatus={order.technician_status}
+                  showTechnicianLink
+                  onOpenChat={() => setIsChatOpen(true)}
                 />
-              </label>
+              </section>
 
-              <label className="auth-form__field">
-                <span>Dirección</span>
-                <input
-                  name="service_address_text"
-                  type="text"
-                  defaultValue={order.service_address_text}
-                />
-              </label>
+              <article
+                className="users-panel orders-dialog__edit-card"
+                style={
+                  editCardHeight ? { height: `${editCardHeight}px` } : undefined
+                }
+              >
+                <p className="user-card__label">Editar Order</p>
+                <h3>Patch admin</h3>
 
-              <label className="auth-form__field">
-                <span>Zona</span>
-                <input
-                  name="zone_slug"
-                  type="text"
-                  defaultValue={order.zone_slug ?? ''}
-                />
-              </label>
-
-              <label className="auth-form__field">
-                <span>Rubro</span>
-                <input
-                  name="appliance_type_slug"
-                  type="text"
-                  defaultValue={order.appliance_type_slug ?? ''}
-                />
-              </label>
-
-              <label className="auth-form__field">
-                <span>Notas</span>
-                <input
-                  name="address_notes"
-                  type="text"
-                  defaultValue={order.address_notes ?? ''}
-                />
-              </label>
-
-              <label className="auth-form__field">
-                <span>Latitud</span>
-                <input
-                  name="service_lat"
-                  type="number"
-                  step="any"
-                  defaultValue={order.service_lat ?? ''}
-                />
-              </label>
-
-              <label className="auth-form__field">
-                <span>Longitud</span>
-                <input
-                  name="service_lng"
-                  type="number"
-                  step="any"
-                  defaultValue={order.service_lng ?? ''}
-                />
-              </label>
-
-              <div className="orders-dialog__actions">
-                <button
-                  type="submit"
-                  className="orders-dialog__primary-action"
-                  disabled={updateOrder.isPending}
+                <form
+                  key={`${order.id}:${order.status}:${order.flow_type}:${order.updated_at}`}
+                  className="auth-form orders-dialog__edit-form"
+                  onSubmit={handleSubmit}
                 >
-                  {updateOrder.isPending ? 'Guardando...' : 'Guardar cambios'}
-                </button>
+                  <input
+                    name="technician_id"
+                    type="hidden"
+                    value={order.technician_id ?? ''}
+                    readOnly
+                  />
 
-                {order.status !== 'cancelled' ? (
+                  <div className="orders-dialog__edit-form-body">
+                    <label className="auth-form__field">
+                      <span>Status</span>
+                      <select name="status" defaultValue={order.status}>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="completed_tech">Completed tech</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Flujo</span>
+                      <select name="flow_type" defaultValue={order.flow_type}>
+                        <option value="client_selects">Client selects</option>
+                        <option value="tech_applies">Tech applies</option>
+                      </select>
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Descripción</span>
+                      <input
+                        name="description"
+                        type="text"
+                        defaultValue={order.description}
+                      />
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Dirección</span>
+                      <input
+                        name="service_address_text"
+                        type="text"
+                        defaultValue={order.service_address_text}
+                      />
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Zona</span>
+                      <input
+                        name="zone_slug"
+                        type="text"
+                        defaultValue={order.zone_slug ?? ''}
+                      />
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Rubro</span>
+                      <input
+                        name="appliance_type_slug"
+                        type="text"
+                        defaultValue={order.appliance_type_slug ?? ''}
+                      />
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Notas</span>
+                      <input
+                        name="address_notes"
+                        type="text"
+                        defaultValue={order.address_notes ?? ''}
+                      />
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Latitud</span>
+                      <input
+                        name="service_lat"
+                        type="number"
+                        step="any"
+                        defaultValue={order.service_lat ?? ''}
+                      />
+                    </label>
+
+                    <label className="auth-form__field">
+                      <span>Longitud</span>
+                      <input
+                        name="service_lng"
+                        type="number"
+                        step="any"
+                        defaultValue={order.service_lng ?? ''}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="orders-dialog__actions orders-dialog__edit-actions">
+                    <button
+                      type="submit"
+                      className="orders-dialog__primary-action"
+                      disabled={updateOrder.isPending}
+                    >
+                      {updateOrder.isPending
+                        ? 'Guardando...'
+                        : 'Guardar cambios'}
+                    </button>
+
+                    {order.status !== 'cancelled' ? (
+                      <button
+                        type="button"
+                        className="users-table__action users-table__action--danger"
+                        disabled={updateOrder.isPending}
+                        onClick={handleDeleteOrder}
+                      >
+                        {updateOrder.isPending ? 'Eliminando...' : 'Eliminar'}
+                      </button>
+                    ) : null}
+                  </div>
+                </form>
+
+                <p
+                  className={
+                    feedbackMessage
+                      ? updateMessage
+                        ? 'users-message users-message--error'
+                        : 'users-message users-message--success'
+                      : 'users-message'
+                  }
+                >
+                  {feedbackMessage || ' '}
+                </p>
+              </article>
+            </section>
+
+            {!showCloseButton ? (
+              <article className="users-panel orders-dialog__operations-card">
+                <div className="user-card__header">
+                  <div>
+                    <p className="user-card__label">Operations</p>
+                    <h3>Operations vinculadas</h3>
+                  </div>
+
                   <button
                     type="button"
-                    className="users-table__action users-table__action--danger"
-                    disabled={updateOrder.isPending}
-                    onClick={handleDeleteOrder}
+                    className="users-table__action"
+                    onClick={() =>
+                      setShowOperations((currentValue) => !currentValue)
+                    }
                   >
-                    {updateOrder.isPending ? 'Eliminando...' : 'Eliminar'}
+                    {showOperations ? 'Ocultar operaciones' : 'Ver operaciones'}
                   </button>
+                </div>
+
+                {showOperations ? (
+                  <OrderOperationsPanel orderId={order.id} />
                 ) : null}
-              </div>
-            </form>
-
-            <p
-              className={
-                feedbackMessage
-                  ? updateMessage
-                    ? 'users-message users-message--error'
-                    : 'users-message users-message--success'
-                  : 'users-message'
-              }
-              >
-                {feedbackMessage || ' '}
-              </p>
-          </article>
-
-          <article className="users-panel orders-dialog__operations-card">
-            <div className="user-card__header">
-              <div>
-                <p className="user-card__label">Operations</p>
-                <h3>Operations vinculadas</h3>
-              </div>
-
-              <button
-                type="button"
-                className="users-table__action"
-                onClick={() => setShowOperations((currentValue) => !currentValue)}
-              >
-                {showOperations ? 'Ocultar operaciones' : 'Ver operaciones'}
-              </button>
-            </div>
-
-            {showOperations ? <OrderOperationsPanel orderId={order.id} /> : null}
-          </article>
+              </article>
+            ) : null}
           </section>
         </>
       )}
+      {isChatOpen && order ? (
+        <ChatDialog orderId={order.id} onClose={() => setIsChatOpen(false)} />
+      ) : null}
     </>
   );
 }

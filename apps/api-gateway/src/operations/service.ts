@@ -63,6 +63,7 @@ const CURRENT_OPERATION_SELECT = `
     )
   ),
   technician:technician_profiles!operations_technician_id_fkey(
+    public_slug,
     phone,
     whatsapp_phone,
     user:users!technician_profiles_id_fkey(
@@ -492,7 +493,9 @@ export async function createTechnicianReview(
 
   const { data: operation, error: operationError } = await supabase
     .from('operations')
-    .select('id, order_id, technician_id, status, order:orders!inner(client_id)')
+    .select(
+      'id, order_id, technician_id, status, order:orders!inner(client_id)',
+    )
     .eq('id', operationId)
     .eq('order.client_id', auth.id)
     .maybeSingle();

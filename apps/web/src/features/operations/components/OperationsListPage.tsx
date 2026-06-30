@@ -14,6 +14,8 @@ import type {
   OperationStatus,
   UsersPageSize,
 } from '@servicienta/types';
+import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
+import { DateTimePickerField } from '../../shared/components/DateTimePickerField';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { ViewOperationActionLink } from '../../shared/components/ViewOperationActionLink';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
@@ -31,16 +33,6 @@ function formatDateTime(value: string | null) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value));
-}
-
-function toDateTimeLocal(value: string | null) {
-  if (!value) return '';
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-
-  const offsetMs = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
 function toIsoDateTime(value: FormDataEntryValue | null) {
@@ -456,15 +448,15 @@ function CurrentOperationsListPage({ role }: { role: string }) {
               </button>
             </header>
             <form className="auth-form" onSubmit={handleScheduleSubmit}>
-              <label className="auth-form__field">
-                <span>Fecha y horario</span>
-                <input
-                  name="scheduled_at"
-                  type="datetime-local"
-                  defaultValue={toDateTimeLocal(scheduleOperation.scheduled_at)}
-                  required
-                />
-              </label>
+              <DateTimePickerField
+                name="scheduled_at"
+                label="Fecha y horario"
+                initialValue={scheduleOperation.scheduled_at}
+                required
+                disablePastDates
+                preventPastTimeSelection
+                minuteStep={OPERATION_SCHEDULE_STEP_MINUTES}
+              />
               <label className="auth-form__field">
                 <span>Descripción técnica</span>
                 <textarea

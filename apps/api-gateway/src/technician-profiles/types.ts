@@ -1,5 +1,17 @@
 export interface PublicTechnicianProfileRow {
   public_slug: string;
+  name?: string | null;
+  surname?: string | null;
+  user?:
+    | {
+        name: string | null;
+        surname: string | null;
+      }
+    | Array<{
+        name: string | null;
+        surname: string | null;
+      }>
+    | null;
   bio: string | null;
   rating: number;
   rating_count: number;

@@ -5,3 +5,4 @@ export * from './client-onboarding/index.js';
 export * from './orders/index.js';
 export * from './operations/index.js';
 export * from './activity-events/index.js';
+export * from './chat/index.js';

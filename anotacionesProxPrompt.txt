@@ -1,26 +1,25 @@
 Me quede sin tokens... 
 
-Tengo que retomar la conversacion: Revisa source-of-truth (del 13 de Mayo)
+Empezar conversacion nueva. Mucha info ya compactada.
 
 Proximo paso
 
 Probar flujo end-to-end con seed:
 
-YA HECHO:
-Agregar TechnicianReview a la vista operativa:
-En Operations o en el dialog de Order, mostrar si la order tiene review.
-Mostrar rating/comment básico.
-Esto está nombrado explícitamente como pendiente.
-
 FALTA: 
-Entrar como client.
-Crear order.
-Seleccionar técnico / crear operation.
-Completar operation.
-Confirmar estados en UI.
+
+CHAT: 
+1.Usar chat para ver correcciones.
+2.Ya de entrada, hacer que haya una pestaña de chats en el sidebar para acceder a todos los chats. 
+3.Que el chat en si sea como los tipicos de apps, que aparezca abajo o un icono flotante en Desktop y se abra, hoy es 
+estilo pop up transparente...
+4.Que con ENTER se mande el mensaje, con shift mas enter salto de linea.
+5.Ver de que manera agilizar el envio de msjs. Tal vez permitir que el browser mande? Hoy se hace por api, que implicaria?
+6. Accion de Agendar para el Tech dentro del chat.
+
 Reemplazar edición libre de status por acciones de negocio:
 
-Confirmar operation
+Confirmar operation con la Agenda, ver UI de eso que esta mal/basico todavia
 Completar operation
 Cancelar operation
 Cerrar order

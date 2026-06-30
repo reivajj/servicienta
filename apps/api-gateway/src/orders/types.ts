@@ -34,6 +34,7 @@ export interface OrderRow {
   technician_id: string | null;
   technician?:
     | {
+        public_slug: string;
         phone: string | null;
         whatsapp_phone: string | null;
         user:
@@ -47,6 +48,7 @@ export interface OrderRow {
             }>;
       }
     | Array<{
+        public_slug: string;
         phone: string | null;
         whatsapp_phone: string | null;
         user:
@@ -74,17 +76,19 @@ export interface OrderRow {
 }
 
 export interface AdminOrderRow extends OrderRow {
-  client: {
-    email: string;
-    name: string | null;
-    surname: string | null;
-    status: string;
-  } | Array<{
-    email: string;
-    name: string | null;
-    surname: string | null;
-    status: string;
-  }>;
+  client:
+    | {
+        email: string;
+        name: string | null;
+        surname: string | null;
+        status: string;
+      }
+    | Array<{
+        email: string;
+        name: string | null;
+        surname: string | null;
+        status: string;
+      }>;
   technician:
     | {
         public_slug: string;

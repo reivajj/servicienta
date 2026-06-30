@@ -2,7 +2,9 @@ export type ActivityEventEntityType =
   | 'user'
   | 'order'
   | 'operation'
-  | 'technician_review';
+  | 'technician_review'
+  | 'chat_conversation'
+  | 'chat_message';
 
 export type ActivityEventType =
   | 'user.client_onboarded'
@@ -15,6 +17,9 @@ export type ActivityEventType =
   | 'operation.completed_by_client'
   | 'operation.cancelled'
   | 'technician_review.created'
+  | 'chat.message_created'
+  | 'chat.admin_joined'
+  | 'chat.operation_scheduled_from_chat'
   | 'admin.order_updated'
   | 'admin.operation_updated';
 

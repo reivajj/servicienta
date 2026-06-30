@@ -5,6 +5,7 @@ import {
   useAdminOperations,
   useAdminOrders,
   useCurrentUser,
+  usePublicTechnicianProfile,
   useUpdateAdminTechnicianProfile,
   useUpdateCurrentTechnicianProfile,
 } from '@servicienta/query-hooks';
@@ -12,6 +13,7 @@ import type {
   AdminOrder,
   OrderFlowType,
   OrderStatus,
+  PublicTechnicianProfile,
   UpdateTechnicianProfileInput,
 } from '@servicienta/types';
 import { AdminOperationsTable } from '../../operations/components/AdminOperationsTable';
@@ -53,6 +55,89 @@ function formatContactChannel(channel: 'phone' | 'whatsapp') {
 
 function getStatusBadgeClass(status: OrderStatus) {
   return `status-badge status-badge--${status}`;
+}
+
+function PublicTechnicianProfileView({
+  profile,
+}: {
+  profile: PublicTechnicianProfile;
+}) {
+  return (
+    <>
+      <header className="users-hero">
+        <div>
+          <p className="users-hero__eyebrow">Technician Profile</p>
+          <h1>{formatTechnicianName(profile.name, profile.surname)}</h1>
+          <p className="users-hero__copy">
+            Perfil público del técnico con información visible para clientes.
+          </p>
+        </div>
+
+        <div className="users-hero__summary">
+          <span>{profile.rating.toFixed(1)} rating</span>
+          <span>{profile.rating_count} reviews</span>
+          <span>{profile.available ? 'Disponible' : 'No disponible'}</span>
+        </div>
+      </header>
+
+      <section className="users-detail-grid">
+        <article className="users-panel">
+          <div className="user-card__header">
+            <div>
+              <p className="user-card__label">Perfil público</p>
+              <h2>{formatTechnicianName(profile.name, profile.surname)}</h2>
+            </div>
+            <span
+              className={
+                profile.available
+                  ? 'user-badge user-badge--active'
+                  : 'user-badge user-badge--deleted'
+              }
+            >
+              {profile.available ? 'Disponible' : 'No disponible'}
+            </span>
+          </div>
+
+          <dl className="user-card__meta">
+            <div>
+              <dt>Public slug</dt>
+              <dd>{profile.public_slug}</dd>
+            </div>
+            <div>
+              <dt>Bio</dt>
+              <dd>{profile.bio || 'Sin bio pública'}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article className="users-panel">
+          <div className="user-card__header">
+            <div>
+              <p className="user-card__label">Reputación</p>
+              <h2>Rating y verificación</h2>
+            </div>
+          </div>
+
+          <dl className="user-card__meta">
+            <div>
+              <dt>Rating</dt>
+              <dd>
+                {profile.rating.toFixed(1)} / 5 ({profile.rating_count} reviews)
+              </dd>
+            </div>
+            <div>
+              <dt>Verificado</dt>
+              <dd>{formatDateTime(profile.verified_at)}</dd>
+            </div>
+            <div>
+              <dt>Creado</dt>
+              <dd>{formatDateTime(profile.created_at)}</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+    </>
+  );
 }
 
 function TechnicianOrdersTable({ orders }: { orders: AdminOrder[] }) {
@@ -111,6 +196,7 @@ export function TechnicianProfilePage({
   const canUseAdminProfile = currentUser?.role === 'admin';
   const canUseCurrentProfile =
     currentUser?.role === 'technician' && currentUser.id === technicianId;
+  const canUsePublicProfile = currentUser?.role === 'client';
   const canEditProfile = canUseAdminProfile || canUseCurrentProfile;
 
   const {
@@ -123,6 +209,11 @@ export function TechnicianProfilePage({
     error: currentProfileError,
     isLoading: isCurrentProfileLoading,
   } = useCurrentTechnicianProfile({ enabled: canUseCurrentProfile });
+  const {
+    data: publicProfile,
+    error: publicProfileError,
+    isLoading: isPublicProfileLoading,
+  } = usePublicTechnicianProfile(canUsePublicProfile ? technicianId : '');
   const updateAdminProfileMutation = useUpdateAdminTechnicianProfile();
   const updateCurrentProfileMutation = useUpdateCurrentTechnicianProfile();
   const {
@@ -153,11 +244,14 @@ export function TechnicianProfilePage({
   const profile = canUseAdminProfile ? adminProfile : currentProfile;
   const profileError = canUseAdminProfile
     ? adminProfileError
-    : currentProfileError;
+    : canUsePublicProfile
+      ? publicProfileError
+      : currentProfileError;
   const isProfileLoading =
     isCurrentUserLoading ||
     (canUseAdminProfile && isAdminProfileLoading) ||
-    (canUseCurrentProfile && isCurrentProfileLoading);
+    (canUseCurrentProfile && isCurrentProfileLoading) ||
+    (canUsePublicProfile && isPublicProfileLoading);
   const profileErrorMessage =
     profileError instanceof Error
       ? profileError.message
@@ -192,6 +286,16 @@ export function TechnicianProfilePage({
           <section className="users-panel">
             <p>Cargando técnico...</p>
           </section>
+        ) : canUsePublicProfile ? (
+          publicProfile ? (
+            <PublicTechnicianProfileView profile={publicProfile} />
+          ) : (
+            <section className="users-panel">
+              <p className="users-message users-message--error">
+                {profileErrorMessage}
+              </p>
+            </section>
+          )
         ) : profileError || !profile ? (
           <section className="users-panel">
             <p className="users-message users-message--error">

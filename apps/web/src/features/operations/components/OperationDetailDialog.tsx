@@ -10,7 +10,10 @@ import {
   useScheduleOperation,
   useUpdateAdminOperation,
 } from '@servicienta/query-hooks';
+import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
 import type { Operation, OperationStatus } from '@servicienta/types';
+import { ChatDialog } from '../../chat/components/ChatDialog';
+import { DateTimePickerField } from '../../shared/components/DateTimePickerField';
 import { InternalChatActionButton } from '../../shared/components/InternalChatActionButton';
 import { ViewClientProfileActionLink } from '../../shared/components/ViewClientProfileActionLink';
 import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
@@ -20,16 +23,6 @@ function formatFullName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
 
   return fullName || 'Sin nombre';
-}
-
-function toDateTimeLocal(value: string | null) {
-  if (!value) return '';
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-
-  const offsetMs = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
 function toIsoDateTime(value: FormDataEntryValue | null) {
@@ -57,6 +50,66 @@ function formatDateTime(value: string | null) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function buildAdminDateWarnings(operation: Operation) {
+  const warnings: string[] = [];
+
+  if (
+    operation.scheduled_at &&
+    operation.technician_completed_at &&
+    new Date(operation.scheduled_at).getTime() >
+      new Date(operation.technician_completed_at).getTime()
+  ) {
+    warnings.push(
+      'La fecha programada actual es posterior a la completada por técnico.',
+    );
+  }
+
+  if (
+    operation.scheduled_at &&
+    operation.completed_at &&
+    new Date(operation.scheduled_at).getTime() >
+      new Date(operation.completed_at).getTime()
+  ) {
+    warnings.push(
+      'La fecha programada actual es posterior a la fecha completada.',
+    );
+  }
+
+  if (
+    operation.technician_completed_at &&
+    operation.completed_at &&
+    new Date(operation.technician_completed_at).getTime() >
+      new Date(operation.completed_at).getTime()
+  ) {
+    warnings.push(
+      'La fecha completada por técnico actual es posterior a la fecha completada.',
+    );
+  }
+
+  if (operation.status === 'scheduled' && !operation.scheduled_at) {
+    warnings.push(
+      'El status actual es scheduled pero la operation no tiene fecha programada.',
+    );
+  }
+
+  if (
+    operation.status === 'completed_tech' &&
+    !operation.technician_completed_at
+  ) {
+    warnings.push(
+      'El status actual es completed_tech pero la operation no tiene fecha completada por técnico.',
+    );
+  }
+
+  if (operation.status === 'completed' && !operation.completed_at) {
+    warnings.push(
+      'El status actual es completed pero la operation no tiene fecha completada.',
+    );
+  }
+
+  return warnings;
 }
 
 function buildWhatsAppUrl(phone: string | null) {
@@ -148,11 +201,7 @@ function OperationUserCard({
   );
 }
 
-function CurrentOperationActions({
-  operation,
-}: {
-  operation: Operation;
-}) {
+function CurrentOperationActions({ operation }: { operation: Operation }) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const scheduleOperation = useScheduleOperation();
@@ -208,8 +257,7 @@ function CurrentOperationActions({
   const canTechnicianCancel =
     isTechnician &&
     (operation.status === 'pending' || operation.status === 'scheduled');
-  const canClientConfirm =
-    isClient && operation.status === 'completed_tech';
+  const canClientConfirm = isClient && operation.status === 'completed_tech';
 
   if (
     !canTechnicianSchedule &&
@@ -276,16 +324,19 @@ function CurrentOperationActions({
       </div>
 
       {canTechnicianSchedule && showScheduleForm ? (
-        <form className="auth-form operation-detail__schedule-form" onSubmit={handleScheduleSubmit}>
-          <label className="auth-form__field">
-            <span>Fecha y horario</span>
-            <input
-              name="scheduled_at"
-              type="datetime-local"
-              defaultValue={toDateTimeLocal(operation.scheduled_at)}
-              required
-            />
-          </label>
+        <form
+          className="auth-form operation-detail__schedule-form"
+          onSubmit={handleScheduleSubmit}
+        >
+          <DateTimePickerField
+            name="scheduled_at"
+            label="Fecha y horario"
+            initialValue={operation.scheduled_at}
+            required
+            disablePastDates
+            preventPastTimeSelection
+            minuteStep={OPERATION_SCHEDULE_STEP_MINUTES}
+          />
 
           <label className="auth-form__field">
             <span>Descripción técnica</span>
@@ -333,15 +384,22 @@ function CurrentOperationDetailView({
   showCloseButton?: boolean;
   onClose?: () => void;
 }) {
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
-  const { data: operation, error, isLoading } = useCurrentOperation(operationId);
+  const {
+    data: operation,
+    error,
+    isLoading,
+  } = useCurrentOperation(operationId);
   const errorMessage =
     error instanceof Error ? error.message : 'No se pudo cargar la operation';
   const isTechnician = currentUser?.role === 'technician';
 
   return (
     <>
-      <header className={showCloseButton ? 'users-modal__header' : 'users-hero'}>
+      <header
+        className={showCloseButton ? 'users-modal__header' : 'users-hero'}
+      >
         <div>
           <p className="users-hero__eyebrow">Operation Detail</p>
           <h2 id={titleId}>Detalle de operation</h2>
@@ -369,6 +427,22 @@ function CurrentOperationDetailView({
         </section>
       ) : (
         <section className="users-detail-grid">
+          {(() => {
+            const adminDateWarnings = buildAdminDateWarnings(operation);
+
+            return adminDateWarnings.length ? (
+              <article className="users-panel operation-admin-warning-card">
+                <p className="user-card__label">Warning</p>
+                <h3>Inconsistencias temporales detectadas</h3>
+                <ul className="operation-admin-warning-list">
+                  {adminDateWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </article>
+            ) : null;
+          })()}
+
           <article className="users-panel">
             <div className="user-card__header">
               <div>
@@ -411,13 +485,17 @@ function CurrentOperationDetailView({
 
           <OperationUserCard
             label={isTechnician ? 'Cliente' : 'Técnico'}
-            name={isTechnician ? operation.client_name : operation.technician_name}
+            name={
+              isTechnician ? operation.client_name : operation.technician_name
+            }
             surname={
               isTechnician
                 ? operation.client_surname
                 : operation.technician_surname
             }
-            phone={isTechnician ? operation.client_phone : operation.technician_phone}
+            phone={
+              isTechnician ? operation.client_phone : operation.technician_phone
+            }
             whatsappPhone={
               isTechnician
                 ? operation.client_whatsapp_phone
@@ -425,38 +503,55 @@ function CurrentOperationDetailView({
             }
             actionSlot={
               isTechnician ? (
-                <ViewClientProfileActionLink
-                  clientProfileId={operation.client_id}
-                  label="Ver cliente"
-                />
+                <>
+                  <InternalChatActionButton
+                    label="Abrir chat interno"
+                    onClick={() => setIsChatOpen(true)}
+                  />
+                  <ViewClientProfileActionLink
+                    clientProfileId={operation.client_id}
+                    label="Ver cliente"
+                    icon="person"
+                  />
+                </>
               ) : (
-                <Link
-                  className="users-table__action users-table__action--icon"
-                  to="/technicians/$technicianId"
-                  params={{ technicianId: operation.technician_id }}
-                  aria-label="Ver técnico"
-                  title="Ver técnico"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="users-table__action-icon"
+                <>
+                  <InternalChatActionButton
+                    label="Abrir chat interno"
+                    onClick={() => setIsChatOpen(true)}
+                  />
+                  <Link
+                    className="users-table__action users-table__action--icon"
+                    to="/technicians/$technicianId"
+                    params={{
+                      technicianId:
+                        operation.technician_public_slug ??
+                        operation.technician_id,
+                    }}
+                    aria-label="Ver técnico"
+                    title="Ver técnico"
                   >
-                    <path
-                      d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    />
-                    <path
-                      d="M4.5 20a7.5 7.5 0 0 1 15 0"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </Link>
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="users-table__action-icon"
+                    >
+                      <path
+                        d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                      />
+                      <path
+                        d="M4.5 20a7.5 7.5 0 0 1 15 0"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </Link>
+                </>
               )
             }
           />
@@ -508,6 +603,13 @@ function CurrentOperationDetailView({
           <CurrentOperationActions operation={operation} />
         </section>
       )}
+      {isChatOpen && operation ? (
+        <ChatDialog
+          orderId={operation.order_id}
+          operationId={operation.id}
+          onClose={() => setIsChatOpen(false)}
+        />
+      ) : null}
     </>
   );
 }
@@ -523,6 +625,7 @@ function AdminOperationDetailView({
   showCloseButton?: boolean;
   onClose?: () => void;
 }) {
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const { data: operation, error, isLoading } = useAdminOperation(operationId);
   const updateOperation = useUpdateAdminOperation();
   const errorMessage =
@@ -553,7 +656,9 @@ function AdminOperationDetailView({
 
   return (
     <>
-      <header className={showCloseButton ? 'users-modal__header' : 'users-hero'}>
+      <header
+        className={showCloseButton ? 'users-modal__header' : 'users-hero'}
+      >
         <div>
           <p className="users-hero__eyebrow">Operation Detail</p>
           <h2 id={titleId}>Ver y editar operation</h2>
@@ -636,10 +741,14 @@ function AdminOperationDetailView({
             whatsappPhone={operation.client_whatsapp_phone}
             actionSlot={
               <>
-                <InternalChatActionButton label="Chat interno cliente próximamente" />
+                <InternalChatActionButton
+                  label="Abrir chat interno"
+                  onClick={() => setIsChatOpen(true)}
+                />
                 <ViewClientProfileActionLink
                   clientProfileId={operation.client_id}
                   label="Ver cliente"
+                  icon="person"
                 />
               </>
             }
@@ -654,7 +763,10 @@ function AdminOperationDetailView({
             whatsappPhone={operation.technician_whatsapp_phone}
             actionSlot={
               <>
-                <InternalChatActionButton label="Chat interno técnico próximamente" />
+                <InternalChatActionButton
+                  label="Abrir chat interno"
+                  onClick={() => setIsChatOpen(true)}
+                />
                 <Link
                   className="users-table__action users-table__action--icon"
                   to="/technicians/$technicianId"
@@ -730,16 +842,21 @@ function AdminOperationDetailView({
             </dl>
           </article>
 
-          <article className="users-panel">
+          <article className="users-panel operation-admin-edit-card">
             <p className="user-card__label">Editar Operation</p>
             <h3>Patch admin</h3>
+            <p className="operation-admin-override-copy">
+              Override administrativo. Acá se permite corregir fechas pasadas o
+              futuras y limpiar valores, pero el backend valida consistencia
+              minima entre programada, completada por técnico y completada.
+            </p>
 
             <form
               key={`${operation.id}:${operation.status}:${operation.scheduled_at ?? ''}:${operation.completed_at ?? ''}`}
-              className="auth-form"
+              className="auth-form operation-admin-edit-form"
               onSubmit={handleSubmit}
             >
-              <label className="auth-form__field">
+              <label className="auth-form__field operation-admin-edit-form__status">
                 <span>Status</span>
                 <select name="status" defaultValue={operation.status}>
                   <option value="pending">Pending</option>
@@ -750,16 +867,7 @@ function AdminOperationDetailView({
                 </select>
               </label>
 
-              <label className="auth-form__field">
-                <span>Programada</span>
-                <input
-                  name="scheduled_at"
-                  type="datetime-local"
-                  defaultValue={toDateTimeLocal(operation.scheduled_at)}
-                />
-              </label>
-
-              <label className="auth-form__field">
+              <label className="auth-form__field operation-admin-edit-form__description">
                 <span>Descripción técnica</span>
                 <input
                   name="description"
@@ -768,30 +876,31 @@ function AdminOperationDetailView({
                 />
               </label>
 
-              <label className="auth-form__field">
-                <span>Completada por técnico</span>
-                <input
-                  name="technician_completed_at"
-                  type="datetime-local"
-                  defaultValue={toDateTimeLocal(
-                    operation.technician_completed_at,
-                  )}
+              <div className="operation-admin-edit-form__dates">
+                <DateTimePickerField
+                  name="scheduled_at"
+                  label="Programada"
+                  initialValue={operation.scheduled_at}
+                  allowClear
                 />
-              </label>
 
-              <label className="auth-form__field">
-                <span>Completada</span>
-                <input
-                  name="completed_at"
-                  type="datetime-local"
-                  defaultValue={toDateTimeLocal(operation.completed_at)}
+                <DateTimePickerField
+                  name="technician_completed_at"
+                  label="Completada por técnico"
+                  initialValue={operation.technician_completed_at}
+                  allowClear
                 />
-              </label>
+
+                <DateTimePickerField
+                  name="completed_at"
+                  label="Completada"
+                  initialValue={operation.completed_at}
+                  allowClear
+                />
+              </div>
 
               <button type="submit" disabled={updateOperation.isPending}>
-                {updateOperation.isPending
-                  ? 'Guardando...'
-                  : 'Guardar cambios'}
+                {updateOperation.isPending ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </form>
 
@@ -849,6 +958,13 @@ function AdminOperationDetailView({
           </article>
         </section>
       )}
+      {isChatOpen && operation ? (
+        <ChatDialog
+          orderId={operation.order_id}
+          operationId={operation.id}
+          onClose={() => setIsChatOpen(false)}
+        />
+      ) : null}
     </>
   );
 }
