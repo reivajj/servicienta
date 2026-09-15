@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useCurrentUser, useUpdateCurrentUser } from '@servicienta/query-hooks';
 import type { UserRole } from '@servicienta/types';
 import { useAuth } from '../../auth/components/AuthProvider';
+import { formatUserRole } from '../../shared/utils/user-role';
 
 export function DashboardPage() {
   const { user, session } = useAuth();
@@ -67,7 +68,9 @@ export function DashboardPage() {
           </div>
           <div>
             <dt>Rol</dt>
-            <dd>{currentUser?.role ?? 'No disponible'}</dd>
+            <dd>
+              {currentUser ? formatUserRole(currentUser.role) : 'No disponible'}
+            </dd>
           </div>
         </dl>
 
@@ -97,9 +100,9 @@ export function DashboardPage() {
           <label className="auth-form__field">
             <span>Rol</span>
             <select name="role" defaultValue={currentUser?.role ?? 'client'}>
-              <option value="client">Client</option>
-              <option value="technician">Technician</option>
-              <option value="admin">Admin</option>
+              <option value="client">Usuario</option>
+              <option value="technician">Técnico</option>
+              <option value="admin">Administrador</option>
             </select>
           </label>
 

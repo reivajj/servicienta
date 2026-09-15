@@ -106,8 +106,11 @@ function ClientProfileDetailView({
   const [showOrders, setShowOrders] = useState(false);
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentUser();
-  const { data: clientProfile, error, isLoading } =
-    useClientProfile(clientProfileId);
+  const {
+    data: clientProfile,
+    error,
+    isLoading,
+  } = useClientProfile(clientProfileId);
   const updateClientProfile = useUpdateClientProfile();
   const canViewRelatedRecords =
     !showCloseButton && currentUser?.role === 'admin';
@@ -143,7 +146,7 @@ function ClientProfileDetailView({
   const operationsErrorMessage =
     operationsError instanceof Error
       ? operationsError.message
-      : 'No se pudieron cargar las operations';
+      : 'No se pudieron cargar las visitas';
   const ordersErrorMessage =
     ordersError instanceof Error
       ? ordersError.message
@@ -177,7 +180,9 @@ function ClientProfileDetailView({
         default_address_text: normalizeNullableFormValue(
           formData.get('default_address_text'),
         ),
-        address_notes: normalizeNullableFormValue(formData.get('address_notes')),
+        address_notes: normalizeNullableFormValue(
+          formData.get('address_notes'),
+        ),
         preferred_contact_channel: preferredContactChannel,
       },
     });
@@ -187,7 +192,9 @@ function ClientProfileDetailView({
 
   return (
     <>
-      <header className={showCloseButton ? 'users-modal__header' : 'users-hero'}>
+      <header
+        className={showCloseButton ? 'users-modal__header' : 'users-hero'}
+      >
         <div>
           <p className="users-hero__eyebrow">Client Profile</p>
           <h2 id={titleId}>Ver y editar cliente</h2>
@@ -367,22 +374,22 @@ function ClientProfileDetailView({
               <article className="users-panel technician-profile-collapsible-card">
                 <div className="user-card__header">
                   <div>
-                    <p className="user-card__label">Operations</p>
-                    <h2>Operaciones del cliente</h2>
+                    <p className="user-card__label">Visitas</p>
+                    <h2>Visitas del cliente</h2>
                   </div>
                   <button
                     type="button"
                     className="users-table__action"
                     onClick={() => setShowOperations((current) => !current)}
                   >
-                    {showOperations ? 'Ocultar' : 'Operaciones'}
+                    {showOperations ? 'Ocultar' : 'Visitas'}
                   </button>
                 </div>
 
                 {showOperations ? (
                   <div className="technician-profile-collapsible-card__content">
                     {isOperationsLoading ? (
-                      <p className="users-message">Cargando operations...</p>
+                      <p className="users-message">Cargando visitas...</p>
                     ) : operationsError ? (
                       <p className="users-message users-message--error">
                         {operationsErrorMessage}
@@ -391,7 +398,7 @@ function ClientProfileDetailView({
                       <AdminOperationsTable operations={operations} />
                     ) : (
                       <p className="users-message">
-                        No hay operations para este cliente.
+                        No hay visitas para este cliente.
                       </p>
                     )}
                   </div>

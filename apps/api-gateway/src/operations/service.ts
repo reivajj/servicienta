@@ -131,9 +131,11 @@ export async function createOperation(
     .maybeSingle();
 
   if (orderError) throw new Error(orderError.message);
-  if (!order) throw new NotFoundError('Order not found');
+  if (!order) throw new NotFoundError('No se encontró el pedido');
   if (order.status !== 'accepted') {
-    throw new ValidationError('Order is not accepted for a new operation');
+    throw new ValidationError(
+      'El pedido no está aceptado para crear una nueva visita',
+    );
   }
 
   const { data: technician, error: technicianError } = await supabase
@@ -143,7 +145,8 @@ export async function createOperation(
     .maybeSingle();
 
   if (technicianError) throw new Error(technicianError.message);
-  if (!technician) throw new NotFoundError('Technician profile not found');
+  if (!technician)
+    throw new NotFoundError('No se encontró el perfil del técnico');
 
   const { data, error } = await supabase
     .from('operations')
@@ -212,7 +215,7 @@ export async function getCurrentOperationById(
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    if (!data) throw new NotFoundError('Operation not found');
+    if (!data) throw new NotFoundError('No se encontró la visita');
 
     const [operation] = await attachTechnicianReviews(supabase, [
       mapOperationRow(data as OperationRow),
@@ -230,7 +233,7 @@ export async function getCurrentOperationById(
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    if (!data) throw new NotFoundError('Operation not found');
+    if (!data) throw new NotFoundError('No se encontró la visita');
 
     const [operation] = await attachTechnicianReviews(supabase, [
       mapOperationRow(data as OperationRow),
@@ -259,9 +262,9 @@ export async function scheduleOperation(
     .maybeSingle();
 
   if (operationError) throw new Error(operationError.message);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
   if (operation.status !== 'pending') {
-    throw new ValidationError('Only pending operations can be scheduled');
+    throw new ValidationError('Solo se pueden agendar visitas pendientes');
   }
 
   const { data, error } = await supabase
@@ -317,9 +320,9 @@ export async function completeTechOperation(
     .maybeSingle();
 
   if (operationError) throw new Error(operationError.message);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
   if (operation.status !== 'scheduled') {
-    throw new ValidationError('Only scheduled operations can be completed');
+    throw new ValidationError('Solo se pueden completar visitas agendadas');
   }
 
   const completedAt = new Date().toISOString();
@@ -376,10 +379,10 @@ export async function confirmCompletedOperation(
     .maybeSingle();
 
   if (operationError) throw new Error(operationError.message);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
   if (operation.status !== 'completed_tech') {
     throw new ValidationError(
-      'Only technician-completed operations can be confirmed',
+      'Solo se pueden confirmar visitas completadas por el técnico',
     );
   }
 
@@ -436,12 +439,12 @@ export async function cancelOperation(
     .maybeSingle();
 
   if (operationError) throw new Error(operationError.message);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
   if (
     operation.status === 'completed' ||
     operation.status === 'completed_tech'
   ) {
-    throw new ValidationError('Completed operations cannot be cancelled');
+    throw new ValidationError('Las visitas completadas no se pueden cancelar');
   }
 
   const updatedAt = new Date().toISOString();
@@ -501,10 +504,10 @@ export async function createTechnicianReview(
     .maybeSingle();
 
   if (operationError) throw new Error(operationError.message);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
   if (operation.status !== 'completed' && operation.status !== 'cancelled') {
     throw new ValidationError(
-      'Only completed or cancelled operations can be reviewed',
+      'Solo se pueden reseñar visitas completadas o canceladas',
     );
   }
 
@@ -516,7 +519,7 @@ export async function createTechnicianReview(
 
   if (existingReviewError) throw new Error(existingReviewError.message);
   if (existingReview) {
-    throw new ValidationError('Operation already has a technician review');
+    throw new ValidationError('La visita ya tiene una reseña para el técnico');
   }
 
   const { data: review, error } = await supabase
@@ -660,10 +663,10 @@ export async function getAdminOperationById(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!data) throw new NotFoundError('Operation not found');
+  if (!data) throw new NotFoundError('No se encontró la visita');
 
   const operation = mapAdminOperationRow(data as AdminOperationRow);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
 
   const [operationWithReview] = await attachTechnicianReviews(supabase, [
     operation,
@@ -698,7 +701,7 @@ export async function updateAdminOperationById(
   if (error) throw new Error(error.message);
 
   const operation = mapAdminOperationRow(data as AdminOperationRow);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
 
   const [operationWithReview] = await attachTechnicianReviews(supabase, [
     operation,

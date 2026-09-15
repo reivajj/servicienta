@@ -50,11 +50,11 @@ export function ActivityEventsListPage() {
       <section className="users-layout">
         <header className="users-hero">
           <div>
-            <p className="users-hero__eyebrow">Admin Events</p>
-            <h1>Activity Events</h1>
+            <p className="users-hero__eyebrow">Eventos administrativos</p>
+            <h1>Registro de actividad</h1>
             <p className="users-hero__copy">
               Eventos principales del flujo operativo para auditar onboarding,
-              órdenes, operaciones y reviews.
+              pedidos, visitas y reseñas.
             </p>
           </div>
 
@@ -66,24 +66,26 @@ export function ActivityEventsListPage() {
 
         <section className="users-toolbar">
           <label className="users-toolbar__field">
-            <span>Entity type</span>
+            <span>Tipo de entidad</span>
             <select
               value={entityType}
               onChange={(event) => {
-                setEntityType(event.target.value as ActivityEventEntityType | 'all');
+                setEntityType(
+                  event.target.value as ActivityEventEntityType | 'all',
+                );
                 setPage(1);
               }}
             >
               <option value="all">Todos</option>
-              <option value="user">User</option>
-              <option value="order">Order</option>
-              <option value="operation">Operation</option>
-              <option value="technician_review">Technician review</option>
+              <option value="user">Usuario</option>
+              <option value="order">Pedido</option>
+              <option value="operation">Visita</option>
+              <option value="technician_review">Reseña del técnico</option>
             </select>
           </label>
 
           <label className="users-toolbar__field">
-            <span>Event type</span>
+            <span>Tipo de evento</span>
             <select
               value={eventType}
               onChange={(event) => {
@@ -92,29 +94,31 @@ export function ActivityEventsListPage() {
               }}
             >
               <option value="all">Todos</option>
-              <option value="user.client_onboarded">Client onboarded</option>
-              <option value="order.created">Order created</option>
-              <option value="order.accepted">Order accepted</option>
-              <option value="order.cancelled">Order cancelled</option>
-              <option value="operation.created">Operation created</option>
-              <option value="operation.scheduled">Operation scheduled</option>
+              <option value="user.client_onboarded">Usuario registrado</option>
+              <option value="order.created">Pedido creado</option>
+              <option value="order.accepted">Pedido aceptado</option>
+              <option value="order.cancelled">Pedido cancelado</option>
+              <option value="operation.created">Visita creada</option>
+              <option value="operation.scheduled">Visita agendada</option>
               <option value="operation.completed_by_technician">
-                Completed by technician
+                Completada por el técnico
               </option>
               <option value="operation.completed_by_client">
-                Completed by client
+                Completada por el usuario
               </option>
-              <option value="operation.cancelled">Operation cancelled</option>
-              <option value="technician_review.created">Review created</option>
-              <option value="admin.order_updated">Admin order updated</option>
+              <option value="operation.cancelled">Visita cancelada</option>
+              <option value="technician_review.created">Reseña creada</option>
+              <option value="admin.order_updated">
+                Pedido actualizado por administración
+              </option>
               <option value="admin.operation_updated">
-                Admin operation updated
+                Visita actualizada por administración
               </option>
             </select>
           </label>
 
           <label className="users-toolbar__field">
-            <span>Entity ID</span>
+            <span>ID de la entidad</span>
             <input
               type="search"
               value={entityId}

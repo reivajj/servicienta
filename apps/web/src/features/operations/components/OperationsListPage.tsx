@@ -19,6 +19,7 @@ import { DateTimePickerField } from '../../shared/components/DateTimePickerField
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { ViewOperationActionLink } from '../../shared/components/ViewOperationActionLink';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
+import { formatOperationStatus } from '../../shared/utils/operation-status';
 import { AdminOperationsTable } from './AdminOperationsTable';
 import { OperationDetailDialog } from './OperationDetailDialog';
 
@@ -135,7 +136,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
   const errorMessage =
     error instanceof Error
       ? error.message
-      : 'No se pudieron cargar tus operations';
+      : 'No se pudieron cargar tus visitas';
 
   async function handleScheduleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -178,30 +179,31 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           <div>
             <p className="users-hero__eyebrow">
               {role === 'technician'
-                ? 'Technician Operations'
-                : 'Client Operations'}
+                ? 'Visitas del técnico'
+                : 'Visitas del usuario'}
             </p>
-            <h1>Operations</h1>
+            <h1>Visitas</h1>
             <p className="users-hero__copy">
               {role === 'technician'
-                ? 'Agendá, cancelá o marcá terminadas tus operaciones.'
+                ? 'Agendá, cancelá o marcá como terminadas tus visitas.'
                 : 'Confirmá el cierre cuando el técnico marcó su trabajo terminado.'}
             </p>
           </div>
 
           <div className="users-hero__summary">
-            <span>{data?.summary.totalOperations ?? 0} operations</span>
-            <span>{data?.summary.pendingOperations ?? 0} pending</span>
-            <span>{data?.summary.scheduledOperations ?? 0} scheduled</span>
+            <span>{data?.summary.totalOperations ?? 0} visitas</span>
+            <span>{data?.summary.pendingOperations ?? 0} pendientes</span>
+            <span>{data?.summary.scheduledOperations ?? 0} agendadas</span>
             <span>
-              {data?.summary.completedTechOperations ?? 0} completed tech
+              {data?.summary.completedTechOperations ?? 0} completadas por
+              técnico
             </span>
           </div>
         </header>
 
         {isLoading ? (
           <section className="users-panel">
-            <p>Cargando operations...</p>
+            <p>Cargando visitas...</p>
           </section>
         ) : error ? (
           <section className="users-panel">
@@ -212,13 +214,13 @@ function CurrentOperationsListPage({ role }: { role: string }) {
             <table className="users-table">
               <thead>
                 <tr>
-                  <th>Accion</th>
-                  <th>Status</th>
+                  <th>Acción</th>
+                  <th>Estado</th>
                   <th>Programada</th>
                   <th>Terminada técnico</th>
                   <th>Completada</th>
                   <th>Descripción</th>
-                  <th>Review</th>
+                  <th>Reseña</th>
                 </tr>
               </thead>
               <tbody>
@@ -229,14 +231,14 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                         <ViewOperationActionLink operationId={operation.id} />
                         {role === 'technician' ? (
                           <SettingsActionButton
-                            label="Ver y gestionar operation"
+                            label="Ver y gestionar visita"
                             onClick={() => setSelectedOperationId(operation.id)}
                           />
                         ) : null}
                         {role === 'technician' &&
                         operation.status === 'pending' ? (
                           <OperationIconActionButton
-                            label="Agendar operation"
+                            label="Agendar visita"
                             onClick={() => setScheduleOperation(operation)}
                           >
                             <svg
@@ -274,7 +276,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                         {role === 'technician' &&
                         operation.status === 'scheduled' ? (
                           <OperationIconActionButton
-                            label="Completar operation"
+                            label="Completar visita"
                             tone="success"
                             disabled={completeTechMutation.isPending}
                             onClick={() =>
@@ -311,7 +313,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                         (operation.status === 'pending' ||
                           operation.status === 'scheduled') ? (
                           <OperationIconActionButton
-                            label="Cancelar operation"
+                            label="Cancelar visita"
                             tone="danger"
                             disabled={cancelOperation.isPending}
                             onClick={() => cancelOperation.mutate(operation.id)}
@@ -349,19 +351,37 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                         (operation.status === 'completed' ||
                           operation.status === 'cancelled') &&
                         !operation.technician_review ? (
-                          <button
-                            type="button"
-                            className="users-table__action"
+                          <OperationIconActionButton
+                            label="Dejar reseña"
                             onClick={() => setReviewOperation(operation)}
                           >
-                            Dejar review
-                          </button>
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              className="users-table__action-icon"
+                            >
+                              <path
+                                d="M5.5 5.5h13A2.5 2.5 0 0 1 21 8v7a2.5 2.5 0 0 1-2.5 2.5H11L6.5 21v-3.5h-1A2.5 2.5 0 0 1 3 15V8a2.5 2.5 0 0 1 2.5-2.5Z"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.7"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="m12 8.1 1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3 1-2Z"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.4"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </OperationIconActionButton>
                         ) : null}
                       </div>
                     </td>
                     <td>
                       <span className={getStatusBadgeClass(operation.status)}>
-                        {operation.status}
+                        {formatOperationStatus(operation.status)}
                       </span>
                     </td>
                     <td>{formatDateTime(operation.scheduled_at)}</td>
@@ -375,7 +395,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                         </span>
                       ) : (
                         <span className="operation-review operation-review--empty">
-                          Sin review
+                          Sin reseña
                         </span>
                       )}
                     </td>
@@ -386,7 +406,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           </section>
         ) : (
           <section className="users-panel">
-            <p>No hay operations por ahora.</p>
+            <p>No hay visitas por ahora.</p>
           </section>
         )}
 
@@ -436,8 +456,8 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           >
             <header className="users-modal__header">
               <div>
-                <p className="users-hero__eyebrow">Schedule</p>
-                <h2 id="schedule-operation-title">Agendar operation</h2>
+                <p className="users-hero__eyebrow">Agenda</p>
+                <h2 id="schedule-operation-title">Agendar visita</h2>
               </div>
               <button
                 type="button"
@@ -489,8 +509,8 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           >
             <header className="users-modal__header">
               <div>
-                <p className="users-hero__eyebrow">Technician Review</p>
-                <h2 id="review-operation-title">Dejar review</h2>
+                <p className="users-hero__eyebrow">Reseña del técnico</p>
+                <h2 id="review-operation-title">Dejar reseña</h2>
               </div>
               <button
                 type="button"
@@ -519,13 +539,15 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                 />
               </label>
               <button type="submit" disabled={createReviewMutation.isPending}>
-                {createReviewMutation.isPending ? 'Enviando...' : 'Enviar review'}
+                {createReviewMutation.isPending
+                  ? 'Enviando...'
+                  : 'Enviar reseña'}
               </button>
               {createReviewMutation.error ? (
                 <p className="users-message users-message--error">
                   {createReviewMutation.error instanceof Error
                     ? createReviewMutation.error.message
-                    : 'No se pudo crear la review'}
+                    : 'No se pudo crear la reseña'}
                 </p>
               ) : null}
             </form>
@@ -561,7 +583,7 @@ function AdminOperationsListPage() {
   const errorMessage =
     error instanceof Error
       ? error.message
-      : 'No se pudieron cargar las operations';
+      : 'No se pudieron cargar las visitas';
   const items = data?.items ?? [];
   const summary = data?.summary;
   const pagination = data?.pagination;
@@ -592,8 +614,8 @@ function AdminOperationsListPage() {
       <section className="users-layout">
         <header className="users-hero">
           <div>
-            <p className="users-hero__eyebrow">Admin Operations</p>
-            <h1>Operations</h1>
+            <p className="users-hero__eyebrow">Visitas administrativas</p>
+            <h1>Visitas</h1>
             <p className="users-hero__copy">
               Vista administrativa inicial para inspeccionar la asignación entre
               órdenes y técnicos, con fechas y estado operativo.
@@ -601,18 +623,20 @@ function AdminOperationsListPage() {
           </div>
 
           <div className="users-hero__summary">
-            <span>{summary?.totalOperations ?? 0} operations</span>
-            <span>{summary?.pendingOperations ?? 0} pending</span>
-            <span>{summary?.scheduledOperations ?? 0} scheduled</span>
-            <span>{summary?.completedTechOperations ?? 0} completed tech</span>
-            <span>{summary?.completedOperations ?? 0} completed</span>
-            <span>{summary?.cancelledOperations ?? 0} cancelled</span>
+            <span>{summary?.totalOperations ?? 0} visitas</span>
+            <span>{summary?.pendingOperations ?? 0} pendientes</span>
+            <span>{summary?.scheduledOperations ?? 0} agendadas</span>
+            <span>
+              {summary?.completedTechOperations ?? 0} completadas por técnico
+            </span>
+            <span>{summary?.completedOperations ?? 0} completadas</span>
+            <span>{summary?.cancelledOperations ?? 0} canceladas</span>
           </div>
         </header>
 
         <section className="users-toolbar">
           <label className="users-toolbar__field">
-            <span>Status</span>
+            <span>Estado</span>
             <select
               value={status}
               onChange={(event) =>
@@ -622,17 +646,17 @@ function AdminOperationsListPage() {
               }
             >
               <option value="all">Todos</option>
-              <option value="pending">Pending</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="completed_tech">Completed tech</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="pending">Pendiente</option>
+              <option value="scheduled">Agendada</option>
+              <option value="completed_tech">Completada por técnico</option>
+              <option value="completed">Completada</option>
+              <option value="cancelled">Cancelada</option>
             </select>
           </label>
 
           <div className="users-toolbar__group">
             <label className="users-toolbar__field">
-              <span>Page size</span>
+              <span>Resultados por página</span>
               <select
                 value={String(pageSize)}
                 onChange={(event) =>
@@ -698,7 +722,7 @@ function AdminOperationsListPage() {
 
         {isLoading ? (
           <section className="users-panel">
-            <p>Cargando operations...</p>
+            <p>Cargando visitas...</p>
           </section>
         ) : error ? (
           <section className="users-panel">
@@ -711,7 +735,7 @@ function AdminOperationsListPage() {
           />
         ) : (
           <section className="users-panel">
-            <p>No hay operations para los filtros actuales.</p>
+            <p>No hay visitas para los filtros actuales.</p>
           </section>
         )}
 

@@ -11,8 +11,49 @@ import {
 import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
 import type { ChatMessage } from '@servicienta/types';
 import { getSupabaseBrowserClient } from '../../../lib/supabase';
-import { DateTimePickerField } from '../../shared/components/DateTimePickerField';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
+
+const SCHEDULE_HOURS = Array.from({ length: 24 }, (_, hour) =>
+  String(hour).padStart(2, '0'),
+);
+const SCHEDULE_MINUTES = Array.from(
+  { length: 60 / OPERATION_SCHEDULE_STEP_MINUTES },
+  (_, index) =>
+    String(index * OPERATION_SCHEDULE_STEP_MINUTES).padStart(2, '0'),
+);
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatLocalTime(date: Date) {
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${hours}:${minutes}`;
+}
+
+function getDefaultSchedule() {
+  const now = new Date();
+  const suggestedDate = new Date(now.getTime() + 30 * 60 * 1000);
+  suggestedDate.setMinutes(
+    Math.ceil(suggestedDate.getMinutes() / OPERATION_SCHEDULE_STEP_MINUTES) *
+      OPERATION_SCHEDULE_STEP_MINUTES,
+    0,
+    0,
+  );
+
+  return {
+    minimumDate: formatLocalDate(now),
+    date: formatLocalDate(suggestedDate),
+    hour: formatLocalTime(suggestedDate).slice(0, 2),
+    minute: formatLocalTime(suggestedDate).slice(3, 5),
+  };
+}
 
 function formatSenderName(message: ChatMessage) {
   if (message.message_type === 'system') return 'Sistema';
@@ -105,6 +146,20 @@ function ChatComposer({ conversationId }: { conversationId: string }) {
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
+          onKeyDown={(event) => {
+            if (
+              event.key !== 'Enter' ||
+              event.shiftKey ||
+              event.nativeEvent.isComposing
+            ) {
+              return;
+            }
+
+            event.preventDefault();
+            if (createMessage.isPending || !body.trim()) return;
+
+            event.currentTarget.form?.requestSubmit();
+          }}
           placeholder="Escribí un mensaje"
           rows={3}
         />
@@ -130,6 +185,7 @@ function ChatActionBar({
   canSchedule: boolean;
 }) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [defaultSchedule] = useState(getDefaultSchedule);
   const scheduleFromChat = useScheduleOperationFromChat();
 
   if (!operationId || !canSchedule) return null;
@@ -137,12 +193,16 @@ function ChatActionBar({
   async function handleScheduleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const date = String(formData.get('schedule_date') ?? '');
+    const hour = String(formData.get('schedule_hour') ?? '');
+    const minute = String(formData.get('schedule_minute') ?? '');
+    const scheduledAt = new Date(`${date}T${hour}:${minute}`).toISOString();
 
     await scheduleFromChat.mutateAsync({
       conversationId,
       input: {
         operation_id: operationId!,
-        scheduled_at: String(formData.get('scheduled_at') ?? ''),
+        scheduled_at: scheduledAt,
         description: String(formData.get('description') ?? ''),
       },
     });
@@ -193,15 +253,41 @@ function ChatActionBar({
           className="auth-form chat-action-card__form"
           onSubmit={handleScheduleSubmit}
         >
-          <DateTimePickerField
-            name="scheduled_at"
-            label="Fecha y horario"
-            initialValue={null}
-            required
-            disablePastDates
-            preventPastTimeSelection
-            minuteStep={OPERATION_SCHEDULE_STEP_MINUTES}
-          />
+          <div className="chat-action-card__schedule-fields">
+            <label className="auth-form__field">
+              <span>Fecha</span>
+              <input
+                name="schedule_date"
+                type="date"
+                min={defaultSchedule.minimumDate}
+                defaultValue={defaultSchedule.date}
+                required
+              />
+            </label>
+            <label className="auth-form__field">
+              <span>Hora</span>
+              <select name="schedule_hour" defaultValue={defaultSchedule.hour}>
+                {SCHEDULE_HOURS.map((hour) => (
+                  <option key={hour} value={hour}>
+                    {hour}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="auth-form__field">
+              <span>Minutos</span>
+              <select
+                name="schedule_minute"
+                defaultValue={defaultSchedule.minute}
+              >
+                {SCHEDULE_MINUTES.map((minute) => (
+                  <option key={minute} value={minute}>
+                    {minute}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <label className="auth-form__field">
             <span>Descripción técnica</span>
             <input name="description" type="text" required />
@@ -287,6 +373,12 @@ export function ChatDialog({
   const markRead = useMarkChatConversationRead();
   const messages = messagesData?.items ?? [];
   const conversationId = conversation?.id ?? null;
+  const conversationOperations = conversation?.operations ?? [];
+  const resolvedOperation = operationId
+    ? conversationOperations.find((operation) => operation.id === operationId)
+    : conversationOperations.length === 1
+      ? conversationOperations[0]
+      : null;
 
   useConversationRealtime(conversationId);
 
@@ -311,7 +403,7 @@ export function ChatDialog({
         <header className="users-modal__header">
           <div>
             <p className="users-hero__eyebrow">Chat interno</p>
-            <h2 id="chat-dialog-title">Conversación de la order</h2>
+            <h2 id="chat-dialog-title">Conversación del pedido</h2>
           </div>
           <button
             type="button"
@@ -334,8 +426,11 @@ export function ChatDialog({
           <section className="chat-thread">
             <ChatActionBar
               conversationId={conversation.id}
-              operationId={operationId}
-              canSchedule={currentUser?.role === 'technician'}
+              operationId={resolvedOperation?.id}
+              canSchedule={
+                currentUser?.role === 'technician' &&
+                resolvedOperation?.status === 'pending'
+              }
             />
             <ChatMessageList
               messages={messages}

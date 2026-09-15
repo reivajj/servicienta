@@ -5,6 +5,7 @@ import {
   useUser,
 } from '@servicienta/query-hooks';
 import type { UserRole, UserStatus } from '@servicienta/types';
+import { formatUserRole } from '../../shared/utils/user-role';
 import { useAuth } from '../../auth/components/AuthProvider';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 
@@ -154,8 +155,8 @@ export function UserDetailDialog({
                   <dd>{user.id}</dd>
                 </div>
                 <div>
-                  <dt>Role</dt>
-                  <dd>{user.role}</dd>
+                  <dt>Rol</dt>
+                  <dd>{formatUserRole(user.role)}</dd>
                 </div>
                 <div>
                   <dt>Created at</dt>
@@ -226,9 +227,9 @@ export function UserDetailDialog({
                 <label className="auth-form__field">
                   <span>Rol</span>
                   <select name="role" defaultValue={user.role}>
-                    <option value="client">Client</option>
-                    <option value="technician">Technician</option>
-                    <option value="admin">Admin</option>
+                    <option value="client">Usuario</option>
+                    <option value="technician">Técnico</option>
+                    <option value="admin">Administrador</option>
                   </select>
                 </label>
 

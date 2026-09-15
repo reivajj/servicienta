@@ -1,6 +1,4 @@
-import {
-  OPERATION_SCHEDULE_STEP_MINUTES,
-} from '@servicienta/types';
+import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
 import type {
   CreateOperationInput,
   CreateTechnicianReviewInput,
@@ -20,7 +18,8 @@ export function validateCreateOperationInput(
 ): CreateOperationInput {
   const technicianId = input.technician_id.trim();
 
-  if (!technicianId) throw new ValidationError('Technician id is required');
+  if (!technicianId)
+    throw new ValidationError('El ID del técnico es obligatorio');
 
   return {
     technician_id: technicianId,
@@ -35,7 +34,7 @@ export function validateCreateTechnicianReviewInput(
   const comment = normalizeNullableText(input.comment);
 
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    throw new ValidationError('Rating must be between 1 and 5');
+    throw new ValidationError('La calificación debe estar entre 1 y 5');
   }
 
   return {
@@ -48,7 +47,7 @@ export function validateUpdateAdminOperationInput(
   input: UpdateAdminOperationInput,
 ): UpdateAdminOperationInput {
   if (!isOperationStatus(input.status)) {
-    throw new ValidationError('Invalid operation status');
+    throw new ValidationError('El estado de la visita no es válido');
   }
 
   const scheduledAt = normalizeNullableDateTime(input.scheduled_at);
@@ -94,13 +93,13 @@ export function validateScheduleOperationInput(
     'scheduled_at',
   );
 
-  if (!description) throw new ValidationError('Description is required');
+  if (!description) throw new ValidationError('La descripción es obligatoria');
   if (isPastDateTime(scheduledAt)) {
-    throw new ValidationError('scheduled_at must be in the future');
+    throw new ValidationError('La fecha programada debe ser futura');
   }
   if (!isAlignedToStep(scheduledAt, OPERATION_SCHEDULE_STEP_MINUTES)) {
     throw new ValidationError(
-      `scheduled_at must use ${OPERATION_SCHEDULE_STEP_MINUTES}-minute increments`,
+      `La fecha programada debe usar intervalos de ${OPERATION_SCHEDULE_STEP_MINUTES} minutos`,
     );
   }
 
@@ -142,7 +141,7 @@ export function validateOperationId(
   value: string | string[] | undefined,
 ): string {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError('Invalid operation id');
+    throw new ValidationError('El ID de la visita no es válido');
   }
 
   return value.trim();
@@ -150,7 +149,7 @@ export function validateOperationId(
 
 export function validateOrderId(value: string | string[] | undefined): string {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError('Invalid order id');
+    throw new ValidationError('El ID del pedido no es válido');
   }
 
   return value.trim();
@@ -160,7 +159,7 @@ export function validateTechnicianId(
   value: string | string[] | undefined,
 ): string {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError('Invalid technician id');
+    throw new ValidationError('El ID del técnico no es válido');
   }
 
   return value.trim();
@@ -168,7 +167,7 @@ export function validateTechnicianId(
 
 export function validateClientId(value: string | string[] | undefined): string {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError('Invalid client id');
+    throw new ValidationError('El ID del cliente no es válido');
   }
 
   return value.trim();
@@ -187,15 +186,15 @@ function validatePaginatedOperationsInput(input: {
   const pageSize = input.pageSize ? Number(input.pageSize) : 25;
 
   if (!Number.isInteger(page) || page < 1) {
-    throw new ValidationError('Invalid page');
+    throw new ValidationError('La página no es válida');
   }
 
   if (!ALLOWED_PAGE_SIZES.includes(pageSize as UsersPageSize)) {
-    throw new ValidationError('Invalid page size');
+    throw new ValidationError('El tamaño de página no es válido');
   }
 
   if (input.status && !isOperationStatus(input.status)) {
-    throw new ValidationError('Invalid status filter');
+    throw new ValidationError('El filtro de estado no es válido');
   }
 
   return {
@@ -224,7 +223,7 @@ function normalizeNullableDateTime(value: string | null): string | null {
   const trimmedValue = value.trim();
   if (!trimmedValue) return null;
   if (Number.isNaN(Date.parse(trimmedValue))) {
-    throw new ValidationError('Invalid scheduled_at datetime');
+    throw new ValidationError('La fecha programada no es válida');
   }
 
   return trimmedValue;
@@ -239,7 +238,7 @@ function normalizeNullableText(value: string | null): string | null {
 function normalizeRequiredDateTime(value: string, fieldName: string): string {
   const trimmedValue = value.trim();
   if (!trimmedValue || Number.isNaN(Date.parse(trimmedValue))) {
-    throw new ValidationError(`Invalid ${fieldName} datetime`);
+    throw new ValidationError(`La fecha de ${fieldName} no es válida`);
   }
 
   return trimmedValue;
@@ -271,7 +270,10 @@ function validateDateOrder({
   laterField: string;
 }) {
   if (!earlierValue || !laterValue) return;
-  if (new Date(earlierValue).getTime() <= new Date(laterValue).getTime()) return;
+  if (new Date(earlierValue).getTime() <= new Date(laterValue).getTime())
+    return;
 
-  throw new ValidationError(`${earlierField} must be before or equal to ${laterField}`);
+  throw new ValidationError(
+    `${earlierField} debe ser anterior o igual a ${laterField}`,
+  );
 }

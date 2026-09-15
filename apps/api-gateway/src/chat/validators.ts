@@ -32,9 +32,9 @@ export function validateCreateChatMessageInput(
 ): CreateChatMessageInput {
   const body = input.body?.trim();
 
-  if (!body) throw new ValidationError('Message body is required');
+  if (!body) throw new ValidationError('El mensaje es obligatorio');
   if (body.length > 2000) {
-    throw new ValidationError('Message body must be 2000 characters or fewer');
+    throw new ValidationError('El mensaje no puede superar los 2000 caracteres');
   }
 
   return { body };
@@ -51,7 +51,7 @@ export function validateScheduleOperationFromChatInput(
 
 export function validateConversationId(value: string | string[] | undefined) {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError('Invalid conversation id');
+    throw new ValidationError('El ID de la conversación no es válido');
   }
 
   return value.trim();
@@ -59,7 +59,7 @@ export function validateConversationId(value: string | string[] | undefined) {
 
 export function validateOrderId(value: string | string[] | undefined) {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError('Invalid order id');
+    throw new ValidationError('El ID del pedido no es válido');
   }
 
   return value.trim();
@@ -73,11 +73,11 @@ function validatePagination(input: {
   const pageSize = Number(input.pageSize ?? '25') as UsersPageSize;
 
   if (!Number.isInteger(page) || page < 1) {
-    throw new ValidationError('Page must be a positive integer');
+    throw new ValidationError('La página debe ser un número entero positivo');
   }
 
   if (!ALLOWED_PAGE_SIZES.includes(pageSize)) {
-    throw new ValidationError('Invalid page size');
+    throw new ValidationError('El tamaño de página no es válido');
   }
 
   return { page, pageSize };

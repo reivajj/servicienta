@@ -50,7 +50,7 @@ export function useChatMessages(
   return useQuery({
     queryKey: chatKeys.messageList(conversationId ?? '', input),
     queryFn: async () => {
-      if (!conversationId) throw new Error('Conversation id is required');
+      if (!conversationId) throw new Error('El ID de la conversación es obligatorio');
 
       const response = await apiClient.chat.messages.list(
         conversationId,

@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
   { to: '/orders', label: 'Orders', roles: ['admin', 'client', 'technician'] },
   {
     to: '/operations',
-    label: 'Operations',
+    label: 'Visitas',
     roles: ['admin', 'client', 'technician'],
   },
   {

@@ -18,6 +18,10 @@ import { InternalChatActionButton } from '../../shared/components/InternalChatAc
 import { ViewClientProfileActionLink } from '../../shared/components/ViewClientProfileActionLink';
 import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
+import {
+  formatOperationStatus,
+  formatOrderStatus,
+} from '../../shared/utils/operation-status';
 
 function formatFullName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -37,8 +41,8 @@ function getStatusBadgeClass(status: string) {
 }
 
 function formatOrderFlowType(value: Operation['order_flow_type']) {
-  if (value === 'client_selects') return 'Client selects';
-  if (value === 'tech_applies') return 'Tech applies';
+  if (value === 'client_selects') return 'El cliente elige';
+  if (value === 'tech_applies') return 'El técnico se postula';
 
   return 'Sin definir';
 }
@@ -90,7 +94,7 @@ function buildAdminDateWarnings(operation: Operation) {
 
   if (operation.status === 'scheduled' && !operation.scheduled_at) {
     warnings.push(
-      'El status actual es scheduled pero la operation no tiene fecha programada.',
+      'El estado actual es Agendada, pero la visita no tiene fecha programada.',
     );
   }
 
@@ -99,13 +103,13 @@ function buildAdminDateWarnings(operation: Operation) {
     !operation.technician_completed_at
   ) {
     warnings.push(
-      'El status actual es completed_tech pero la operation no tiene fecha completada por técnico.',
+      'El estado actual es Completada por técnico, pero la visita no tiene la fecha correspondiente.',
     );
   }
 
   if (operation.status === 'completed' && !operation.completed_at) {
     warnings.push(
-      'El status actual es completed pero la operation no tiene fecha completada.',
+      'El estado actual es Completada, pero la visita no tiene fecha de finalización.',
     );
   }
 
@@ -221,13 +225,13 @@ function CurrentOperationActions({ operation }: { operation: Operation }) {
           : cancelOperation.error instanceof Error
             ? cancelOperation.error.message
             : scheduleOperation.isSuccess
-              ? 'Operation agendada'
+              ? 'Visita agendada'
               : completeTechOperation.isSuccess
-                ? 'Operation completada'
+                ? 'Visita completada'
                 : confirmCompletedOperation.isSuccess
                   ? 'Cierre confirmado'
                   : cancelOperation.isSuccess
-                    ? 'Operation cancelada'
+                    ? 'Visita cancelada'
                     : '';
   const isMutating =
     scheduleOperation.isPending ||
@@ -273,7 +277,7 @@ function CurrentOperationActions({ operation }: { operation: Operation }) {
       <div className="user-card__header">
         <div>
           <p className="user-card__label">Acciones</p>
-          <h3>Gestionar operation</h3>
+          <h3>Gestionar visita</h3>
         </div>
       </div>
 
@@ -392,7 +396,7 @@ function CurrentOperationDetailView({
     isLoading,
   } = useCurrentOperation(operationId);
   const errorMessage =
-    error instanceof Error ? error.message : 'No se pudo cargar la operation';
+    error instanceof Error ? error.message : 'No se pudo cargar la visita';
   const isTechnician = currentUser?.role === 'technician';
 
   return (
@@ -401,8 +405,8 @@ function CurrentOperationDetailView({
         className={showCloseButton ? 'users-modal__header' : 'users-hero'}
       >
         <div>
-          <p className="users-hero__eyebrow">Operation Detail</p>
-          <h2 id={titleId}>Detalle de operation</h2>
+          <p className="users-hero__eyebrow">Detalle de la visita</p>
+          <h2 id={titleId}>Detalle de la visita</h2>
         </div>
 
         {showCloseButton && onClose ? (
@@ -410,7 +414,7 @@ function CurrentOperationDetailView({
             type="button"
             className="users-modal__close"
             onClick={onClose}
-            aria-label="Cerrar detalle de operation"
+            aria-label="Cerrar detalle de la visita"
           >
             Cerrar
           </button>
@@ -419,7 +423,7 @@ function CurrentOperationDetailView({
 
       {isLoading ? (
         <section className="users-panel">
-          <p>Cargando operation...</p>
+          <p>Cargando visita...</p>
         </section>
       ) : error || !operation ? (
         <section className="users-panel">
@@ -432,7 +436,7 @@ function CurrentOperationDetailView({
 
             return adminDateWarnings.length ? (
               <article className="users-panel operation-admin-warning-card">
-                <p className="user-card__label">Warning</p>
+                <p className="user-card__label">Advertencia</p>
                 <h3>Inconsistencias temporales detectadas</h3>
                 <ul className="operation-admin-warning-list">
                   {adminDateWarnings.map((warning) => (
@@ -446,22 +450,22 @@ function CurrentOperationDetailView({
           <article className="users-panel">
             <div className="user-card__header">
               <div>
-                <p className="user-card__label">Operation</p>
+                <p className="user-card__label">Visita</p>
                 <h3>{operation.id}</h3>
               </div>
 
               <span className={getStatusBadgeClass(operation.status)}>
-                {operation.status}
+                {formatOperationStatus(operation.status)}
               </span>
             </div>
 
             <dl className="user-card__meta">
               <div>
-                <dt>Operation ID</dt>
+                <dt>ID de la visita</dt>
                 <dd>{operation.id}</dd>
               </div>
               <div>
-                <dt>Order ID</dt>
+                <dt>ID del pedido</dt>
                 <dd>{operation.order_id}</dd>
               </div>
               <div>
@@ -559,26 +563,26 @@ function CurrentOperationDetailView({
           <article className="users-panel">
             <div className="user-card__header">
               <div>
-                <p className="user-card__label">Order asociada</p>
+                <p className="user-card__label">Pedido asociado</p>
                 <h3>Contexto de la solicitud</h3>
               </div>
 
               <div className="orders-dialog__icon-actions">
                 {operation.order_status ? (
                   <span className={getStatusBadgeClass(operation.order_status)}>
-                    {operation.order_status}
+                    {formatOrderStatus(operation.order_status)}
                   </span>
                 ) : null}
                 <ViewOrderActionLink
                   orderId={operation.order_id}
-                  label="Ver order asociada"
+                  label="Ver pedido asociado"
                 />
               </div>
             </div>
 
             <dl className="user-card__meta">
               <div>
-                <dt>Flow type</dt>
+                <dt>Tipo de flujo</dt>
                 <dd>{formatOrderFlowType(operation.order_flow_type)}</dd>
               </div>
               <div>
@@ -629,11 +633,11 @@ function AdminOperationDetailView({
   const { data: operation, error, isLoading } = useAdminOperation(operationId);
   const updateOperation = useUpdateAdminOperation();
   const errorMessage =
-    error instanceof Error ? error.message : 'No se pudo cargar la operation';
+    error instanceof Error ? error.message : 'No se pudo cargar la visita';
   const updateMessage =
     updateOperation.error instanceof Error ? updateOperation.error.message : '';
   const feedbackMessage =
-    updateMessage || (updateOperation.isSuccess ? 'Operation actualizada' : '');
+    updateMessage || (updateOperation.isSuccess ? 'Visita actualizada' : '');
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -660,8 +664,8 @@ function AdminOperationDetailView({
         className={showCloseButton ? 'users-modal__header' : 'users-hero'}
       >
         <div>
-          <p className="users-hero__eyebrow">Operation Detail</p>
-          <h2 id={titleId}>Ver y editar operation</h2>
+          <p className="users-hero__eyebrow">Detalle de la visita</p>
+          <h2 id={titleId}>Ver y editar visita</h2>
         </div>
 
         {showCloseButton && onClose ? (
@@ -669,7 +673,7 @@ function AdminOperationDetailView({
             type="button"
             className="users-modal__close"
             onClick={onClose}
-            aria-label="Cerrar detalle de operation"
+            aria-label="Cerrar detalle de la visita"
           >
             Cerrar
           </button>
@@ -678,7 +682,7 @@ function AdminOperationDetailView({
 
       {isLoading ? (
         <section className="users-panel">
-          <p>Cargando operation...</p>
+          <p>Cargando visita...</p>
         </section>
       ) : error || !operation ? (
         <section className="users-panel">
@@ -689,7 +693,7 @@ function AdminOperationDetailView({
           <article className="users-panel">
             <div className="user-card__header">
               <div>
-                <p className="user-card__label">Operation</p>
+                <p className="user-card__label">Visita</p>
                 <h3>
                   {formatFullName(
                     operation.technician_name,
@@ -699,17 +703,17 @@ function AdminOperationDetailView({
               </div>
 
               <span className={getStatusBadgeClass(operation.status)}>
-                {operation.status}
+                {formatOperationStatus(operation.status)}
               </span>
             </div>
 
             <dl className="user-card__meta">
               <div>
-                <dt>Operation ID</dt>
+                <dt>ID de la visita</dt>
                 <dd>{operation.id}</dd>
               </div>
               <div>
-                <dt>Order ID</dt>
+                <dt>ID del pedido</dt>
                 <dd>{operation.order_id}</dd>
               </div>
               <div>
@@ -801,26 +805,26 @@ function AdminOperationDetailView({
           <article className="users-panel">
             <div className="user-card__header">
               <div>
-                <p className="user-card__label">Order asociada</p>
+                <p className="user-card__label">Pedido asociado</p>
                 <h3>Contexto de la solicitud</h3>
               </div>
 
               <div className="orders-dialog__icon-actions">
                 {operation.order_status ? (
                   <span className={getStatusBadgeClass(operation.order_status)}>
-                    {operation.order_status}
+                    {formatOrderStatus(operation.order_status)}
                   </span>
                 ) : null}
                 <ViewOrderActionLink
                   orderId={operation.order_id}
-                  label="Ver order asociada"
+                  label="Ver pedido asociado"
                 />
               </div>
             </div>
 
             <dl className="user-card__meta">
               <div>
-                <dt>Flow type</dt>
+                <dt>Tipo de flujo</dt>
                 <dd>{formatOrderFlowType(operation.order_flow_type)}</dd>
               </div>
               <div>
@@ -843,12 +847,13 @@ function AdminOperationDetailView({
           </article>
 
           <article className="users-panel operation-admin-edit-card">
-            <p className="user-card__label">Editar Operation</p>
-            <h3>Patch admin</h3>
+            <p className="user-card__label">Editar visita</p>
+            <h3>Edición administrativa</h3>
             <p className="operation-admin-override-copy">
-              Override administrativo. Acá se permite corregir fechas pasadas o
-              futuras y limpiar valores, pero el backend valida consistencia
-              minima entre programada, completada por técnico y completada.
+              Esta corrección administrativa permite modificar fechas pasadas o
+              futuras y limpiar valores. El servidor valida la consistencia
+              mínima entre las fechas programada, completada por técnico y
+              completada.
             </p>
 
             <form
@@ -857,13 +862,13 @@ function AdminOperationDetailView({
               onSubmit={handleSubmit}
             >
               <label className="auth-form__field operation-admin-edit-form__status">
-                <span>Status</span>
+                <span>Estado</span>
                 <select name="status" defaultValue={operation.status}>
-                  <option value="pending">Pending</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="completed_tech">Completed tech</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="scheduled">Agendada</option>
+                  <option value="completed_tech">Completada por técnico</option>
+                  <option value="completed">Completada</option>
+                  <option value="cancelled">Cancelada</option>
                 </select>
               </label>
 
@@ -920,8 +925,8 @@ function AdminOperationDetailView({
           <article className="users-panel operation-detail-review">
             <div className="user-card__header">
               <div>
-                <p className="user-card__label">TechnicianReview</p>
-                <h3>Review del técnico</h3>
+                <p className="user-card__label">Reseña del técnico</p>
+                <h3>Evaluación del servicio técnico</h3>
               </div>
 
               {operation.technician_review ? (
@@ -934,17 +939,17 @@ function AdminOperationDetailView({
             {operation.technician_review ? (
               <dl className="user-card__meta">
                 <div>
-                  <dt>Rating</dt>
+                  <dt>Calificación</dt>
                   <dd>{operation.technician_review.rating}/5</dd>
                 </div>
                 <div>
-                  <dt>Comment</dt>
+                  <dt>Comentario</dt>
                   <dd>
                     {operation.technician_review.comment || 'Sin comentario'}
                   </dd>
                 </div>
                 <div>
-                  <dt>Created at</dt>
+                  <dt>Creada el</dt>
                   <dd>
                     {formatDateTime(operation.technician_review.created_at)}
                   </dd>
@@ -952,7 +957,7 @@ function AdminOperationDetailView({
               </dl>
             ) : (
               <p className="users-message">
-                Esta operation todavía no tiene TechnicianReview.
+                Esta visita todavía no tiene una reseña del técnico.
               </p>
             )}
           </article>

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 
 export function ViewOrderActionLink({
   orderId,
-  label = 'Ver order',
+  label = 'Ver pedido',
 }: {
   orderId: string;
   label?: string;

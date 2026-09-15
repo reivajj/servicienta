@@ -21,6 +21,10 @@ import { OperationDetailDialog } from '../../operations/components/OperationDeta
 import { InternalChatActionButton } from '../../shared/components/InternalChatActionButton';
 import { ViewClientProfileActionLink } from '../../shared/components/ViewClientProfileActionLink';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
+import {
+  formatOrderFlowType,
+  formatOrderStatus,
+} from '../../shared/utils/operation-status';
 
 function formatPersonName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -358,12 +362,12 @@ function CurrentOrderDetailView({
   return (
     <>
       <header
-        className={showCloseButton ? 'users-modal__header' : 'users-hero'}
+        className={`${showCloseButton ? 'users-modal__header' : 'users-hero'} orders-dialog__header-card`}
       >
         <div>
-          <p className="users-hero__eyebrow">Order Detail</p>
-          <h1>Detalle de order</h1>
-          <p className="users-hero__copy">
+          <p className="users-hero__eyebrow">Pedido</p>
+          <h1>Detalle del pedido</h1>
+          <p className="users-hero__copy orders-dialog__header-copy">
             Vista de seguimiento de la solicitud con estado, dirección y datos
             del servicio.
           </p>
@@ -374,7 +378,7 @@ function CurrentOrderDetailView({
             type="button"
             className="users-modal__close"
             onClick={onClose}
-            aria-label="Cerrar detalle de order"
+            aria-label="Cerrar detalle del pedido"
           >
             Cerrar
           </button>
@@ -499,22 +503,22 @@ function CurrentOrderContent({
       <article className="users-panel orders-dialog__meta-strip">
         <dl className="user-card__meta orders-dialog__meta-list">
           <div>
-            <dt>Order ID</dt>
+            <dt>ID del pedido</dt>
             <dd>{order.id}</dd>
           </div>
           <div>
-            <dt>Created at</dt>
+            <dt>Creado el</dt>
             <dd>{formatDateTime(order.created_at)}</dd>
           </div>
           <div>
-            <dt>Updated at</dt>
+            <dt>Actualizado el</dt>
             <dd>{formatDateTime(order.updated_at)}</dd>
           </div>
           <div>
-            <dt>Status</dt>
+            <dt>Estado</dt>
             <dd>
               <span className={getStatusBadgeClass(order.status)}>
-                {order.status}
+                {formatOrderStatus(order.status)}
               </span>
             </dd>
           </div>
@@ -592,14 +596,14 @@ function OrderOperationsPanel({ orderId }: { orderId: string }) {
   const errorMessage =
     error instanceof Error
       ? error.message
-      : 'No se pudieron cargar las operations';
+      : 'No se pudieron cargar las visitas';
 
   return (
     <>
       <section className="orders-dialog__operations">
         {isLoading ? (
           <section className="users-panel">
-            <p>Cargando operations...</p>
+            <p>Cargando visitas...</p>
           </section>
         ) : error ? (
           <section className="users-panel">
@@ -614,7 +618,7 @@ function OrderOperationsPanel({ orderId }: { orderId: string }) {
 
             <div className="users-pagination orders-dialog__pagination">
               <p className="users-pagination__summary">
-                {pagination?.total ?? 0} operations vinculadas
+                {pagination?.total ?? 0} visitas vinculadas
               </p>
 
               <div className="users-pagination__controls">
@@ -647,7 +651,7 @@ function OrderOperationsPanel({ orderId }: { orderId: string }) {
           </>
         ) : (
           <section className="users-panel">
-            <p>No hay operations vinculadas a esta order.</p>
+            <p>No hay visitas vinculadas a este pedido.</p>
           </section>
         )}
       </section>
@@ -772,12 +776,12 @@ function AdminOrderDetailView({
         className={showCloseButton ? 'users-modal__header' : 'users-hero'}
       >
         <div>
-          <p className="users-hero__eyebrow">Order Detail</p>
-          <h1 id={titleId}>Ver y editar order</h1>
+          <p className="users-hero__eyebrow">Detalle del pedido</p>
+          <h1 id={titleId}>Ver y editar pedido</h1>
           {!showCloseButton ? (
             <p className="users-hero__copy">
-              Vista administrativa completa de la order, con cliente, técnico,
-              edición y operations vinculadas.
+              Vista administrativa completa del pedido, con cliente, técnico,
+              edición y visitas vinculadas.
             </p>
           ) : null}
         </div>
@@ -787,7 +791,7 @@ function AdminOrderDetailView({
             type="button"
             className="users-modal__close"
             onClick={onClose}
-            aria-label="Cerrar detalle de order"
+            aria-label="Cerrar detalle del pedido"
           >
             Cerrar
           </button>
@@ -807,22 +811,22 @@ function AdminOrderDetailView({
           <article className="users-panel orders-dialog__meta-strip">
             <dl className="user-card__meta orders-dialog__meta-list">
               <div>
-                <dt>Order ID</dt>
+                <dt>ID del pedido</dt>
                 <dd>{order.id}</dd>
               </div>
               <div>
-                <dt>Created at</dt>
+                <dt>Creado el</dt>
                 <dd>{formatDateTime(order.created_at)}</dd>
               </div>
               <div>
-                <dt>Updated at</dt>
+                <dt>Actualizado el</dt>
                 <dd>{formatDateTime(order.updated_at)}</dd>
               </div>
               <div>
-                <dt>Status</dt>
+                <dt>Estado</dt>
                 <dd>
                   <span className={getStatusBadgeClass(order.status)}>
-                    {order.status}
+                    {formatOrderStatus(order.status)}
                   </span>
                 </dd>
               </div>
@@ -880,7 +884,7 @@ function AdminOrderDetailView({
                     </div>
                     <div>
                       <dt>Flow type</dt>
-                      <dd>{order.flow_type}</dd>
+                      <dd>{formatOrderFlowType(order.flow_type)}</dd>
                     </div>
                   </dl>
                 </article>
@@ -917,22 +921,26 @@ function AdminOrderDetailView({
 
                   <div className="orders-dialog__edit-form-body">
                     <label className="auth-form__field">
-                      <span>Status</span>
+                      <span>Estado</span>
                       <select name="status" defaultValue={order.status}>
-                        <option value="pending">Pending</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="in_progress">In progress</option>
-                        <option value="completed_tech">Completed tech</option>
-                        <option value="completed">Completed</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="accepted">Aceptado</option>
+                        <option value="cancelled">Cancelado</option>
+                        <option value="in_progress">En progreso</option>
+                        <option value="completed_tech">
+                          Completado por técnico
+                        </option>
+                        <option value="completed">Completado</option>
                       </select>
                     </label>
 
                     <label className="auth-form__field">
                       <span>Flujo</span>
                       <select name="flow_type" defaultValue={order.flow_type}>
-                        <option value="client_selects">Client selects</option>
-                        <option value="tech_applies">Tech applies</option>
+                        <option value="client_selects">El cliente elige</option>
+                        <option value="tech_applies">
+                          El técnico se postula
+                        </option>
                       </select>
                     </label>
 
@@ -1044,8 +1052,8 @@ function AdminOrderDetailView({
               <article className="users-panel orders-dialog__operations-card">
                 <div className="user-card__header">
                   <div>
-                    <p className="user-card__label">Operations</p>
-                    <h3>Operations vinculadas</h3>
+                    <p className="user-card__label">Visitas</p>
+                    <h3>Visitas vinculadas</h3>
                   </div>
 
                   <button
@@ -1055,7 +1063,7 @@ function AdminOrderDetailView({
                       setShowOperations((currentValue) => !currentValue)
                     }
                   >
-                    {showOperations ? 'Ocultar operaciones' : 'Ver operaciones'}
+                    {showOperations ? 'Ocultar visitas' : 'Ver visitas'}
                   </button>
                 </div>
 

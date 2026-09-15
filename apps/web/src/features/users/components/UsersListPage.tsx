@@ -1,6 +1,7 @@
 import { useDeferredValue, useState } from 'react';
 import { useUsers } from '@servicienta/query-hooks';
 import type { UserRole, UserStatus, UsersPageSize } from '@servicienta/types';
+import { formatUserRole } from '../../shared/utils/user-role';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { UserDetailDialog } from './UserDetailDialog';
 
@@ -137,7 +138,7 @@ export function UsersListPage() {
           </label>
 
           <label className="users-toolbar__field">
-            <span>Role</span>
+            <span>Rol</span>
             <select
               value={role}
               onChange={(event) =>
@@ -145,9 +146,9 @@ export function UsersListPage() {
               }
             >
               <option value="all">Todos</option>
-              <option value="admin">Admin</option>
-              <option value="technician">Technician</option>
-              <option value="client">Client</option>
+              <option value="admin">Administrador</option>
+              <option value="technician">Técnico</option>
+              <option value="client">Usuario</option>
             </select>
           </label>
 
@@ -233,7 +234,7 @@ export function UsersListPage() {
                   <th>Accion</th>
                   <th>Nombre</th>
                   <th>Email</th>
-                  <th>Role</th>
+                  <th>Rol</th>
                   <th>Status</th>
                   <th>User ID</th>
                 </tr>
@@ -249,7 +250,7 @@ export function UsersListPage() {
                     </td>
                     <td>{formatUserName(user.name, user.surname)}</td>
                     <td>{user.email}</td>
-                    <td>{user.role}</td>
+                    <td>{formatUserRole(user.role)}</td>
                     <td>
                       <span
                         className={

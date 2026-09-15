@@ -259,7 +259,7 @@ export function TechnicianProfilePage({
   const operationsErrorMessage =
     operationsError instanceof Error
       ? operationsError.message
-      : 'No se pudieron cargar las operations';
+      : 'No se pudieron cargar las visitas';
   const ordersErrorMessage =
     ordersError instanceof Error
       ? ordersError.message
@@ -310,7 +310,7 @@ export function TechnicianProfilePage({
                 <h1>{formatTechnicianName(profile.name, profile.surname)}</h1>
                 <p className="users-hero__copy">
                   Vista operativa completa del técnico, con datos de perfil,
-                  orders y operations asociadas.
+                  pedidos y visitas asociadas.
                 </p>
               </div>
 
@@ -471,22 +471,22 @@ export function TechnicianProfilePage({
                 <article className="users-panel technician-profile-collapsible-card">
                   <div className="user-card__header">
                     <div>
-                      <p className="user-card__label">Operations</p>
-                      <h2>Operaciones del técnico</h2>
+                      <p className="user-card__label">Visitas</p>
+                      <h2>Visitas del técnico</h2>
                     </div>
                     <button
                       type="button"
                       className="users-table__action"
                       onClick={() => setShowOperations((current) => !current)}
                     >
-                      {showOperations ? 'Ocultar' : 'Operaciones'}
+                      {showOperations ? 'Ocultar' : 'Visitas'}
                     </button>
                   </div>
 
                   {showOperations ? (
                     <div className="technician-profile-collapsible-card__content">
                       {isOperationsLoading ? (
-                        <p className="users-message">Cargando operations...</p>
+                        <p className="users-message">Cargando visitas...</p>
                       ) : operationsError ? (
                         <p className="users-message users-message--error">
                           {operationsErrorMessage}
@@ -495,7 +495,7 @@ export function TechnicianProfilePage({
                         <AdminOperationsTable operations={operations} />
                       ) : (
                         <p className="users-message">
-                          No hay operations para este técnico.
+                          No hay visitas para este técnico.
                         </p>
                       )}
                     </div>

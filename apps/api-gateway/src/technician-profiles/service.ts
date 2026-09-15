@@ -23,7 +23,7 @@ import {
   mapPublicTechnicianCatalogItemRow,
   mapPublicTechnicianProfileRow,
 } from './mapper.js';
-import type { AdminTechnicianProfileRow } from './types.js';
+import type { AdminTechnicianProfileRow, PublicTechnicianProfileRow } from './types.js';
 import { validateUpdateTechnicianProfileInput } from './validators.js';
 
 export async function listPublicTechnicianProfiles(
@@ -41,7 +41,26 @@ export async function listPublicTechnicianProfiles(
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map(mapPublicTechnicianProfileRow);
+  if (!data?.length) return [];
+  const rows = data as PublicTechnicianProfileRow[];
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from('technician_profiles')
+    .select('public_slug, user:users!technician_profiles_id_fkey(name, surname)')
+    .in('public_slug', rows.map((row) => row.public_slug));
+
+  if (profilesError) throw new Error(profilesError.message);
+
+  const usersBySlug = new Map(
+    (profiles ?? []).map((profile) => [profile.public_slug, profile.user]),
+  );
+
+  return rows.map((row) =>
+    mapPublicTechnicianProfileRow({
+      ...row,
+      user: usersBySlug.get(row.public_slug),
+    }),
+  );
 }
 
 export async function getPublicTechnicianProfileBySlug(

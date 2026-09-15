@@ -18,6 +18,10 @@ import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 
 type AuthMode = 'signup' | 'login';
 
+function getTechnicianName(profile: PublicTechnicianProfile) {
+  return [profile.name, profile.surname].filter(Boolean).join(' ').trim() || 'Técnico';
+}
+
 export function TechnicianSearchPage() {
   const navigate = useNavigate();
   const supabase = getSupabaseBrowserClient();
@@ -307,8 +311,8 @@ export function TechnicianSearchPage() {
                 >
                   <div className="technician-result-card__header">
                     <div>
-                      <p className="user-card__label">Técnico público</p>
-                      <h2>{profile.public_slug}</h2>
+                      <p className="user-card__label">Técnico</p>
+                      <h2>{getTechnicianName(profile)}</h2>
                     </div>
                     <span
                       className={`user-badge ${
@@ -398,7 +402,7 @@ export function TechnicianSearchPage() {
                   <span>Técnico</span>
                   <input
                     type="text"
-                    value={selectedTechnician.public_slug}
+                    value={getTechnicianName(selectedTechnician)}
                     readOnly
                   />
                 </label>
@@ -451,6 +455,7 @@ export function TechnicianSearchPage() {
 
                   <button
                     type="submit"
+                    className="auth-form__primary-action technician-order-step-card__action"
                     disabled={
                       createOrder.isPending ||
                       (Boolean(session) &&
@@ -461,7 +466,7 @@ export function TechnicianSearchPage() {
                     {createOrder.isPending
                       ? 'Creando...'
                       : session
-                        ? 'Crear order pending'
+                        ? 'Crear Orden'
                         : 'Continuar'}
                   </button>
                 </article>

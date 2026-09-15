@@ -46,7 +46,9 @@ Campos principales:
 Reglas:
 
 - Client y technician se agregan automaticamente desde la `Order`.
-- Admin se agrega cuando entra al hilo.
+- Admin puede leer el hilo sin anunciar su presencia.
+- Admin se agrega como participante y genera el mensaje de sistema cuando
+  envía su primer mensaje.
 - `last_read_at` alimenta unread count.
 
 ### ChatMessage
@@ -96,7 +98,10 @@ Cuando llega un mensaje nuevo:
 
 - Client accede a chats de sus propias orders.
 - Technician accede a chats de orders asignadas a su perfil.
-- Admin accede a cualquier chat y puede sumarse como participante.
+- Admin accede a cualquier chat sin generar actividad visible por abrirlo.
+- Al enviar su primer mensaje, se anuncia su incorporación a la conversación.
+- Client y technician ven los mensajes de cualquier admin bajo el nombre
+  genérico `Soporte`; los admins ven el nombre real de quien escribió.
 - RLS permite lectura a participantes y admin.
 - RLS no habilita inserts directos desde browser en v1.
 
@@ -106,7 +111,9 @@ La accion implementada es agendar operation desde chat.
 
 Flujo:
 
-1. Tecnico abre chat desde una operation.
+1. Tecnico abre el chat desde una operation o desde su Order asociada.
+   Si la Order tiene una sola Operation asignada, el chat la selecciona
+   automaticamente.
 2. Usa accion de calendario.
 3. Selecciona fecha/hora con el selector existente.
 4. El frontend llama `schedule-operation` del chat.

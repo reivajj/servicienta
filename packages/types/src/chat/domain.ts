@@ -1,4 +1,5 @@
 import type { UserRole } from '../users/domain.js';
+import type { OperationStatus } from '../operations/domain.js';
 
 export type ChatConversationType = 'order' | 'direct';
 export type ChatConversationStatus = 'open' | 'closed' | 'archived';
@@ -14,6 +15,11 @@ export type ChatActionType =
   | 'operation.complete_tech'
   | 'operation.confirm_completed';
 
+export interface ChatConversationOperation {
+  id: string;
+  status: OperationStatus;
+}
+
 export interface ChatConversation {
   id: string;
   conversation_type: ChatConversationType;
@@ -26,6 +32,7 @@ export interface ChatConversation {
   participant_count: number;
   unread_count: number;
   last_message: ChatMessagePreview | null;
+  operations?: ChatConversationOperation[];
 }
 
 export interface ChatMessagePreview {

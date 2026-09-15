@@ -1,8 +1,10 @@
 import type {
   ChatActionType,
   ChatConversation,
+  ChatConversationOperation,
   ChatMessage,
   ChatMessagePreview,
+  UserRole,
 } from '@servicienta/types';
 import type { ChatConversationRow, ChatMessageRow } from './types.js';
 
@@ -10,6 +12,7 @@ export interface MapChatConversationOptions {
   participantCount: number;
   unreadCount: number;
   lastMessage: ChatMessagePreview | null;
+  operations: ChatConversationOperation[];
 }
 
 export function mapChatConversationRow(
@@ -28,19 +31,24 @@ export function mapChatConversationRow(
     participant_count: options.participantCount,
     unread_count: options.unreadCount,
     last_message: options.lastMessage,
+    operations: options.operations,
   };
 }
 
-export function mapChatMessageRow(row: ChatMessageRow): ChatMessage {
+export function mapChatMessageRow(
+  row: ChatMessageRow,
+  viewerRole: UserRole,
+): ChatMessage {
   const sender = Array.isArray(row.sender) ? row.sender[0] : row.sender;
+  const hideAdminIdentity = sender?.role === 'admin' && viewerRole !== 'admin';
 
   return {
     id: row.id,
     conversation_id: row.conversation_id,
     sender_id: row.sender_id,
-    sender_email: sender?.email ?? null,
-    sender_name: sender?.name ?? null,
-    sender_surname: sender?.surname ?? null,
+    sender_email: hideAdminIdentity ? null : (sender?.email ?? null),
+    sender_name: hideAdminIdentity ? 'Soporte' : (sender?.name ?? null),
+    sender_surname: hideAdminIdentity ? null : (sender?.surname ?? null),
     sender_role: sender?.role ?? null,
     message_type: row.message_type,
     body: row.body,
@@ -54,17 +62,19 @@ export function mapChatMessageRow(row: ChatMessageRow): ChatMessage {
 
 export function mapChatMessagePreviewRow(
   row: ChatMessageRow,
+  viewerRole: UserRole,
 ): ChatMessagePreview {
   const sender = Array.isArray(row.sender) ? row.sender[0] : row.sender;
+  const hideAdminIdentity = sender?.role === 'admin' && viewerRole !== 'admin';
 
   return {
     id: row.id,
     message_type: row.message_type,
     body: row.body,
     sender_id: row.sender_id,
-    sender_email: sender?.email ?? null,
-    sender_name: sender?.name ?? null,
-    sender_surname: sender?.surname ?? null,
+    sender_email: hideAdminIdentity ? null : (sender?.email ?? null),
+    sender_name: hideAdminIdentity ? 'Soporte' : (sender?.name ?? null),
+    sender_surname: hideAdminIdentity ? null : (sender?.surname ?? null),
     created_at: row.created_at,
   };
 }

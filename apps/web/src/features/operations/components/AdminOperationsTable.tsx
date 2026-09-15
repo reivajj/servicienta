@@ -2,6 +2,10 @@ import { Fragment, useState } from 'react';
 import type { AdminOperation } from '@servicienta/types';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { ViewOperationActionLink } from '../../shared/components/ViewOperationActionLink';
+import {
+  formatOperationStatus,
+  formatOrderStatus,
+} from '../../shared/utils/operation-status';
 
 function formatFullName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -37,13 +41,13 @@ export function AdminOperationsTable({
       <table className="users-table">
         <thead>
           <tr>
-            {onSelectOperation ? <th>Accion</th> : null}
+            {onSelectOperation ? <th>Acción</th> : null}
             <th>Cliente</th>
             <th>Técnico</th>
             <th>Slug</th>
-            <th>Order</th>
-            <th>Operation</th>
-            <th>Review</th>
+            <th>Pedido</th>
+            <th>Visita</th>
+            <th>Reseña</th>
             <th>Programada</th>
             <th>Completada</th>
             <th>Dirección</th>
@@ -62,7 +66,7 @@ export function AdminOperationsTable({
                       <div className="users-table__actions">
                         <ViewOperationActionLink operationId={operation.id} />
                         <SettingsActionButton
-                          label="Ver y editar operation"
+                          label="Ver y editar visita"
                           onClick={() => onSelectOperation(operation.id)}
                         />
                       </div>
@@ -86,7 +90,7 @@ export function AdminOperationsTable({
                       <span
                         className={getStatusBadgeClass(operation.order_status)}
                       >
-                        {operation.order_status}
+                        {formatOrderStatus(operation.order_status)}
                       </span>
                     ) : (
                       'Sin definir'
@@ -94,7 +98,7 @@ export function AdminOperationsTable({
                   </td>
                   <td>
                     <span className={getStatusBadgeClass(operation.status)}>
-                      {operation.status}
+                      {formatOperationStatus(operation.status)}
                     </span>
                   </td>
                   <td>
@@ -114,7 +118,7 @@ export function AdminOperationsTable({
                       </button>
                     ) : (
                       <span className="operation-review operation-review--empty">
-                        Sin review
+                        Sin reseña
                       </span>
                     )}
                   </td>
@@ -131,9 +135,9 @@ export function AdminOperationsTable({
                     <td colSpan={expandedColSpan}>
                       <div className="operation-review-row__content">
                         <span className="operation-review-row__label">
-                          TechnicianReview
+                          Reseña del técnico
                         </span>
-                        <strong>Rating {review.rating}/5</strong>
+                        <strong>Calificación {review.rating}/5</strong>
                         <p>{review.comment || 'Sin comentario'}</p>
                         <small>{formatDateTime(review.created_at)}</small>
                       </div>

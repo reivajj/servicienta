@@ -94,10 +94,6 @@ export async function getOrCreateOrderChatConversation(
 
   await ensureOrderParticipants(supabase, conversation.id, order);
 
-  if (auth.role === 'admin') {
-    await ensureAdminParticipant(supabase, auth, conversation);
-  }
-
   return hydrateConversation(supabase, auth, conversation);
 }
 
@@ -120,7 +116,7 @@ export async function listChatMessages(
   if (error) throw new Error(error.message);
 
   const items = ((data ?? []) as ChatMessageRow[])
-    .map(mapChatMessageRow)
+    .map((row) => mapChatMessageRow(row, auth.role))
     .reverse();
   const total = count ?? 0;
 
@@ -147,12 +143,18 @@ export async function createChatMessage(
     auth,
     conversationId,
   );
+
+  if (auth.role === 'admin') {
+    await announceAdminOnFirstMessage(supabase, auth, conversation);
+  }
+
   const message = await insertChatMessage(supabase, {
     conversationId: conversation.id,
     senderId: auth.id,
     messageType: 'text',
     body: payload.body,
     relatedOrderId: conversation.order_id,
+    viewerRole: auth.role,
   });
 
   await recordActivityEvent(supabase, {
@@ -211,7 +213,7 @@ export async function scheduleOperationFromChat(
   );
 
   if (!conversation.order_id) {
-    throw new ValidationError('Conversation is not linked to an order');
+    throw new ValidationError('La conversación no está vinculada a un pedido');
   }
 
   const { data: operation, error: operationError } = await supabase
@@ -222,7 +224,7 @@ export async function scheduleOperationFromChat(
     .maybeSingle();
 
   if (operationError) throw new Error(operationError.message);
-  if (!operation) throw new NotFoundError('Operation not found');
+  if (!operation) throw new NotFoundError('No se encontró la visita');
 
   await scheduleOperation(supabase, auth, payload.operation_id, {
     scheduled_at: payload.scheduled_at,
@@ -246,6 +248,7 @@ export async function scheduleOperationFromChat(
     },
     relatedOrderId: conversation.order_id,
     relatedOperationId: payload.operation_id,
+    viewerRole: auth.role,
   });
 
   await recordActivityEvent(supabase, {
@@ -333,7 +336,7 @@ async function getAuthorizedOrder(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!data) throw new NotFoundError('Order not found');
+  if (!data) throw new NotFoundError('No se encontró el pedido');
 
   const order = data as ChatOrderRow;
 
@@ -342,7 +345,7 @@ async function getAuthorizedOrder(
     order.client_id !== auth.id &&
     order.technician_id !== auth.id
   ) {
-    throw new ForbiddenError('Order chat access denied');
+    throw new ForbiddenError('No tenés acceso al chat de este pedido');
   }
 
   return order;
@@ -419,28 +422,33 @@ async function ensureOrderParticipants(
   if (error) throw new Error(error.message);
 }
 
-async function ensureAdminParticipant(
+async function announceAdminOnFirstMessage(
   supabase: SupabaseClient,
   auth: RequestAuth,
   conversation: ChatConversationRow,
 ) {
-  const { data: existing, error: existingError } = await supabase
-    .from('chat_conversation_participants')
-    .select('conversation_id')
+  const { data: previousMessage, error: previousMessageError } = await supabase
+    .from('chat_messages')
+    .select('id')
     .eq('conversation_id', conversation.id)
-    .eq('user_id', auth.id)
+    .eq('sender_id', auth.id)
+    .eq('message_type', 'text')
+    .limit(1)
     .maybeSingle();
 
-  if (existingError) throw new Error(existingError.message);
-  if (existing) return;
+  if (previousMessageError) throw new Error(previousMessageError.message);
+  if (previousMessage) return;
 
   const { error } = await supabase
     .from('chat_conversation_participants')
-    .insert({
-      conversation_id: conversation.id,
-      user_id: auth.id,
-      participant_role: 'admin',
-    });
+    .upsert(
+      {
+        conversation_id: conversation.id,
+        user_id: auth.id,
+        participant_role: 'admin',
+      },
+      { onConflict: 'conversation_id,user_id' },
+    );
 
   if (error) throw new Error(error.message);
 
@@ -450,6 +458,7 @@ async function ensureAdminParticipant(
     messageType: 'system',
     body: 'Un administrador se sumó a la conversación.',
     relatedOrderId: conversation.order_id,
+    viewerRole: auth.role,
   });
 
   await recordActivityEvent(supabase, {
@@ -476,7 +485,7 @@ async function getAuthorizedConversation(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!data) throw new NotFoundError('Chat conversation not found');
+  if (!data) throw new NotFoundError('No se encontró la conversación del chat');
 
   const conversation = data as ChatConversationRow;
 
@@ -490,7 +499,8 @@ async function getAuthorizedConversation(
     .maybeSingle();
 
   if (participantError) throw new Error(participantError.message);
-  if (!participant) throw new ForbiddenError('Chat conversation access denied');
+  if (!participant)
+    throw new ForbiddenError('No tenés acceso a esta conversación');
 
   return conversation;
 }
@@ -500,17 +510,45 @@ async function hydrateConversation(
   auth: RequestAuth,
   row: ChatConversationRow,
 ): Promise<ChatConversation> {
-  const [participantCount, unreadCount, lastMessage] = await Promise.all([
-    countConversationParticipants(supabase, row.id),
-    countUnreadMessages(supabase, row.id, auth.id),
-    getLastConversationMessage(supabase, row.id),
-  ]);
+  const [participantCount, unreadCount, lastMessage, operations] =
+    await Promise.all([
+      countConversationParticipants(supabase, row.id),
+      countUnreadMessages(supabase, row.id, auth.id),
+      getLastConversationMessage(supabase, row.id, auth.role),
+      listConversationOperations(supabase, row.order_id, auth),
+    ]);
 
   return mapChatConversationRow(row, {
     participantCount,
     unreadCount,
     lastMessage,
+    operations,
   });
+}
+
+async function listConversationOperations(
+  supabase: SupabaseClient,
+  orderId: string | null,
+  auth: RequestAuth,
+) {
+  if (!orderId) return [];
+
+  let query = supabase
+    .from('operations')
+    .select('id, status')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: true });
+
+  if (auth.role === 'technician') query = query.eq('technician_id', auth.id);
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((operation) => ({
+    id: operation.id,
+    status: operation.status,
+  }));
 }
 
 async function countConversationParticipants(
@@ -561,6 +599,7 @@ async function countUnreadMessages(
 async function getLastConversationMessage(
   supabase: SupabaseClient,
   conversationId: string,
+  viewerRole: RequestAuth['role'],
 ) {
   const { data, error } = await supabase
     .from('chat_messages')
@@ -572,7 +611,9 @@ async function getLastConversationMessage(
 
   if (error) throw new Error(error.message);
 
-  return data ? mapChatMessagePreviewRow(data as ChatMessageRow) : null;
+  return data
+    ? mapChatMessagePreviewRow(data as ChatMessageRow, viewerRole)
+    : null;
 }
 
 async function insertChatMessage(
@@ -586,6 +627,7 @@ async function insertChatMessage(
     actionPayload?: Record<string, unknown> | null;
     relatedOrderId?: string | null;
     relatedOperationId?: string | null;
+    viewerRole: RequestAuth['role'];
   },
 ) {
   const { data, error } = await supabase
@@ -605,5 +647,5 @@ async function insertChatMessage(
 
   if (error) throw new Error(error.message);
 
-  return mapChatMessageRow(data as ChatMessageRow);
+  return mapChatMessageRow(data as ChatMessageRow, input.viewerRole);
 }

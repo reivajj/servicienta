@@ -13,16 +13,16 @@ import type {
 import { AcceptOrderActionButton } from '../../shared/components/AcceptOrderActionButton';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
+import {
+  formatOrderFlowType,
+  formatOrderStatus,
+} from '../../shared/utils/operation-status';
 import { OrderDetailDialog } from './OrderDetailDialog';
 
 function formatClientName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
 
   return fullName || 'Sin nombre';
-}
-
-function formatFlowType(flowType: OrderFlowType) {
-  return flowType === 'client_selects' ? 'Client selects' : 'Tech applies';
 }
 
 function getStatusBadgeClass(status: OrderStatus) {
@@ -68,7 +68,9 @@ function CurrentOrdersListPage({ role }: { role: string }) {
   const items = data?.items ?? [];
   const pagination = data?.pagination;
   const errorMessage =
-    error instanceof Error ? error.message : 'No se pudieron cargar tus orders';
+    error instanceof Error
+      ? error.message
+      : 'No se pudieron cargar tus pedidos';
 
   return (
     <main className="users-page">
@@ -76,21 +78,23 @@ function CurrentOrdersListPage({ role }: { role: string }) {
         <header className="users-hero">
           <div>
             <p className="users-hero__eyebrow">
-              {role === 'technician' ? 'Technician Orders' : 'Client Orders'}
+              {role === 'technician'
+                ? 'Pedidos del técnico'
+                : 'Pedidos del usuario'}
             </p>
             <h1>{role === 'technician' ? 'Solicitudes' : 'Mis órdenes'}</h1>
             <p className="users-hero__copy">
               {role === 'technician'
-                ? 'Aceptá solicitudes pendientes para crear la operación vinculada.'
+                ? 'Aceptá solicitudes pendientes para crear la visita vinculada.'
                 : 'Seguí tus solicitudes y cancelá las que todavía no fueron cerradas.'}
             </p>
           </div>
 
           <div className="users-hero__summary">
             <span>{data?.summary.totalOrders ?? 0} órdenes</span>
-            <span>{data?.summary.pendingOrders ?? 0} pending</span>
-            <span>{data?.summary.acceptedOrders ?? 0} accepted</span>
-            <span>{data?.summary.completedOrders ?? 0} completed</span>
+            <span>{data?.summary.pendingOrders ?? 0} pendientes</span>
+            <span>{data?.summary.acceptedOrders ?? 0} aceptados</span>
+            <span>{data?.summary.completedOrders ?? 0} completados</span>
           </div>
         </header>
 
@@ -107,8 +111,8 @@ function CurrentOrdersListPage({ role }: { role: string }) {
             <table className="users-table">
               <thead>
                 <tr>
-                  <th>Accion</th>
-                  <th>Status</th>
+                  <th>Acción</th>
+                  <th>Estado</th>
                   <th>Dirección</th>
                   <th>Problema</th>
                   <th>Zona</th>
@@ -123,13 +127,13 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                         <ViewOrderActionLink orderId={order.id} />
 
                         <SettingsActionButton
-                          label="Ver y gestionar order"
+                          label="Ver y gestionar pedido"
                           onClick={() => setSelectedOrderId(order.id)}
                         />
 
                         {role === 'technician' && order.status === 'pending' ? (
                           <AcceptOrderActionButton
-                            label="Aceptar order"
+                            label="Aceptar pedido"
                             disabled={acceptOrder.isPending}
                             onClick={() => acceptOrder.mutate(order.id)}
                           />
@@ -138,7 +142,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                     </td>
                     <td>
                       <span className={getStatusBadgeClass(order.status)}>
-                        {order.status}
+                        {formatOrderStatus(order.status)}
                       </span>
                     </td>
                     <td>{order.service_address_text}</td>
@@ -218,7 +222,9 @@ function AdminOrdersListPage() {
   });
 
   const errorMessage =
-    error instanceof Error ? error.message : 'No se pudieron cargar las orders';
+    error instanceof Error
+      ? error.message
+      : 'No se pudieron cargar los pedidos';
   const items = data?.items ?? [];
   const summary = data?.summary;
   const pagination = data?.pagination;
@@ -266,8 +272,8 @@ function AdminOrdersListPage() {
       <section className="users-layout">
         <header className="users-hero">
           <div>
-            <p className="users-hero__eyebrow">Admin Orders</p>
-            <h1>Orders</h1>
+            <p className="users-hero__eyebrow">Administración de pedidos</p>
+            <h1>Pedidos</h1>
             <p className="users-hero__copy">
               Primera vista administrativa de órdenes para inspeccionar cliente,
               flujo, estado y dirección de servicio.
@@ -276,11 +282,13 @@ function AdminOrdersListPage() {
 
           <div className="users-hero__summary">
             <span>{summary?.totalOrders ?? 0} órdenes</span>
-            <span>{summary?.pendingOrders ?? 0} pending</span>
-            <span>{summary?.acceptedOrders ?? 0} accepted</span>
-            <span>{summary?.inProgressOrders ?? 0} in progress</span>
-            <span>{summary?.completedTechOrders ?? 0} completed tech</span>
-            <span>{summary?.completedOrders ?? 0} completed</span>
+            <span>{summary?.pendingOrders ?? 0} pendientes</span>
+            <span>{summary?.acceptedOrders ?? 0} aceptados</span>
+            <span>{summary?.inProgressOrders ?? 0} en progreso</span>
+            <span>
+              {summary?.completedTechOrders ?? 0} completados por técnico
+            </span>
+            <span>{summary?.completedOrders ?? 0} completados</span>
           </div>
         </header>
 
@@ -302,7 +310,7 @@ function AdminOrdersListPage() {
           </label>
 
           <label className="users-toolbar__field">
-            <span>Status</span>
+            <span>Estado</span>
             <select
               value={status}
               onChange={(event) =>
@@ -310,12 +318,12 @@ function AdminOrdersListPage() {
               }
             >
               <option value="all">Todos</option>
-              <option value="pending">Pending</option>
-              <option value="accepted">Accepted</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="in_progress">In progress</option>
-              <option value="completed_tech">Completed tech</option>
-              <option value="completed">Completed</option>
+              <option value="pending">Pendiente</option>
+              <option value="accepted">Aceptado</option>
+              <option value="cancelled">Cancelado</option>
+              <option value="in_progress">En progreso</option>
+              <option value="completed_tech">Completado por técnico</option>
+              <option value="completed">Completado</option>
             </select>
           </label>
 
@@ -330,14 +338,14 @@ function AdminOrdersListPage() {
               }
             >
               <option value="all">Todos</option>
-              <option value="client_selects">Client selects</option>
-              <option value="tech_applies">Tech applies</option>
+              <option value="client_selects">El cliente elige</option>
+              <option value="tech_applies">El técnico se postula</option>
             </select>
           </label>
 
           <div className="users-toolbar__group">
             <label className="users-toolbar__field">
-              <span>Page size</span>
+              <span>Resultados por página</span>
               <select
                 value={String(pageSize)}
                 onChange={(event) =>
@@ -414,11 +422,11 @@ function AdminOrdersListPage() {
             <table className="users-table">
               <thead>
                 <tr>
-                  <th>Accion</th>
+                  <th>Acción</th>
                   <th>Cliente</th>
                   <th>Email</th>
                   <th>Flujo</th>
-                  <th>Status</th>
+                  <th>Estado</th>
                   <th>Dirección</th>
                   <th>Descripción</th>
                 </tr>
@@ -429,7 +437,7 @@ function AdminOrdersListPage() {
                     <td>
                       <div className="users-table__actions">
                         <SettingsActionButton
-                          label="Ver y editar order"
+                          label="Ver y editar pedido"
                           onClick={() => setSelectedOrderId(order.id)}
                         />
 
@@ -443,10 +451,10 @@ function AdminOrdersListPage() {
                       )}
                     </td>
                     <td>{order.client_email}</td>
-                    <td>{formatFlowType(order.flow_type)}</td>
+                    <td>{formatOrderFlowType(order.flow_type)}</td>
                     <td>
                       <span className={getStatusBadgeClass(order.status)}>
-                        {order.status}
+                        {formatOrderStatus(order.status)}
                       </span>
                     </td>
                     <td>{order.service_address_text}</td>
