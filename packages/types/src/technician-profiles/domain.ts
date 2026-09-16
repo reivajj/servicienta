@@ -42,6 +42,7 @@ export interface PublicTechnicianCatalogItem {
 export interface PublicTechnicianProfileCatalogs {
   zones: PublicTechnicianCatalogItem[];
   applianceTypes: PublicTechnicianCatalogItem[];
+  applianceTypeSlugsByZone: Record<string, string[]>;
 }
 
 export interface AdminTechnicianCatalogItem {

@@ -63,6 +63,7 @@ export function operationsRouter(options: OperationsRouterOptions) {
           pageSize: readQueryParam(request.query.pageSize),
           status: readQueryParam(request.query.status),
           orderId: readQueryParam(request.query.orderId),
+          search: readQueryParam(request.query.search),
         }),
       );
 

@@ -77,6 +77,7 @@ function buildPaginatedOperationsQuery(
   });
 
   if (input.status) searchParams.set('status', input.status);
+  if ('search' in input && input.search) searchParams.set('search', input.search);
   if ('order_id' in input && input.order_id) {
     searchParams.set('orderId', input.order_id);
   }

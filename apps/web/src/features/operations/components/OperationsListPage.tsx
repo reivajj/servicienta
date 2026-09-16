@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import {
   useAdminOperations,
   useCancelOperation,
@@ -111,6 +111,9 @@ export function OperationsListPage() {
 
 function CurrentOperationsListPage({ role }: { role: string }) {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<UsersPageSize>(25);
+  const [status, setStatus] = useState<OperationStatus | 'all'>('all');
+  const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [selectedOperationId, setSelectedOperationId] = useState<string | null>(
     null,
@@ -127,9 +130,10 @@ function CurrentOperationsListPage({ role }: { role: string }) {
   const reviewModalRef = useEscapeKey<HTMLDivElement>(() =>
     setReviewOperation(null),
   );
-  const pageSize: UsersPageSize = 25;
-  const { data, error, isLoading } = useCurrentOperations({ page, pageSize });
-  const { data: calendarData } = useCurrentOperations({ page: 1, pageSize: 100 });
+  const deferredSearch = useDeferredValue(search.trim());
+  const filters = { status: status === 'all' ? undefined : status, search: deferredSearch.length >= 3 ? deferredSearch : undefined };
+  const { data, error, isLoading } = useCurrentOperations({ page, pageSize, ...filters });
+  const { data: calendarData } = useCurrentOperations({ page: 1, pageSize: 100, ...filters });
   const scheduleMutation = useScheduleOperation();
   const completeTechMutation = useCompleteTechOperation();
   const confirmCompletedMutation = useConfirmCompletedOperation();
@@ -138,6 +142,9 @@ function CurrentOperationsListPage({ role }: { role: string }) {
   const cancelOperation = useCancelOperation();
   const items = data?.items ?? [];
   const pagination = data?.pagination;
+  const start = pagination?.total ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
+  const end = pagination?.total ? start + items.length - 1 : 0;
+  const hasActiveFilters = search.length > 0 || status !== 'all' || pageSize !== 25 || page !== 1;
   const errorMessage =
     error instanceof Error
       ? error.message
@@ -211,6 +218,26 @@ function CurrentOperationsListPage({ role }: { role: string }) {
             </span>
           </div>
         </header>
+
+        {role === 'technician' ? (
+          <section className="users-toolbar">
+            <label className="users-toolbar__field">
+              <span>Buscar</span>
+              <input type="search" value={search} placeholder="Descripción de la visita" onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
+              <small className="users-toolbar__hint">{search.trim().length > 0 && search.trim().length < 3 ? 'Escribí al menos 3 caracteres para buscar' : ' '}</small>
+            </label>
+            <label className="users-toolbar__field">
+              <span>Estado</span>
+              <select value={status} onChange={(event) => { setStatus(event.target.value as OperationStatus | 'all'); setPage(1); }}>
+                <option value="all">Todos</option><option value="pending">Pendiente</option><option value="scheduled">Agendada</option><option value="completed_tech">Completada por técnico</option><option value="completion_rejected">Finalización rechazada</option><option value="completed">Completada</option><option value="cancelled">Cancelada</option>
+              </select>
+            </label>
+            <div className="users-toolbar__group">
+              <label className="users-toolbar__field"><span>Resultados por página</span><select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value) as UsersPageSize); setPage(1); }}><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label>
+              <div className="users-toolbar__actions"><button type="button" className="users-toolbar__clear" disabled={!hasActiveFilters} aria-label="Quitar filtros" title="Quitar filtros" onClick={() => { setSearch(''); setStatus('all'); setPageSize(25); setPage(1); }}>×</button></div>
+            </div>
+          </section>
+        ) : null}
 
         {role === 'technician' ? (
           <div className="operations-view-toggle" role="group" aria-label="Vista de visitas">
@@ -483,13 +510,13 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           </section>
         ) : (
           <section className="users-panel">
-            <p>No hay visitas por ahora.</p>
+            <p>{role === 'technician' && hasActiveFilters ? 'No hay visitas para los filtros actuales.' : 'No hay visitas por ahora.'}</p>
           </section>
         )}
 
         <section className="users-pagination">
           <p className="users-pagination__summary">
-            {pagination?.total ?? 0} resultados
+            {pagination?.total ? `Mostrando ${start}-${end} de ${pagination.total}` : 'Sin resultados'}
           </p>
           <div className="users-pagination__controls">
             <button

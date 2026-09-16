@@ -1051,6 +1051,7 @@ function buildClientOperationsQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
 
   return query;
 }
@@ -1067,6 +1068,7 @@ function buildClientOperationsCountQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
 
   return query;
 }
@@ -1077,13 +1079,14 @@ function buildClientOperationsStatusCountQuery(
   clientId: string,
   status: OperationStatus,
 ) {
-  const query = supabase
+  let query = supabase
     .from('operations')
     .select('id, order:orders!inner(client_id)', { count: 'exact', head: true })
     .eq('order.client_id', clientId)
     .eq('status', status);
 
-  if (input.order_id) return query.eq('order_id', input.order_id);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
 
   return query;
 }
@@ -1104,6 +1107,7 @@ function buildTechnicianOperationsQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
 
   return query;
 }
@@ -1120,6 +1124,7 @@ function buildTechnicianOperationsCountQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
 
   return query;
 }
@@ -1130,13 +1135,14 @@ function buildTechnicianOperationsStatusCountQuery(
   technicianId: string,
   status: OperationStatus,
 ) {
-  const query = supabase
+  let query = supabase
     .from('operations')
     .select('id', { count: 'exact', head: true })
     .eq('technician_id', technicianId)
     .eq('status', status);
 
-  if (input.order_id) return query.eq('order_id', input.order_id);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
+  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
 
   return query;
 }

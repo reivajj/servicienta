@@ -65,6 +65,7 @@ export interface ListCurrentOperationsInput {
   pageSize: UsersPageSize;
   status?: OperationStatus;
   order_id?: string;
+  search?: string;
 }
 
 export interface PaginatedOperationsSummary {

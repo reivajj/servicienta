@@ -114,10 +114,14 @@ export function validateListCurrentOperationsInput(input: {
   pageSize?: string;
   status?: string;
   orderId?: string;
+  search?: string;
 }): ListCurrentOperationsInput {
+  const search = input.search?.trim();
+  if (search && search.length > 100) throw new ValidationError('La búsqueda es demasiado larga');
   return {
     ...validatePaginatedOperationsInput(input),
     order_id: input.orderId ? validateOrderId(input.orderId) : undefined,
+    search: search && search.length >= 3 ? search : undefined,
   };
 }
 

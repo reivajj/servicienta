@@ -18,6 +18,7 @@ import {
   formatOrderStatus,
 } from '../../shared/utils/operation-status';
 import { OrderDetailDialog } from './OrderDetailDialog';
+import { OrderVisitsActionButton, OrderVisitsDialog } from './OrderVisitsDialog';
 
 function formatClientName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -61,12 +62,24 @@ export function OrdersListPage() {
 
 function CurrentOrdersListPage({ role }: { role: string }) {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<UsersPageSize>(25);
+  const [status, setStatus] = useState<OrderStatus | 'all'>('all');
+  const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const pageSize: UsersPageSize = 25;
-  const { data, error, isLoading } = useCurrentOrders({ page, pageSize });
+  const [visitsOrderId, setVisitsOrderId] = useState<string | null>(null);
+  const deferredSearch = useDeferredValue(search.trim());
+  const { data, error, isLoading } = useCurrentOrders({
+    page,
+    pageSize,
+    status: status === 'all' ? undefined : status,
+    search: deferredSearch.length >= 3 ? deferredSearch : undefined,
+  });
   const acceptOrder = useAcceptOrder();
   const items = data?.items ?? [];
   const pagination = data?.pagination;
+  const start = pagination?.total ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
+  const end = pagination?.total ? start + items.length - 1 : 0;
+  const hasActiveFilters = search.length > 0 || status !== 'all' || pageSize !== 25 || page !== 1;
   const errorMessage =
     error instanceof Error
       ? error.message
@@ -82,7 +95,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                 ? 'Pedidos del técnico'
                 : 'Pedidos del usuario'}
             </p>
-            <h1>{role === 'technician' ? 'Solicitudes' : 'Mis órdenes'}</h1>
+            <h1>{role === 'technician' ? 'Pedidos' : 'Mis órdenes'}</h1>
             <p className="users-hero__copy">
               {role === 'technician'
                 ? 'Aceptá solicitudes pendientes para crear la visita vinculada.'
@@ -97,6 +110,26 @@ function CurrentOrdersListPage({ role }: { role: string }) {
             <span>{data?.summary.completedOrders ?? 0} completados</span>
           </div>
         </header>
+
+        {role === 'technician' ? (
+          <section className="users-toolbar users-toolbar--technician-orders">
+            <label className="users-toolbar__field">
+              <span>Buscar</span>
+              <input type="search" value={search} placeholder="Descripción o dirección" onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
+              <small className="users-toolbar__hint">{search.trim().length > 0 && search.trim().length < 3 ? 'Escribí al menos 3 caracteres para buscar' : ' '}</small>
+            </label>
+            <label className="users-toolbar__field">
+              <span>Estado</span>
+              <select value={status} onChange={(event) => { setStatus(event.target.value as OrderStatus | 'all'); setPage(1); }}>
+                <option value="all">Todos</option><option value="pending">Pendiente</option><option value="accepted">Aceptado</option><option value="cancelled">Cancelado</option><option value="in_progress">En progreso</option><option value="completed_tech">Completado por técnico</option><option value="completion_rejected">Finalización rechazada</option><option value="completed">Completado</option>
+              </select>
+            </label>
+            <div className="users-toolbar__group">
+              <label className="users-toolbar__field"><span>Resultados por página</span><select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value) as UsersPageSize); setPage(1); }}><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label>
+              <div className="users-toolbar__actions"><button type="button" className="users-toolbar__clear" disabled={!hasActiveFilters} aria-label="Quitar filtros" title="Quitar filtros" onClick={() => { setSearch(''); setStatus('all'); setPageSize(25); setPage(1); }}>×</button></div>
+            </div>
+          </section>
+        ) : null}
 
         {isLoading ? (
           <section className="users-panel">
@@ -117,6 +150,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                   <th>Problema</th>
                   <th>Zona</th>
                   <th>Rubro</th>
+                  <th>Visitas</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,6 +183,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                     <td>{order.description}</td>
                     <td>{order.zone_slug ?? 'Sin definir'}</td>
                     <td>{order.appliance_type_slug ?? 'Sin definir'}</td>
+                    <td><OrderVisitsActionButton onClick={() => setVisitsOrderId(order.id)} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -156,13 +191,13 @@ function CurrentOrdersListPage({ role }: { role: string }) {
           </section>
         ) : (
           <section className="users-panel">
-            <p>No hay órdenes por ahora.</p>
+            <p>{role === 'technician' && hasActiveFilters ? 'No hay pedidos para los filtros actuales.' : 'No hay órdenes por ahora.'}</p>
           </section>
         )}
 
         <section className="users-pagination">
           <p className="users-pagination__summary">
-            {pagination?.total ?? 0} resultados
+            {pagination?.total ? `Mostrando ${start}-${end} de ${pagination.total}` : 'Sin resultados'}
           </p>
           <div className="users-pagination__controls">
             <button
@@ -196,6 +231,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
             onClose={() => setSelectedOrderId(null)}
           />
         ) : null}
+        {visitsOrderId ? <OrderVisitsDialog orderId={visitsOrderId} mode="current" onClose={() => setVisitsOrderId(null)} /> : null}
       </section>
     </main>
   );
@@ -209,6 +245,7 @@ function AdminOrdersListPage() {
   const [flowType, setFlowType] = useState<OrderFlowType | 'all'>('all');
   const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [visitsOrderId, setVisitsOrderId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search.trim());
   const searchFilter =
     deferredSearch.length >= MIN_SEARCH_LENGTH ? deferredSearch : undefined;
@@ -432,6 +469,7 @@ function AdminOrdersListPage() {
                   <th>Estado</th>
                   <th>Dirección</th>
                   <th>Descripción</th>
+                  <th>Visitas</th>
                 </tr>
               </thead>
               <tbody>
@@ -462,6 +500,7 @@ function AdminOrdersListPage() {
                     </td>
                     <td>{order.service_address_text}</td>
                     <td>{order.description}</td>
+                    <td><OrderVisitsActionButton onClick={() => setVisitsOrderId(order.id)} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -513,6 +552,7 @@ function AdminOrdersListPage() {
             onClose={() => setSelectedOrderId(null)}
           />
         ) : null}
+        {visitsOrderId ? <OrderVisitsDialog orderId={visitsOrderId} mode="admin" onClose={() => setVisitsOrderId(null)} /> : null}
       </section>
     </main>
   );

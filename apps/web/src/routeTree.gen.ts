@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -28,6 +29,11 @@ import { Route as OperationsOperationIdRouteImport } from './routes/operations.$
 import { Route as DevSupabaseRouteImport } from './routes/dev.supabase'
 import { Route as ClientProfilesClientProfileIdRouteImport } from './routes/client-profiles.$clientProfileId'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/client-profiles/$clientProfileId': typeof ClientProfilesClientProfileIdRoute
   '/dev/supabase': typeof DevSupabaseRoute
   '/operations/$operationId': typeof OperationsOperationIdRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/client-profiles/$clientProfileId': typeof ClientProfilesClientProfileIdRoute
   '/dev/supabase': typeof DevSupabaseRoute
   '/operations/$operationId': typeof OperationsOperationIdRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/client-profiles/$clientProfileId': typeof ClientProfilesClientProfileIdRoute
   '/dev/supabase': typeof DevSupabaseRoute
   '/operations/$operationId': typeof OperationsOperationIdRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/signup'
     | '/client-profiles/$clientProfileId'
     | '/dev/supabase'
     | '/operations/$operationId'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/signup'
     | '/client-profiles/$clientProfileId'
     | '/dev/supabase'
     | '/operations/$operationId'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/reset-password'
+    | '/signup'
     | '/client-profiles/$clientProfileId'
     | '/dev/supabase'
     | '/operations/$operationId'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
   ClientProfilesClientProfileIdRoute: typeof ClientProfilesClientProfileIdRoute
   DevSupabaseRoute: typeof DevSupabaseRoute
   OperationsOperationIdRoute: typeof OperationsOperationIdRoute
@@ -267,6 +280,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -401,6 +421,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
   ClientProfilesClientProfileIdRoute: ClientProfilesClientProfileIdRoute,
   DevSupabaseRoute: DevSupabaseRoute,
   OperationsOperationIdRoute: OperationsOperationIdRoute,

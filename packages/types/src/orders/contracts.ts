@@ -50,6 +50,7 @@ export interface ListMyOrdersInput {
   page: number;
   pageSize: UsersPageSize;
   status?: OrderStatus;
+  flow_type?: OrderFlowType;
   search?: string;
 }
 

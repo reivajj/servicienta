@@ -619,12 +619,13 @@ function buildMyOrdersQuery(
 ) {
   let query = supabase
     .from('orders')
-    .select(ORDER_SELECT, { count: 'exact' })
+    .select(ORDER_DETAIL_SELECT, { count: 'exact' })
     .eq(ownerColumn, ownerId)
     .order('created_at', { ascending: false })
     .range(from, to);
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
   return query;
@@ -642,6 +643,7 @@ function buildMyOrdersCountQuery(
     .eq(ownerColumn, ownerId);
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
   return query;
@@ -666,6 +668,7 @@ function buildMyOrdersStatusCountQuery(
     .eq(ownerColumn, ownerId)
     .eq('status', status);
 
+  if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
   return query;

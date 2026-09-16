@@ -51,7 +51,11 @@ export function TechnicianSearchPage() {
     error: profilesError,
     isFetching: isProfilesFetching,
   } = usePublicTechnicianProfiles(submittedInput);
-  const canSearch = Boolean(zoneSlug && applianceTypeSlug);
+  const availableApplianceSlugs = new Set(catalogs?.applianceTypeSlugsByZone?.[zoneSlug] ?? []);
+  const availableApplianceTypes = zoneSlug
+    ? (catalogs?.applianceTypes ?? []).filter((item) => availableApplianceSlugs.has(item.slug))
+    : [];
+  const canSearch = Boolean(zoneSlug && applianceTypeSlug && availableApplianceSlugs.has(applianceTypeSlug));
   const catalogsErrorMessage =
     catalogsError instanceof Error
       ? catalogsError.message
@@ -212,18 +216,11 @@ export function TechnicianSearchPage() {
           <div>
             <p className="users-hero__eyebrow">Technician Search</p>
             <h1>Buscá técnicos por zona y electrodoméstico</h1>
-            <p className="users-hero__copy">
-              Esta vista reutiliza la búsqueda pública de `technician-profiles`.
-              Sirve para probar el flujo como usuario anónimo y también como
-              herramienta interna desde la app.
-            </p>
           </div>
 
           <div className="users-hero__summary">
             <span>{catalogs?.zones.length ?? 0} zonas</span>
-            <span>
-              {catalogs?.applianceTypes.length ?? 0} electrodomésticos
-            </span>
+            <span>{zoneSlug ? availableApplianceTypes.length : catalogs?.applianceTypes.length ?? 0} electrodomésticos</span>
             <span>{profiles?.length ?? 0} resultados</span>
           </div>
         </header>
@@ -237,7 +234,12 @@ export function TechnicianSearchPage() {
               <span>Zona</span>
               <select
                 value={zoneSlug}
-                onChange={(event) => setZoneSlug(event.target.value)}
+                onChange={(event) => {
+                  setZoneSlug(event.target.value);
+                  setApplianceTypeSlug('');
+                  setSubmittedInput(null);
+                  setSelectedTechnician(null);
+                }}
                 disabled={isCatalogsLoading}
               >
                 <option value="">Seleccionar zona</option>
@@ -253,16 +255,23 @@ export function TechnicianSearchPage() {
               <span>Electrodoméstico</span>
               <select
                 value={applianceTypeSlug}
-                onChange={(event) => setApplianceTypeSlug(event.target.value)}
-                disabled={isCatalogsLoading}
+                onChange={(event) => {
+                  setApplianceTypeSlug(event.target.value);
+                  setSubmittedInput(null);
+                  setSelectedTechnician(null);
+                }}
+                disabled={isCatalogsLoading || !zoneSlug}
               >
-                <option value="">Seleccionar electrodoméstico</option>
-                {(catalogs?.applianceTypes ?? []).map((applianceType) => (
+                <option value="">{zoneSlug ? 'Seleccionar electrodoméstico' : 'Primero seleccioná una zona'}</option>
+                {availableApplianceTypes.map((applianceType) => (
                   <option key={applianceType.id} value={applianceType.slug}>
                     {applianceType.name}
                   </option>
                 ))}
               </select>
+              {zoneSlug && !isCatalogsLoading && availableApplianceTypes.length === 0 ? (
+                <small className="users-toolbar__hint">Todavía no hay técnicos con especialidades en esta zona.</small>
+              ) : null}
             </label>
 
             <div className="technician-search-form__actions">

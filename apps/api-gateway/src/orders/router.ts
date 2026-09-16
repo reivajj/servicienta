@@ -54,6 +54,7 @@ export function ordersRouter(options: OrdersRouterOptions) {
           pageSize: readQueryParam(request.query.pageSize),
           status: readQueryParam(request.query.status),
           search: readQueryParam(request.query.search),
+          flowType: readQueryParam(request.query.flowType),
         }),
       );
 

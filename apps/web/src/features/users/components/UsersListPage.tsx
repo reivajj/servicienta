@@ -1,15 +1,8 @@
 import { useDeferredValue, useState } from 'react';
 import { useUsers } from '@servicienta/query-hooks';
 import type { UserRole, UserStatus, UsersPageSize } from '@servicienta/types';
-import { formatUserRole } from '../../shared/utils/user-role';
-import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { UserDetailDialog } from './UserDetailDialog';
-
-function formatUserName(name: string | null, surname: string | null) {
-  const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
-
-  return fullName || 'Sin nombre';
-}
+import { UsersTable } from './UsersTable';
 
 export function UsersListPage() {
   const MIN_SEARCH_LENGTH = 3;
@@ -227,47 +220,7 @@ export function UsersListPage() {
             <p className="users-message users-message--error">{errorMessage}</p>
           </section>
         ) : items.length ? (
-          <section className="users-table-wrapper">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>Accion</th>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Status</th>
-                  <th>User ID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <SettingsActionButton
-                        label="Ver y editar user"
-                        onClick={() => setSelectedUserId(user.id)}
-                      />
-                    </td>
-                    <td>{formatUserName(user.name, user.surname)}</td>
-                    <td>{user.email}</td>
-                    <td>{formatUserRole(user.role)}</td>
-                    <td>
-                      <span
-                        className={
-                          user.status === 'ACTIVE'
-                            ? 'user-badge user-badge--active'
-                            : 'user-badge user-badge--deleted'
-                        }
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="users-table__id">{user.id}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+          <UsersTable users={items} onSelectUser={setSelectedUserId} />
         ) : (
           <section className="users-panel">
             <p>No hay usuarios para los filtros actuales.</p>

@@ -96,14 +96,51 @@ export async function getPublicTechnicianProfileBySlug(
 export async function listPublicTechnicianProfileCatalogs(
   supabase: SupabaseClient,
 ): Promise<PublicTechnicianProfileCatalogs> {
-  const [zones, applianceTypes] = await Promise.all([
+  const [zones, applianceTypes, coverageZones, applianceSpecialties] = await Promise.all([
     listCatalogItems(supabase, 'zones'),
     listCatalogItems(supabase, 'appliance_types'),
+    supabase.from('technician_coverage_zones').select('technician_id, zone_id'),
+    supabase.from('technician_appliance_specialties').select('technician_id, appliance_type_id').not('appliance_type_id', 'is', null),
   ]);
+
+  if (coverageZones.error) throw new Error(coverageZones.error.message);
+  if (applianceSpecialties.error) throw new Error(applianceSpecialties.error.message);
+
+  const zoneSlugById = new Map(zones.map((zone) => [zone.id, zone.slug]));
+  const applianceSlugById = new Map(applianceTypes.map((item) => [item.id, item.slug]));
+  const applianceSlugsByTechnician = new Map<string, Set<string>>();
+
+  for (const specialty of applianceSpecialties.data ?? []) {
+    const applianceSlug = specialty.appliance_type_id
+      ? applianceSlugById.get(specialty.appliance_type_id)
+      : undefined;
+    if (!applianceSlug) continue;
+
+    const slugs = applianceSlugsByTechnician.get(specialty.technician_id) ?? new Set<string>();
+    slugs.add(applianceSlug);
+    applianceSlugsByTechnician.set(specialty.technician_id, slugs);
+  }
+
+  const applianceTypeSlugsByZone = Object.fromEntries(
+    zones.map((zone) => [zone.slug, new Set<string>()]),
+  ) as Record<string, Set<string>>;
+
+  for (const coverage of coverageZones.data ?? []) {
+    const zoneSlug = zoneSlugById.get(coverage.zone_id);
+    const applianceSlugs = applianceSlugsByTechnician.get(coverage.technician_id);
+    if (!zoneSlug || !applianceSlugs) continue;
+
+    for (const applianceSlug of applianceSlugs) {
+      applianceTypeSlugsByZone[zoneSlug].add(applianceSlug);
+    }
+  }
 
   return {
     zones: zones.map(mapPublicTechnicianCatalogItemRow),
     applianceTypes: applianceTypes.map(mapPublicTechnicianCatalogItemRow),
+    applianceTypeSlugsByZone: Object.fromEntries(
+      Object.entries(applianceTypeSlugsByZone).map(([zoneSlug, slugs]) => [zoneSlug, [...slugs]]),
+    ),
   };
 }
 

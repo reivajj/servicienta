@@ -84,8 +84,16 @@ export function validateListMyOrdersInput(input: {
   pageSize?: string;
   status?: string;
   search?: string;
+  flowType?: string;
 }): ListMyOrdersInput {
-  return validatePaginatedOrdersInput(input);
+  if (input.flowType && !isOrderFlowType(input.flowType)) {
+    throw new ValidationError('El filtro de flujo no es válido');
+  }
+
+  return {
+    ...validatePaginatedOrdersInput(input),
+    flow_type: input.flowType && isOrderFlowType(input.flowType) ? input.flowType : undefined,
+  };
 }
 
 export function validateListAdminOrdersInput(input: {
