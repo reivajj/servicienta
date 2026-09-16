@@ -73,6 +73,10 @@ para múltiples intervenciones y reasignaciones todavía no están resueltas.
 También existen cancelaciones y reviews sobre operaciones canceladas. Las reglas
 de cancelación requieren revisar su coherencia entre UI y backend.
 
+Cuando el cliente no reconoce la finalización informada por el técnico, Order y
+Operation pasan a `completion_rejected`. La continuidad operativa desde ese estado
+queda pendiente de definición.
+
 La garantía no es un estado persistido `en_garantia`. La dirección actual es
 derivarla de `technician_completed_at`; su duración y reglas completas siguen
 abiertas. Los estados `open`, `confirmed` y `closed` que aparecen en documentos
@@ -112,7 +116,7 @@ Los microservicios mencionados en notas iniciales no están implementados.
 | Búsqueda pública | Implementada con perfiles públicos y búsqueda SQL/RPC. |
 | Registro de cliente | Implementado dentro del flujo de contratación. |
 | Perfiles y catálogos | Implementados perfiles de cliente/técnico, especialidades, marcas y zonas. |
-| Orders y Operations | Tablas, detalles y acciones principales implementados; pendientes de QA completo. |
+| Orders y Operations | Tablas, detalles, acciones principales y calendario mensual de visitas para técnico/admin implementados; pendiente de QA completo. |
 | Reviews de técnicos | Asociadas a Operation; cierre y cancelación admiten review según reglas actuales. |
 | Auditoría | ActivityEvent y vista administrativa implementados. |
 | Chat | Primera versión implementada, con UX y comportamientos por completar. |
@@ -130,14 +134,16 @@ Los microservicios mencionados en notas iniciales no están implementados.
 - 27 de mayo: reorganización del flujo de selección, aceptación y cierre.
 - 29 de junio: mejoras de registro, pantallas y eventos de actividad.
 - 30 de junio: primera implementación de chat y ajustes de agendado.
+- 15 de septiembre: calendario mensual de visitas para técnico y admin, con
+  detalle diario scrollable cuando hay más de tres visitas.
 
 ## Relación con las anotaciones de continuidad
 
 | Anotación | Estado y trabajo restante |
 |---|---|
-| Probar flujo end-to-end con seed | Sigue siendo la prioridad principal. Existen escenario y checklist. |
-| Usar el chat para encontrar correcciones | Pendiente de prueba con sesiones de cliente, técnico y admin. |
-| Pestaña de chats en sidebar | Falta UI. Ya existen endpoint y hook para listar conversaciones del usuario. |
+HECHO: | Probar flujo end-to-end con seed | Sigue siendo la prioridad principal. Existen escenario y checklist. |
+HECHO: | Usar el chat para encontrar correcciones | Pendiente de prueba con sesiones de cliente, técnico y admin. |
+| Pestaña de chats en sidebar | Implementada con listado, no leídos, estados de carga/vacío/error y apertura del chat. |
 | Chat flotante o acoplado abajo en desktop | Pendiente. Actualmente se abre como modal. |
 | Enter envía; Shift+Enter agrega salto | Pendiente. El textarea no tiene manejo específico de teclado. |
 | Agilizar envío de mensajes | Falta medir latencia. El hook espera la API e invalida consultas; no tiene actualización optimista. |
@@ -206,7 +212,7 @@ optimista con manejo de errores.
 ## Tareas priorizadas
 
 ### Prioridad 1 — Validar el recorrido operativo
-
+REALIZADOS:
 - [ ] Verificar configuración del entorno y migraciones aplicadas, especialmente
   las de junio para eventos, registro y chat.
 - [ ] Preparar el escenario `orders-operations-realistic` en el entorno de prueba.
@@ -233,16 +239,16 @@ de ejecutarlo. Consultar [scripts/README.md](../scripts/README.md).
 
 ### Prioridad 3 — Completar chat v1
 
-- [ ] Probar intercambio de mensajes con dos sesiones abiertas y participación admin.
-- [ ] Añadir pantalla de conversaciones y acceso desde sidebar.
-- [ ] Mostrar estados de carga, vacío, error y mensajes no leídos.
+- [x] Probar intercambio de mensajes con dos sesiones abiertas y participación admin.
+- [x] Añadir pantalla de conversaciones y acceso desde sidebar.
+- [x] Mostrar estados de carga, vacío, error y mensajes no leídos.
 - [ ] Adaptar el chat a ventana flotante/acoplada en desktop y vista usable en móvil.
-- [ ] Implementar Enter para enviar y Shift+Enter para salto de línea.
-- [ ] Mostrar errores de envío y permitir reintentar sin perder el texto.
-- [ ] Medir latencia y evaluar actualización optimista y actualización de caché.
+- [x] Implementar Enter para enviar y Shift+Enter para salto de línea.
+- [x] Mostrar errores de envío y permitir reintentar sin perder el texto.
+- [x] Medir latencia y evaluar actualización optimista y actualización de caché.
 - [ ] Permitir cargar mensajes anteriores al límite inicial.
-- [ ] Validar agendado desde chat, sus permisos y su disponibilidad según estado.
-- [ ] Comprobar actualización de Order, Operation, mensaje de acción y eventos tras agendar.
+- [x] Validar agendado desde chat, sus permisos y su disponibilidad según estado.
+- [x] Comprobar actualización de Order, Operation, mensaje de acción y eventos tras agendar.
 
 Conversaciones directas admin–usuario, archivos, presencia, indicadores de
 escritura, búsqueda y moderación quedan para etapas posteriores.
@@ -259,12 +265,12 @@ escritura, búsqueda y moderación quedan para etapas posteriores.
 
 ### Prioridad 5 — Actualizar documentación
 
-- [ ] Actualizar fecha y descripción del estado en `source-of-truth.md`.
-- [ ] Corregir afirmaciones atrasadas del README sobre el schema implementado.
-- [ ] Actualizar inventario de módulos del gateway.
-- [ ] Actualizar el mapa de selectores con las validaciones que ya existen.
-- [ ] Marcar notas y ERD antiguos como históricos o alinearlos con el modelo actual.
-- [ ] Incorporar pruebas del chat al checklist end-to-end.
+- [x] Actualizar fecha y descripción del estado en `source-of-truth.md`.
+- [x] Corregir afirmaciones atrasadas del README sobre el schema implementado.
+- [x] Actualizar inventario de módulos del gateway.
+- [x] Actualizar el mapa de selectores con las validaciones que ya existen.
+- [x] Marcar notas y ERD antiguos como históricos o alinearlos con el modelo actual.
+- [x] Incorporar pruebas del chat al checklist end-to-end.
 
 ### Etapa posterior — Nuevas capacidades
 

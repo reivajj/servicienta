@@ -9,6 +9,7 @@ export function formatOperationStatus(status: OperationStatus) {
     pending: 'Pendiente',
     scheduled: 'Agendada',
     completed_tech: 'Completada por técnico',
+    completion_rejected: 'Finalización rechazada',
     completed: 'Completada',
     cancelled: 'Cancelada',
   };
@@ -23,6 +24,7 @@ export function formatOrderStatus(status: OrderStatus) {
     cancelled: 'Cancelado',
     in_progress: 'En progreso',
     completed_tech: 'Completado por técnico',
+    completion_rejected: 'Finalización rechazada',
     completed: 'Completado',
   };
 

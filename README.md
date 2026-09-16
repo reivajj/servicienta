@@ -144,7 +144,10 @@ Variables principales:
 
 La carpeta `supabase/` contiene las migraciones del proyecto.
 
-Hoy no hay un schema definitivo implementado para el modelo real del negocio.
+Hay un schema de prototipo implementado y evolucionado mediante migraciones para
+usuarios, perfiles, pedidos, visitas, reviews, chat, catálogos y auditoría. No
+es el modelo definitivo: pagos, suscripciones, autorización/RLS integral y
+varias reglas de negocio siguen pendientes.
 
 ## Otras notas
 

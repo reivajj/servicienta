@@ -9,13 +9,13 @@ Probar flujo end-to-end con seed:
 FALTA: 
 
 CHAT: 
-1.Usar chat para ver correcciones.
-2.Ya de entrada, hacer que haya una pestaña de chats en el sidebar para acceder a todos los chats. 
+HECHA: 1.Usar chat para ver correcciones.
+HECHA: 2.Ya de entrada, hacer que haya una pestaña de chats en el sidebar para acceder a todos los chats. 
 3.Que el chat en si sea como los tipicos de apps, que aparezca abajo o un icono flotante en Desktop y se abra, hoy es 
 estilo pop up transparente...
-4.Que con ENTER se mande el mensaje, con shift mas enter salto de linea.
-5.Ver de que manera agilizar el envio de msjs. Tal vez permitir que el browser mande? Hoy se hace por api, que implicaria?
-6. Accion de Agendar para el Tech dentro del chat.
+HECHA: 4.Que con ENTER se mande el mensaje, con shift mas enter salto de linea.
+HECHA: 5.Ver de que manera agilizar el envio de msjs. Tal vez permitir que el browser mande? Hoy se hace por api, que implicaria?
+HECHA: 6. Accion de Agendar para el Tech dentro del chat.
 
 Reemplazar edición libre de status por acciones de negocio:
 

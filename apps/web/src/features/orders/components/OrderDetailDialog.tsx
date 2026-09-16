@@ -6,6 +6,7 @@ import {
   useAcceptOrder,
   useCancelOrder,
   useCurrentOrder,
+  useCurrentOperations,
   useCurrentUser,
   useUpdateAdminOrder,
 } from '@servicienta/query-hooks';
@@ -22,6 +23,7 @@ import { InternalChatActionButton } from '../../shared/components/InternalChatAc
 import { ViewClientProfileActionLink } from '../../shared/components/ViewClientProfileActionLink';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 import {
+  formatOperationStatus,
   formatOrderFlowType,
   formatOrderStatus,
 } from '../../shared/utils/operation-status';
@@ -32,7 +34,9 @@ function formatPersonName(name: string | null, surname: string | null) {
   return fullName || 'Sin nombre';
 }
 
-function formatDateTime(value: string) {
+function formatDateTime(value: string | null) {
+  if (!value) return 'Sin definir';
+
   return new Intl.DateTimeFormat('es-AR', {
     dateStyle: 'short',
     timeStyle: 'short',
@@ -313,7 +317,7 @@ function TechnicianInfoCard({
         </div>
         {technicianStatus !== undefined ? (
           <div>
-            <dt>Technician status</dt>
+            <dt>Estado del técnico</dt>
             <dd>
               {technicianStatus ? (
                 <span className={getUserStatusBadgeClass(technicianStatus)}>
@@ -325,6 +329,89 @@ function TechnicianInfoCard({
             </dd>
           </div>
         ) : null}
+      </dl>
+    </article>
+  );
+}
+
+function ClientInfoCard({
+  order,
+  onOpenChat,
+}: {
+  order: Pick<
+    Order,
+    | 'client_id'
+    | 'client_name'
+    | 'client_surname'
+    | 'client_phone'
+    | 'client_whatsapp_phone'
+  >;
+  onOpenChat?: () => void;
+}) {
+  const whatsAppUrl = buildWhatsAppUrl(
+    order.client_whatsapp_phone ?? order.client_phone,
+  );
+
+  return (
+    <article className="users-panel">
+      <div className="user-card__header">
+        <div>
+          <p className="user-card__label">Cliente</p>
+          <h2>{formatPersonName(order.client_name, order.client_surname)}</h2>
+        </div>
+
+        <div className="orders-dialog__icon-actions">
+          <InternalChatActionButton
+            label="Abrir chat interno"
+            onClick={onOpenChat}
+          />
+          <ViewClientProfileActionLink
+            clientProfileId={order.client_id}
+            label="Ver cliente"
+            icon="person"
+          />
+        </div>
+      </div>
+
+      <dl className="user-card__meta">
+        <div>
+          <dt>Nombre</dt>
+          <dd>{formatPersonName(order.client_name, order.client_surname)}</dd>
+        </div>
+        <div>
+          <dt>Teléfono</dt>
+          <dd className="orders-dialog__contact-row">
+            <span>{order.client_phone ?? 'Sin definir'}</span>
+            {whatsAppUrl ? (
+              <a
+                className="users-table__action users-table__action--icon"
+                href={whatsAppUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Abrir WhatsApp"
+                title="Abrir WhatsApp"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="users-table__action-icon"
+                >
+                  <path
+                    d="M12.1 3.5a8.4 8.4 0 0 0-7.3 12.5L4 20.5l4.7-1.2a8.4 8.4 0 1 0 3.4-15.8Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M9.2 8.8c.2-.4.4-.5.8-.5h.6c.2 0 .4 0 .5.4l.6 1.5c.1.3 0 .4-.1.6l-.4.5c-.1.1-.2.3-.1.5.2.5.7 1.2 1.4 1.8.9.8 1.7 1.1 2.1 1.3.2.1.4 0 .5-.1l.6-.7c.2-.2.4-.2.6-.1l1.4.7c.3.1.4.3.4.5v.5c0 .4-.2.7-.6.9-.4.2-1 .3-1.6.2-1-.2-2.2-.8-3.5-1.9-1-.8-1.8-1.8-2.3-2.8-.5-.9-.7-1.8-.6-2.5.1-.4.2-.7.3-.9Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </a>
+            ) : null}
+          </dd>
+        </div>
       </dl>
     </article>
   );
@@ -352,7 +439,7 @@ function CurrentOrderDetailView({
       : cancelOrder.error instanceof Error
         ? cancelOrder.error.message
         : acceptOrder.isSuccess
-          ? 'Order aceptada'
+          ? 'Orden aceptada'
           : cancelOrder.isSuccess
             ? 'Order cancelada'
             : '';
@@ -535,7 +622,11 @@ function CurrentOrderContent({
           />
         ) : null}
 
-        {order.status === 'accepted' ? (
+        {role === 'technician' ? (
+          <ClientInfoCard order={order} onOpenChat={onOpenChat} />
+        ) : null}
+
+        {order.status === 'accepted' && role === 'client' ? (
           <CoordinationCard order={order} role={role} onOpenChat={onOpenChat} />
         ) : null}
 
@@ -575,6 +666,161 @@ function CurrentOrderContent({
           ) : null}
         </article>
       </section>
+
+      <CurrentOrderOperationsPanel orderId={order.id} />
+    </>
+  );
+}
+
+function CurrentOrderOperationsPanel({ orderId }: { orderId: string }) {
+  const [selectedOperationId, setSelectedOperationId] = useState<string | null>(
+    null,
+  );
+  const [page, setPage] = useState(1);
+  const pageSize: UsersPageSize = 25;
+  const { data, error, isLoading } = useCurrentOperations({
+    page,
+    pageSize,
+    order_id: orderId,
+  });
+  const operations = data?.items ?? [];
+
+  return (
+    <>
+      <section className="orders-dialog__operations">
+        {isLoading ? (
+          <article className="users-panel">
+            <p>Cargando visitas vinculadas...</p>
+          </article>
+        ) : error ? (
+          <article className="users-panel">
+            <p className="users-message users-message--error">
+              {error instanceof Error
+                ? error.message
+                : 'No se pudieron cargar las visitas vinculadas'}
+            </p>
+          </article>
+        ) : operations.length ? (
+          <article className="users-panel">
+            <div className="user-card__header">
+              <div>
+                <h2>Visitas</h2>
+              </div>
+              <span className="orders-dialog__operations-count">
+                {data?.pagination.total ?? operations.length}
+              </span>
+            </div>
+
+            <section className="users-table-wrapper">
+              <table className="users-table">
+                <thead>
+                  <tr>
+                    <th>Acción</th>
+                    <th>Estado</th>
+                    <th>Programada</th>
+                    <th>Terminada por técnico</th>
+                    <th>Completada</th>
+                    <th>Descripción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {operations.map((operation) => (
+                    <tr key={operation.id}>
+                      <td>
+                        <div className="users-table__actions">
+                          <button
+                            type="button"
+                            className="users-table__action users-table__action--icon"
+                            aria-label="Ver detalle de la visita"
+                            title="Ver detalle de la visita"
+                            onClick={() => setSelectedOperationId(operation.id)}
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              className="users-table__action-icon"
+                            >
+                              <path
+                                d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinejoin="round"
+                              />
+                              <circle
+                                cx="12"
+                                cy="12"
+                                r="3.2"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={getStatusBadgeClass(operation.status)}>
+                          {formatOperationStatus(operation.status)}
+                        </span>
+                      </td>
+                      <td>{formatDateTime(operation.scheduled_at)}</td>
+                      <td>
+                        {formatDateTime(operation.technician_completed_at)}
+                      </td>
+                      <td>{formatDateTime(operation.completed_at)}</td>
+                      <td>{operation.description ?? 'Sin definir'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            {(data?.pagination.totalPages ?? 1) > 1 ? (
+              <div className="users-pagination orders-dialog__pagination">
+                <button
+                  type="button"
+                  className="users-pagination__button"
+                  disabled={page <= 1}
+                  onClick={() =>
+                    setPage((currentPage) => Math.max(1, currentPage - 1))
+                  }
+                >
+                  Anterior
+                </button>
+                <span>
+                  Página {data?.pagination.page ?? page} de{' '}
+                  {data?.pagination.totalPages ?? 1}
+                </span>
+                <button
+                  type="button"
+                  className="users-pagination__button"
+                  disabled={page >= (data?.pagination.totalPages ?? 1)}
+                  onClick={() => setPage((currentPage) => currentPage + 1)}
+                >
+                  Siguiente
+                </button>
+              </div>
+            ) : null}
+          </article>
+        ) : (
+          <article className="users-panel">
+            <p className="user-card__label">Visitas</p>
+            <h2>Sin visitas vinculadas</h2>
+            <p className="orders-dialog__coordination-copy">
+              Todavía no hay visitas creadas para este pedido.
+            </p>
+          </article>
+        )}
+      </section>
+
+      {selectedOperationId ? (
+        <OperationDetailDialog
+          operationId={selectedOperationId}
+          mode="current"
+          onClose={() => setSelectedOperationId(null)}
+        />
+      ) : null}
     </>
   );
 }
@@ -867,11 +1113,11 @@ function AdminOrderDetailView({
                       <dd>{order.client_email}</dd>
                     </div>
                     <div>
-                      <dt>Client ID</dt>
+                      <dt>ID del cliente</dt>
                       <dd>{order.client_id}</dd>
                     </div>
                     <div>
-                      <dt>Client status</dt>
+                      <dt>Estado del cliente</dt>
                       <dd>
                         <span
                           className={getUserStatusBadgeClass(
@@ -883,7 +1129,7 @@ function AdminOrderDetailView({
                       </dd>
                     </div>
                     <div>
-                      <dt>Flow type</dt>
+                      <dt>Tipo de flujo</dt>
                       <dd>{formatOrderFlowType(order.flow_type)}</dd>
                     </div>
                   </dl>
@@ -904,8 +1150,8 @@ function AdminOrderDetailView({
                   editCardHeight ? { height: `${editCardHeight}px` } : undefined
                 }
               >
-                <p className="user-card__label">Editar Order</p>
-                <h3>Patch admin</h3>
+                <p className="user-card__label">Editar pedido</p>
+                <h3>Edición administrativa</h3>
 
                 <form
                   key={`${order.id}:${order.status}:${order.flow_type}:${order.updated_at}`}
@@ -929,6 +1175,9 @@ function AdminOrderDetailView({
                         <option value="in_progress">En progreso</option>
                         <option value="completed_tech">
                           Completado por técnico
+                        </option>
+                        <option value="completion_rejected">
+                          Finalización rechazada
                         </option>
                         <option value="completed">Completado</option>
                       </select>

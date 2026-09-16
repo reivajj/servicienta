@@ -1,5 +1,6 @@
 import type { UserRole } from '../users/domain.js';
 import type { OperationStatus } from '../operations/domain.js';
+import type { OrderStatus } from '../orders/domain.js';
 
 export type ChatConversationType = 'order' | 'direct';
 export type ChatConversationStatus = 'open' | 'closed' | 'archived';
@@ -32,7 +33,18 @@ export interface ChatConversation {
   participant_count: number;
   unread_count: number;
   last_message: ChatMessagePreview | null;
+  order: ChatConversationOrder | null;
   operations?: ChatConversationOperation[];
+}
+
+export interface ChatConversationOrder {
+  id: string;
+  status: OrderStatus;
+  created_at: string;
+  client_name: string | null;
+  client_surname: string | null;
+  technician_name: string | null;
+  technician_surname: string | null;
 }
 
 export interface ChatMessagePreview {

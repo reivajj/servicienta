@@ -4,6 +4,7 @@ export type OperationStatus =
   | 'pending'
   | 'scheduled'
   | 'completed_tech'
+  | 'completion_rejected'
   | 'completed'
   | 'cancelled';
 
@@ -14,12 +15,14 @@ export interface Operation {
   technician_id: string;
   technician_public_slug: string | null;
   status: OperationStatus;
+  client_email: string | null;
   client_name: string | null;
   client_surname: string | null;
   client_phone: string | null;
   client_whatsapp_phone: string | null;
   technician_name: string | null;
   technician_surname: string | null;
+  technician_email: string | null;
   technician_phone: string | null;
   technician_whatsapp_phone: string | null;
   order_status:
@@ -28,6 +31,7 @@ export interface Operation {
     | 'cancelled'
     | 'in_progress'
     | 'completed_tech'
+    | 'completion_rejected'
     | 'completed'
     | null;
   order_flow_type: 'client_selects' | 'tech_applies' | null;

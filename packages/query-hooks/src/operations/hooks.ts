@@ -104,6 +104,26 @@ export function useConfirmCompletedOperation() {
   });
 }
 
+export function useRejectCompletedOperation() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (operationId: string) =>
+      apiClient.operations.rejectCompleted(operationId),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        operationKeys.currentDetail(response.data.id),
+        response.data,
+      );
+      void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+    },
+  });
+}
+
 export function useCancelOperation() {
   const apiClient = useApiClient();
   const queryClient = useQueryClient();

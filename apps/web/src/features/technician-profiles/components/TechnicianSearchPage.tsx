@@ -448,7 +448,7 @@ export function TechnicianSearchPage() {
                     <h3>{session ? 'Enviar solicitud' : 'Continuar con tu cuenta'}</h3>
                     <p className="technician-order-step-card__copy">
                       {session
-                        ? 'Vamos a crear la order y dejarla pending para que el técnico la revise.'
+                        ? 'Crearemos el pedido y el técnico evaluará la solicitud antes de avanzar.'
                         : 'Guardamos esta solicitud en memoria y te pedimos registrarte o ingresar en el paso siguiente.'}
                     </p>
                   </div>
@@ -466,7 +466,7 @@ export function TechnicianSearchPage() {
                     {createOrder.isPending
                       ? 'Creando...'
                       : session
-                        ? 'Crear Orden'
+                        ? 'Crear pedido'
                         : 'Continuar'}
                   </button>
                 </article>
@@ -476,7 +476,7 @@ export function TechnicianSearchPage() {
                     {orderMessage ||
                       (createOrder.error instanceof Error
                         ? createOrder.error.message
-                        : 'No se pudo crear la order')}
+                        : 'No se pudo crear el pedido')}
                   </p>
                 ) : null}
               </form>

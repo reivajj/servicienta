@@ -12,6 +12,7 @@ interface NavItem {
     | '/technician-profiles'
     | '/orders'
     | '/operations'
+    | '/chats'
     | '/technician-search'
     | '/technician-catalogs'
     | '/activity-events'
@@ -25,39 +26,44 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     to: '/dashboard',
-    label: 'Dashboard',
+    label: 'Panel',
     roles: ['admin', 'client', 'technician'],
   },
-  { to: '/users', label: 'Users', roles: ['admin'] },
-  { to: '/client-profiles', label: 'Client Profiles', roles: ['admin'] },
+  { to: '/users', label: 'Usuarios', roles: ['admin'] },
+  { to: '/client-profiles', label: 'Clientes', roles: ['admin'] },
   {
     to: '/technician-profiles',
-    label: 'Technician Profiles',
+    label: 'Técnicos',
     roles: ['admin'],
   },
-  { to: '/orders', label: 'Orders', roles: ['admin', 'client', 'technician'] },
+  { to: '/orders', label: 'Pedidos', roles: ['admin', 'client', 'technician'] },
   {
     to: '/operations',
     label: 'Visitas',
     roles: ['admin', 'client', 'technician'],
   },
   {
+    to: '/chats',
+    label: 'Chats',
+    roles: ['admin', 'client', 'technician'],
+  },
+  {
     to: '/technician-search',
-    label: 'Technician Search',
+    label: 'Búsqueda',
     roles: ['admin', 'client'],
   },
   {
     to: '/technician-catalogs',
-    label: 'Technician Catalogs',
+    label: 'Catálogo',
     roles: ['admin'],
   },
   {
     to: '/activity-events',
-    label: 'Activity Events',
+    label: 'Eventos de actividad',
     roles: ['admin'],
   },
-  { to: '/login', label: 'Login', publicOnly: true },
-  { to: '/dev/supabase', label: 'Diagnostico', roles: ['admin'] },
+  { to: '/login', label: 'Ingresar', publicOnly: true },
+  { to: '/dev/supabase', label: 'Diagnóstico', roles: ['admin'] },
 ];
 
 export function AppShell() {
@@ -140,7 +146,7 @@ export function AppShell() {
                 rel="noreferrer"
                 className="app-shell__link"
               >
-                API Docs
+                Documentación API
               </a>
             ) : null}
           </nav>

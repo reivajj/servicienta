@@ -15,6 +15,7 @@ export type ActivityEventType =
   | 'operation.scheduled'
   | 'operation.completed_by_technician'
   | 'operation.completed_by_client'
+  | 'operation.completion_rejected_by_client'
   | 'operation.cancelled'
   | 'technician_review.created'
   | 'chat.message_created'

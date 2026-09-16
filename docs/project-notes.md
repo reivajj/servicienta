@@ -1,6 +1,11 @@
 # Notas del proyecto — Schema & arquitectura
 
-_Última actualización: 2026-03-19_
+_Última actualización: 2026-03-19 — documento histórico_
+
+> **Histórico.** Esta nota refleja un modelo previo y contiene estados, módulos
+> y decisiones que ya no coinciden con el runtime. Consultar
+> [source-of-truth.md](./source-of-truth.md) y las migraciones de `supabase/`
+> para el estado vigente.
 
 ---
 

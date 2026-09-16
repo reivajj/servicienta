@@ -35,12 +35,14 @@ export function mapOperationRow(row: OperationRow): Operation {
     technician_id: row.technician_id,
     technician_public_slug: technician?.public_slug ?? null,
     status: normalizeOperationStatus(row.status),
+    client_email: client?.email ?? null,
     client_name: client?.name ?? null,
     client_surname: client?.surname ?? null,
     client_phone: clientProfile?.phone ?? null,
     client_whatsapp_phone: clientProfile?.whatsapp_phone ?? null,
     technician_name: technicianUser?.name ?? null,
     technician_surname: technicianUser?.surname ?? null,
+    technician_email: technicianUser?.email ?? null,
     technician_phone: technician?.phone ?? null,
     technician_whatsapp_phone: technician?.whatsapp_phone ?? null,
     order_status: order ? normalizeOrderStatus(order.status) : null,
@@ -93,6 +95,7 @@ function normalizeOperationStatus(value: string): OperationStatus {
     value === 'pending' ||
     value === 'scheduled' ||
     value === 'completed_tech' ||
+    value === 'completion_rejected' ||
     value === 'completed' ||
     value === 'cancelled'
   ) {
@@ -109,6 +112,7 @@ function normalizeOrderStatus(value: string): OrderStatus {
     value === 'cancelled' ||
     value === 'in_progress' ||
     value === 'completed_tech' ||
+    value === 'completion_rejected' ||
     value === 'completed'
   ) {
     return value;

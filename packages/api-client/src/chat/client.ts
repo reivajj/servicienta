@@ -50,10 +50,19 @@ export interface ChatApiClient {
 function buildChatPaginationQuery(
   input: ListCurrentChatConversationsInput | ListChatMessagesInput,
 ) {
-  return new URLSearchParams({
+  const searchParams = new URLSearchParams({
     page: String(input.page),
     pageSize: String(input.pageSize),
-  }).toString();
+  });
+
+  if ('status' in input && input.status) {
+    searchParams.set('status', input.status);
+  }
+  if ('search' in input && input.search) {
+    searchParams.set('search', input.search);
+  }
+
+  return searchParams.toString();
 }
 
 export function createChatApiClient({

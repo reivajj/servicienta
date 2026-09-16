@@ -1,10 +1,13 @@
 import type { UsersPageSize } from '../users/contracts.js';
 import type { ScheduleOperationInput } from '../operations/contracts.js';
+import type { OrderStatus } from '../orders/domain.js';
 import type { ChatConversation, ChatMessage } from './domain.js';
 
 export interface ListCurrentChatConversationsInput {
   page: number;
   pageSize: UsersPageSize;
+  status?: OrderStatus;
+  search?: string;
 }
 
 export interface PaginatedChatConversationsPagination {

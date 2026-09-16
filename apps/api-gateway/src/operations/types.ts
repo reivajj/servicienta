@@ -14,6 +14,7 @@ export interface OperationRow {
         client_id: string;
         client?:
           | {
+              email: string;
               name: string | null;
               surname: string | null;
               client_profile?:
@@ -28,6 +29,7 @@ export interface OperationRow {
                 | null;
             }
           | Array<{
+              email: string;
               name: string | null;
               surname: string | null;
               client_profile?:
@@ -52,6 +54,7 @@ export interface OperationRow {
         client_id: string;
         client?:
           | {
+              email: string;
               name: string | null;
               surname: string | null;
               client_profile?:
@@ -66,6 +69,7 @@ export interface OperationRow {
                 | null;
             }
           | Array<{
+              email: string;
               name: string | null;
               surname: string | null;
               client_profile?:
@@ -87,10 +91,12 @@ export interface OperationRow {
         whatsapp_phone: string | null;
         user:
           | {
+              email: string;
               name: string | null;
               surname: string | null;
             }
           | Array<{
+              email: string;
               name: string | null;
               surname: string | null;
             }>;
@@ -101,10 +107,12 @@ export interface OperationRow {
         whatsapp_phone: string | null;
         user:
           | {
+              email: string;
               name: string | null;
               surname: string | null;
             }
           | Array<{
+              email: string;
               name: string | null;
               surname: string | null;
             }>;

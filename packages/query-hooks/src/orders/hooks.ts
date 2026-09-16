@@ -34,7 +34,10 @@ export function useCurrentOrders(input: ListMyOrdersInput) {
   });
 }
 
-export function useCurrentOrder(orderId: string) {
+export function useCurrentOrder(
+  orderId: string,
+  options?: { enabled?: boolean },
+) {
   const apiClient = useApiClient();
 
   return useQuery({
@@ -43,7 +46,7 @@ export function useCurrentOrder(orderId: string) {
       const response = await apiClient.orders.current.getById(orderId);
       return response.data;
     },
-    enabled: Boolean(orderId),
+    enabled: Boolean(orderId) && (options?.enabled ?? true),
   });
 }
 
@@ -109,7 +112,10 @@ export function useAdminOrders(
   });
 }
 
-export function useAdminOrder(orderId: string) {
+export function useAdminOrder(
+  orderId: string,
+  options?: { enabled?: boolean },
+) {
   const apiClient = useApiClient();
 
   return useQuery({
@@ -118,7 +124,7 @@ export function useAdminOrder(orderId: string) {
       const response = await apiClient.orders.admin.getById(orderId);
       return response.data;
     },
-    enabled: Boolean(orderId),
+    enabled: Boolean(orderId) && (options?.enabled ?? true),
   });
 }
 

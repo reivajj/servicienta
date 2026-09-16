@@ -84,6 +84,7 @@ function normalizeOrderStatus(value: string): OrderStatus {
     value === 'cancelled' ||
     value === 'in_progress' ||
     value === 'completed_tech' ||
+    value === 'completion_rejected' ||
     value === 'completed'
   ) {
     return value;

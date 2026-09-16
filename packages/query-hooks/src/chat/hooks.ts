@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  ChatMessage,
   CreateChatMessageInput,
   ListChatMessagesInput,
   ListCurrentChatConversationsInput,
+  PaginatedChatMessages,
   ScheduleOperationFromChatInput,
 } from '@servicienta/types';
 import { operationKeys } from '../operations/keys.js';
@@ -73,8 +75,58 @@ export function useCreateChatMessage() {
     }: {
       conversationId: string;
       input: CreateChatMessageInput;
+      optimisticMessage: ChatMessage;
     }) => apiClient.chat.messages.create(conversationId, input),
-    onSuccess: (_response, variables) => {
+    onMutate: async (variables) => {
+      const messageQueryKey = chatKeys.messages(variables.conversationId);
+
+      await queryClient.cancelQueries({ queryKey: messageQueryKey });
+      const previousMessages =
+        queryClient.getQueriesData<PaginatedChatMessages>({
+          queryKey: messageQueryKey,
+        });
+
+      queryClient.setQueriesData<PaginatedChatMessages>(
+        { queryKey: messageQueryKey },
+        (current) => {
+          if (!current || current.pagination.page !== 1) return current;
+
+          return {
+            ...current,
+            items: [...current.items, variables.optimisticMessage],
+            pagination: {
+              ...current.pagination,
+              total: current.pagination.total + 1,
+            },
+          };
+        },
+      );
+
+      return { previousMessages };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousMessages.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+    },
+    onSuccess: (response, variables) => {
+      queryClient.setQueriesData<PaginatedChatMessages>(
+        { queryKey: chatKeys.messages(variables.conversationId) },
+        (current) => {
+          if (!current) return current;
+
+          return {
+            ...current,
+            items: current.items.map((message) =>
+              message.id === variables.optimisticMessage.id
+                ? response.data
+                : message,
+            ),
+          };
+        },
+      );
+    },
+    onSettled: (_response, _error, variables) => {
       void queryClient.invalidateQueries({
         queryKey: chatKeys.messages(variables.conversationId),
       });

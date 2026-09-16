@@ -1,6 +1,6 @@
 # Mapa de selectores de fecha y horario
 
-_Ultima actualizacion: 2026-06-30_
+_Ultima actualizacion: 2026-09-15_
 
 ## Objetivo
 
@@ -11,9 +11,9 @@ Tener en un solo lugar:
 - que validaciones existen hoy en frontend y backend
 - que reglas de negocio conviene aplicar segun cada caso
 
-Hoy, los selectores reales de fecha estan concentrados en `operations`.
-No hay por ahora otros formularios activos en `orders`, `users`, `client_profiles`
-o `technician_profiles` que permitan elegir fechas manualmente.
+Los selectores reales se usan al agendar visitas desde `operations` y desde el
+chat del pedido. No hay formularios activos en `orders`, `users`,
+`client_profiles` o `technician_profiles` que permitan elegir fechas manualmente.
 
 ## Componente compartido actual
 
@@ -27,21 +27,23 @@ Responsabilidad:
 
 - renderizar calendario mensual
 - permitir elegir dia
-- ofrecer franjas rapidas de horario
-- permitir editar hora manualmente
+- ofrecer selector de hora/minutos en incrementos configurables
 - serializar a un `input hidden` con formato local `YYYY-MM-DDTHH:mm`
 
 Notas:
 
-- no aplica hoy restricciones de negocio por si mismo
-- no bloquea fechas pasadas
-- no bloquea horarios fuera de franja
-- no sabe de rol, status ni disponibilidad del tecnico
+- admite `disablePastDates`, `preventPastTimeSelection`, `minuteStep` y
+  `allowClear`
+- los agendados técnicos usan bloqueo de fecha pasada, horario vencido del día y
+  saltos de `10` minutos
+- no conoce rol, estado ni disponibilidad del técnico; esas reglas permanecen
+  en la superficie que lo usa y en backend
 
 Conclusion:
 
 - hoy es un componente de presentacion y captura
-- las reglas reales todavia viven afuera o directamente faltan
+- aplica restricciones de captura configurables; las reglas de autorización y
+  disponibilidad real viven afuera o todavía faltan
 
 ## Lugares donde hoy se usa
 
@@ -135,6 +137,20 @@ Contexto:
 - lo usa admin para correccion manual
 - admite valor o `null`
 
+### 6. Agendado desde el chat del pedido
+
+UI:
+
+- [apps/web/src/features/chat/components/ChatDialog.tsx](/home/reivaj/0.ServiceApp/servicienta/apps/web/src/features/chat/components/ChatDialog.tsx:361)
+
+Contexto:
+
+- lo usa el técnico sobre una visita `pending` vinculada al chat
+- reutiliza `DateTimePickerField` y las mismas restricciones visuales del
+  agendado desde visitas
+- el endpoint de chat reutiliza `scheduleOperation`, por lo que conserva las
+  mismas validaciones backend
+
 ### 5. Edicion admin de `completed_at`
 
 UI:
@@ -176,6 +192,7 @@ Estados de `Operation`:
 - `pending`
 - `scheduled`
 - `completed_tech`
+- `completion_rejected`
 - `completed`
 - `cancelled`
 
@@ -184,6 +201,7 @@ Estados de `Order` relacionados:
 - `accepted`
 - `in_progress`
 - `completed_tech`
+- `completion_rejected`
 - `completed`
 - `cancelled`
 
@@ -193,9 +211,11 @@ Estados de `Order` relacionados:
 
 Hoy el frontend:
 
-- captura fecha y hora
-- transforma el valor a ISO en `toIsoDateTime(...)`
-- no valida negocio de fechas
+- serializa fecha y hora en un `input hidden` local y lo transforma a ISO al
+  enviar
+- en agendado técnico y desde chat bloquea fechas pasadas, horarios ya vencidos
+  del día y valores fuera del salto de 10 minutos
+- deja los campos administrativos sin esas restricciones para permitir override
 
 Eso ocurre en:
 
@@ -204,26 +224,27 @@ Eso ocurre en:
 
 ### Backend
 
-Hoy el backend solo valida:
+Hoy el backend valida:
 
 - que el datetime exista cuando es obligatorio
 - que el string sea parseable por `Date.parse(...)`
 - que el status permita la accion
+- al agendar, que la fecha sea futura y esté alineada al salto de 10 minutos
+- en el patch administrativo, el orden temporal entre fecha agendada,
+  finalización técnica y finalización del cliente cuando todas existan
 
 No valida hoy:
 
-- fecha futura
 - minimo de anticipacion
 - horarios laborales
 - franjas por tecnico
 - feriados
-- consistencia temporal entre `scheduled_at`, `technician_completed_at` y `completed_at`
 
 Detalle:
 
 #### Schedule operation
 
-- `scheduled_at` obligatorio y parseable
+- `scheduled_at` obligatorio, parseable, futuro y alineado a 10 minutos
 - `description` obligatoria
 - solo se puede agendar si `operation.status === pending`
 
@@ -236,7 +257,8 @@ Referencias:
 
 - `status` debe ser valido
 - fechas parseables o `null`
-- no hay hoy reglas de orden temporal entre campos
+- valida `scheduled_at <= technician_completed_at <= completed_at` cuando los
+  valores correspondientes existen
 
 Referencias:
 
@@ -384,9 +406,10 @@ seguir refinando el selector:
 
 Hoy:
 
-- el unico selector reusable es `DateTimePickerField`
-- los unicos usos activos estan en `operations`
-- backend solo valida parseo y status
+- el selector reusable es `DateTimePickerField`
+- se usa en visitas y en el agendado desde chat
+- el agendado técnico tiene restricciones visuales y backend de futuro/salto
+- el patch admin valida consistencia temporal básica
 
 Falta definir e implementar:
 

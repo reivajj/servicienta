@@ -5,6 +5,7 @@ export type {
   CompleteOperationResponse,
   CompleteTechOperationResponse,
   ConfirmCompletedOperationResponse,
+  RejectCompletedOperationResponse,
   CreateOperationInput,
   CreateOperationResponse,
   GetAdminOperationResponse,

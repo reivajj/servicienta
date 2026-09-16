@@ -6,6 +6,7 @@ export type OrderStatus =
   | 'cancelled'
   | 'in_progress'
   | 'completed_tech'
+  | 'completion_rejected'
   | 'completed';
 
 export type OrderFlowType = 'client_selects' | 'tech_applies';

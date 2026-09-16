@@ -31,6 +31,10 @@ export interface ConfirmCompletedOperationResponse {
   data: Operation;
 }
 
+export interface RejectCompletedOperationResponse {
+  data: Operation;
+}
+
 export interface CancelOperationResponse {
   data: Operation;
 }
@@ -60,6 +64,7 @@ export interface ListCurrentOperationsInput {
   page: number;
   pageSize: UsersPageSize;
   status?: OperationStatus;
+  order_id?: string;
 }
 
 export interface PaginatedOperationsSummary {

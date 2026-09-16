@@ -185,6 +185,7 @@ function isOrderStatus(value: string): value is OrderStatus {
     value === 'cancelled' ||
     value === 'in_progress' ||
     value === 'completed_tech' ||
+    value === 'completion_rejected' ||
     value === 'completed'
   );
 }

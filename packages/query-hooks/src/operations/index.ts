@@ -5,6 +5,7 @@ export {
   useCompleteOperation,
   useCompleteTechOperation,
   useConfirmCompletedOperation,
+  useRejectCompletedOperation,
   useCreateOperation,
   useCreateTechnicianReview,
   useCurrentOperation,

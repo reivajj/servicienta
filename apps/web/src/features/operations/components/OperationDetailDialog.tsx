@@ -447,6 +447,44 @@ function CurrentOperationDetailView({
             ) : null;
           })()}
 
+          {operation.technician_review ? (
+            <article className="users-panel operation-detail-review">
+              <div className="user-card__header">
+                <div>
+                  <p className="user-card__label">Reseña del técnico</p>
+                  <h3>Evaluación del servicio técnico</h3>
+                </div>
+
+                <span
+                  className="operation-review__rating"
+                  aria-label={`${operation.technician_review.rating} de 5 estrellas`}
+                  title={`${operation.technician_review.rating} de 5 estrellas`}
+                >
+                  {'★'.repeat(operation.technician_review.rating)}
+                </span>
+              </div>
+
+              <dl className="user-card__meta">
+                <div>
+                  <dt>Calificación</dt>
+                  <dd>{operation.technician_review.rating}/5</dd>
+                </div>
+                <div>
+                  <dt>Comentario</dt>
+                  <dd>
+                    {operation.technician_review.comment || 'Sin comentario'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Creada el</dt>
+                  <dd>
+                    {formatDateTime(operation.technician_review.created_at)}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          ) : null}
+
           <article className="users-panel">
             <div className="user-card__header">
               <div>
@@ -867,6 +905,9 @@ function AdminOperationDetailView({
                   <option value="pending">Pendiente</option>
                   <option value="scheduled">Agendada</option>
                   <option value="completed_tech">Completada por técnico</option>
+                  <option value="completion_rejected">
+                    Finalización rechazada
+                  </option>
                   <option value="completed">Completada</option>
                   <option value="cancelled">Cancelada</option>
                 </select>
@@ -930,8 +971,12 @@ function AdminOperationDetailView({
               </div>
 
               {operation.technician_review ? (
-                <span className="operation-review__rating">
-                  {operation.technician_review.rating}/5
+                <span
+                  className="operation-review__rating"
+                  aria-label={`${operation.technician_review.rating} de 5 estrellas`}
+                  title={`${operation.technician_review.rating} de 5 estrellas`}
+                >
+                  {'★'.repeat(operation.technician_review.rating)}
                 </span>
               ) : null}
             </div>

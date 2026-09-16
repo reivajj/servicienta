@@ -45,7 +45,7 @@ const CURRENT_OPERATION_SELECT = `
   completed_at,
   created_at,
   updated_at,
-  order:orders!inner(
+  order:orders!operations_order_id_fkey!inner(
     client_id,
     status,
     flow_type,
@@ -54,6 +54,7 @@ const CURRENT_OPERATION_SELECT = `
     zone_slug,
     appliance_type_slug,
     client:users!orders_client_id_fkey(
+      email,
       name,
       surname,
       client_profile:client_profiles!client_profiles_id_fkey(
@@ -67,6 +68,7 @@ const CURRENT_OPERATION_SELECT = `
     phone,
     whatsapp_phone,
     user:users!technician_profiles_id_fkey(
+      email,
       name,
       surname
     )
@@ -418,6 +420,64 @@ export async function confirmCompletedOperation(
     payload: {
       order_id: operation.order_id,
       completed_at: completedAt,
+    },
+  });
+
+  return mappedOperation;
+}
+
+export async function rejectCompletedOperation(
+  supabase: SupabaseClient,
+  auth: RequestAuth,
+  operationId: string,
+) {
+  ensureClientRole(auth);
+
+  const { data: operation, error: operationError } = await supabase
+    .from('operations')
+    .select('id, order_id, status, order:orders!inner(client_id)')
+    .eq('id', operationId)
+    .eq('order.client_id', auth.id)
+    .maybeSingle();
+
+  if (operationError) throw new Error(operationError.message);
+  if (!operation) throw new NotFoundError('No se encontró la visita');
+  if (operation.status !== 'completed_tech') {
+    throw new ValidationError(
+      'Solo se puede rechazar la finalización informada por el técnico',
+    );
+  }
+
+  const rejectedAt = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('operations')
+    .update({
+      status: 'completion_rejected',
+      updated_at: rejectedAt,
+    })
+    .eq('id', operationId)
+    .select(OPERATION_SELECT)
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const { error: updateOrderError } = await supabase
+    .from('orders')
+    .update({ status: 'completion_rejected', updated_at: rejectedAt })
+    .eq('id', operation.order_id);
+
+  if (updateOrderError) throw new Error(updateOrderError.message);
+
+  const mappedOperation = mapOperationRow(data as OperationRow);
+
+  await recordActivityEvent(supabase, {
+    actorId: auth.id,
+    entityType: 'operation',
+    entityId: mappedOperation.id,
+    eventType: 'operation.completion_rejected_by_client',
+    payload: {
+      order_id: operation.order_id,
+      rejected_at: rejectedAt,
     },
   });
 
@@ -990,6 +1050,7 @@ function buildClientOperationsQuery(
     .range(from, to);
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
 
   return query;
 }
@@ -1005,13 +1066,14 @@ function buildClientOperationsCountQuery(
     .eq('order.client_id', clientId);
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
 
   return query;
 }
 
 function buildClientOperationsStatusCountQuery(
   supabase: SupabaseClient,
-  _input: ListCurrentOperationsInput,
+  input: ListCurrentOperationsInput,
   clientId: string,
   status: OperationStatus,
 ) {
@@ -1020,6 +1082,8 @@ function buildClientOperationsStatusCountQuery(
     .select('id, order:orders!inner(client_id)', { count: 'exact', head: true })
     .eq('order.client_id', clientId)
     .eq('status', status);
+
+  if (input.order_id) return query.eq('order_id', input.order_id);
 
   return query;
 }
@@ -1033,12 +1097,13 @@ function buildTechnicianOperationsQuery(
 ) {
   let query = supabase
     .from('operations')
-    .select(OPERATION_SELECT, { count: 'exact' })
+    .select(CURRENT_OPERATION_SELECT, { count: 'exact' })
     .eq('technician_id', technicianId)
     .order('created_at', { ascending: false })
     .range(from, to);
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
 
   return query;
 }
@@ -1054,13 +1119,14 @@ function buildTechnicianOperationsCountQuery(
     .eq('technician_id', technicianId);
 
   if (input.status) query = query.eq('status', input.status);
+  if (input.order_id) query = query.eq('order_id', input.order_id);
 
   return query;
 }
 
 function buildTechnicianOperationsStatusCountQuery(
   supabase: SupabaseClient,
-  _input: ListCurrentOperationsInput,
+  input: ListCurrentOperationsInput,
   technicianId: string,
   status: OperationStatus,
 ) {
@@ -1069,6 +1135,8 @@ function buildTechnicianOperationsStatusCountQuery(
     .select('id', { count: 'exact', head: true })
     .eq('technician_id', technicianId)
     .eq('status', status);
+
+  if (input.order_id) return query.eq('order_id', input.order_id);
 
   return query;
 }

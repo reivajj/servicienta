@@ -1,6 +1,6 @@
 # Checklist QA - Flujo completo cliente tecnico admin
 
-_Ultima actualizacion: 2026-06-29_
+_Ultima actualizacion: 2026-09-15_
 
 ## Preparacion
 
@@ -68,6 +68,18 @@ _Ultima actualizacion: 2026-06-29_
    - no se puede crear una segunda review para la misma operation
    - el rating del tecnico cambia en busqueda publica o perfil admin
 
+## Chat del pedido
+
+1. Con cliente y técnico en sesiones separadas, abrir el chat desde el pedido.
+2. Verificar que el encabezado muestra estado, contraparte y fecha de creación.
+3. Enviar un mensaje como cliente y otro como técnico.
+4. Verificar que cada mensaje aparece de inmediato, llega a la otra sesión y el
+   contador/listado de chats se actualiza.
+5. Como técnico, agendar una visita desde el chat y confirmar que se crea el
+   mensaje de acción y cambia el estado de la visita.
+6. Como admin, abrir el mismo chat y verificar que ve cliente, técnico, estado
+   y el historial completo.
+
 ## Flujo cancelado con review
 
 1. Crear otra order y hacer que el tecnico la acepte.
@@ -100,6 +112,11 @@ _Ultima actualizacion: 2026-06-29_
    - `operation.completed_by_client`
    - `technician_review.created`
    - `operation.cancelled`
+5. En `/operations`, cambiar a la vista Calendario y verificar que:
+   - el técnico solo ve sus visitas y el nombre/email de cada cliente
+   - el admin ve cliente y técnico en cada visita
+   - cada día muestra como máximo tres tarjetas y `+N más` abre la agenda diaria
+     scrollable
 
 ## Validaciones negativas
 

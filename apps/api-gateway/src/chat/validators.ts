@@ -5,6 +5,7 @@ import type {
   ScheduleOperationFromChatInput,
   UsersPageSize,
 } from '@servicienta/types';
+import type { OrderStatus } from '@servicienta/types';
 import { ValidationError } from '../core/errors.js';
 import {
   validateOperationId,
@@ -16,8 +17,24 @@ const ALLOWED_PAGE_SIZES: UsersPageSize[] = [25, 50, 100];
 export function validateListCurrentChatConversationsInput(input: {
   page?: string;
   pageSize?: string;
+  status?: string;
+  search?: string;
 }): ListCurrentChatConversationsInput {
-  return validatePagination(input);
+  const pagination = validatePagination(input);
+  const search = input.search?.trim();
+
+  if (input.status && !isOrderStatus(input.status)) {
+    throw new ValidationError('El filtro de estado no es válido');
+  }
+  if (search && search.length > 120) {
+    throw new ValidationError('La búsqueda no puede superar 120 caracteres');
+  }
+
+  return {
+    ...pagination,
+    status: input.status as OrderStatus | undefined,
+    search: search || undefined,
+  };
 }
 
 export function validateListChatMessagesInput(input: {
@@ -34,7 +51,9 @@ export function validateCreateChatMessageInput(
 
   if (!body) throw new ValidationError('El mensaje es obligatorio');
   if (body.length > 2000) {
-    throw new ValidationError('El mensaje no puede superar los 2000 caracteres');
+    throw new ValidationError(
+      'El mensaje no puede superar los 2000 caracteres',
+    );
   }
 
   return { body };
@@ -81,4 +100,16 @@ function validatePagination(input: {
   }
 
   return { page, pageSize };
+}
+
+function isOrderStatus(value: string): value is OrderStatus {
+  return (
+    value === 'pending' ||
+    value === 'accepted' ||
+    value === 'cancelled' ||
+    value === 'in_progress' ||
+    value === 'completed_tech' ||
+    value === 'completion_rejected' ||
+    value === 'completed'
+  );
 }

@@ -323,6 +323,9 @@ function AdminOrdersListPage() {
               <option value="cancelled">Cancelado</option>
               <option value="in_progress">En progreso</option>
               <option value="completed_tech">Completado por técnico</option>
+              <option value="completion_rejected">
+                Finalización rechazada
+              </option>
               <option value="completed">Completado</option>
             </select>
           </label>

@@ -1,6 +1,6 @@
 # API Gateway — Estructura actual
 
-_Última actualización: 2026-04-16_
+_Última actualización: 2026-09-15_
 
 ## Propósito
 
@@ -43,10 +43,19 @@ apps/api-gateway/src/
     async-handler.ts
     error-handler.ts
     not-found.ts
+    require-admin.ts
+    require-auth.ts
     request-id.ts
     request-logger.ts
   system/
+    api-docs.ts
     health.ts
+  activity-events/
+  chat/
+  client-onboarding/
+  client-profiles/
+  operations/
+  orders/
   technician-profiles/
     helpers/
       catalog.ts
@@ -58,11 +67,6 @@ apps/api-gateway/src/
     types.ts
     validators.ts
   users/
-    mapper.ts
-    router.ts
-    service.ts
-    types.ts
-    validators.ts
 ```
 
 ## Responsabilidad de cada capa
@@ -217,6 +221,7 @@ Endpoints transversales no ligados a una feature de negocio específica.
 Hoy incluye:
 
 - `health.ts`
+- `api-docs.ts`, protegido para admin
 
 Regla:
 si un endpoint no pertenece claramente a un módulo de dominio, puede vivir en `system/`.
@@ -231,9 +236,10 @@ Ejemplos típicos:
 
 Cada feature del gateway debería vivir en su propia carpeta.
 
-Hoy existe:
-
-- `users/`
+Hoy existen los módulos `activity-events`, `chat`, `client-onboarding`,
+`client-profiles`, `operations`, `orders`, `technician-profiles` y `users`.
+Todos mantienen router y service; los que necesitan validación, mapping o tipos
+internos los separan en archivos propios.
 
 ### Patrón actual del módulo `users/`
 

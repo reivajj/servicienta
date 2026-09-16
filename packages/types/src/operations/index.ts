@@ -11,6 +11,7 @@ export type {
   CompleteTechOperationResponse,
   CancelOperationResponse,
   ConfirmCompletedOperationResponse,
+  RejectCompletedOperationResponse,
   CreateOperationInput,
   CreateOperationResponse,
   CreateTechnicianReviewInput,

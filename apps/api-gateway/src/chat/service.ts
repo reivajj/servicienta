@@ -1,5 +1,6 @@
 import type {
   ChatConversation,
+  ChatConversationOrder,
   ChatMessage,
   ListChatMessagesInput,
   ListCurrentChatConversationsInput,
@@ -23,6 +24,7 @@ import {
 } from './mapper.js';
 import type {
   ChatConversationRow,
+  ChatConversationOrderRow,
   ChatMessageRow,
   ChatOrderRow,
 } from './types.js';
@@ -58,16 +60,20 @@ export async function listCurrentChatConversations(
   auth: RequestAuth,
   input: ListCurrentChatConversationsInput,
 ): Promise<PaginatedChatConversations> {
-  const from = (input.page - 1) * input.pageSize;
-  const to = from + input.pageSize - 1;
-  const { rows, total } =
+  const rows =
     auth.role === 'admin'
-      ? await listAdminConversations(supabase, from, to)
-      : await listParticipantConversations(supabase, auth.id, from, to);
+      ? await listAdminConversations(supabase)
+      : await listParticipantConversations(supabase, auth.id);
 
-  const items = await Promise.all(
+  const hydratedItems = await Promise.all(
     rows.map((row) => hydrateConversation(supabase, auth, row)),
   );
+  const filteredItems = hydratedItems.filter((conversation) =>
+    matchesConversationFilters(conversation, auth, input),
+  );
+  const total = filteredItems.length;
+  const from = (input.page - 1) * input.pageSize;
+  const items = filteredItems.slice(from, from + input.pageSize);
 
   return {
     items,
@@ -269,31 +275,21 @@ export async function scheduleOperationFromChat(
   };
 }
 
-async function listAdminConversations(
-  supabase: SupabaseClient,
-  from: number,
-  to: number,
-) {
-  const { data, error, count } = await supabase
+async function listAdminConversations(supabase: SupabaseClient) {
+  const { data, error } = await supabase
     .from('chat_conversations')
     .select(CHAT_CONVERSATION_SELECT, { count: 'exact' })
     .order('last_message_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .range(from, to);
+    .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
 
-  return {
-    rows: (data ?? []) as ChatConversationRow[],
-    total: count ?? 0,
-  };
+  return (data ?? []) as ChatConversationRow[];
 }
 
 async function listParticipantConversations(
   supabase: SupabaseClient,
   userId: string,
-  from: number,
-  to: number,
 ) {
   const { data: participants, error: participantsError } = await supabase
     .from('chat_conversation_participants')
@@ -306,22 +302,18 @@ async function listParticipantConversations(
     (participant) => participant.conversation_id as string,
   );
 
-  if (!conversationIds.length) return { rows: [], total: 0 };
+  if (!conversationIds.length) return [];
 
-  const { data, error, count } = await supabase
+  const { data, error } = await supabase
     .from('chat_conversations')
     .select(CHAT_CONVERSATION_SELECT, { count: 'exact' })
     .in('id', conversationIds)
     .order('last_message_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .range(from, to);
+    .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
 
-  return {
-    rows: (data ?? []) as ChatConversationRow[],
-    total: count ?? 0,
-  };
+  return (data ?? []) as ChatConversationRow[];
 }
 
 async function getAuthorizedOrder(
@@ -510,20 +502,108 @@ async function hydrateConversation(
   auth: RequestAuth,
   row: ChatConversationRow,
 ): Promise<ChatConversation> {
-  const [participantCount, unreadCount, lastMessage, operations] =
+  const [participantCount, unreadCount, lastMessage, operations, order] =
     await Promise.all([
       countConversationParticipants(supabase, row.id),
       countUnreadMessages(supabase, row.id, auth.id),
       getLastConversationMessage(supabase, row.id, auth.role),
       listConversationOperations(supabase, row.order_id, auth),
+      getConversationOrderSummary(supabase, row.order_id),
     ]);
 
   return mapChatConversationRow(row, {
     participantCount,
     unreadCount,
     lastMessage,
+    order,
     operations,
   });
+}
+
+async function getConversationOrderSummary(
+  supabase: SupabaseClient,
+  orderId: string | null,
+): Promise<ChatConversationOrder | null> {
+  if (!orderId) return null;
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select(
+      `
+        id,
+        status,
+        created_at,
+        client:users!orders_client_id_fkey(name, surname),
+        technician:technician_profiles!orders_technician_id_fkey(
+          user:users!technician_profiles_id_fkey(name, surname)
+        )
+      `,
+    )
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const row = data as ChatConversationOrderRow;
+  const client = Array.isArray(row.client) ? row.client[0] : row.client;
+  const technician = Array.isArray(row.technician)
+    ? row.technician[0]
+    : row.technician;
+  const technicianUser = technician
+    ? Array.isArray(technician.user)
+      ? technician.user[0]
+      : technician.user
+    : null;
+
+  return {
+    id: row.id,
+    status: normalizeOrderStatus(row.status),
+    created_at: row.created_at,
+    client_name: client?.name ?? null,
+    client_surname: client?.surname ?? null,
+    technician_name: technicianUser?.name ?? null,
+    technician_surname: technicianUser?.surname ?? null,
+  };
+}
+
+function matchesConversationFilters(
+  conversation: ChatConversation,
+  auth: RequestAuth,
+  input: ListCurrentChatConversationsInput,
+) {
+  const order = conversation.order;
+
+  if (input.status && order?.status !== input.status) return false;
+  if (!input.search) return true;
+
+  const search = input.search.toLocaleLowerCase('es-AR');
+  const clientName = `${order?.client_name ?? ''} ${order?.client_surname ?? ''}`;
+  const technicianName = `${order?.technician_name ?? ''} ${order?.technician_surname ?? ''}`;
+  const searchableText =
+    auth.role === 'technician'
+      ? `${order?.id ?? ''} ${clientName}`
+      : auth.role === 'client'
+        ? `${order?.id ?? ''} ${technicianName}`
+        : `${order?.id ?? ''} ${clientName} ${technicianName}`;
+
+  return searchableText.toLocaleLowerCase('es-AR').includes(search);
+}
+
+function normalizeOrderStatus(value: string): ChatConversationOrder['status'] {
+  if (
+    value === 'pending' ||
+    value === 'accepted' ||
+    value === 'cancelled' ||
+    value === 'in_progress' ||
+    value === 'completed_tech' ||
+    value === 'completion_rejected' ||
+    value === 'completed'
+  ) {
+    return value;
+  }
+
+  return 'pending';
 }
 
 async function listConversationOperations(

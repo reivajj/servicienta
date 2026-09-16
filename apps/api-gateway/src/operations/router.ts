@@ -15,6 +15,7 @@ import {
   getCurrentOperationById,
   listAdminOperations,
   listCurrentOperations,
+  rejectCompletedOperation,
   scheduleOperation,
   updateAdminOperationById,
 } from './service.js';
@@ -61,6 +62,7 @@ export function operationsRouter(options: OperationsRouterOptions) {
           page: readQueryParam(request.query.page),
           pageSize: readQueryParam(request.query.pageSize),
           status: readQueryParam(request.query.status),
+          orderId: readQueryParam(request.query.orderId),
         }),
       );
 
@@ -116,6 +118,20 @@ export function operationsRouter(options: OperationsRouterOptions) {
     requireAuth({ supabase: options.supabase }),
     asyncHandler(async (request, response) => {
       const operation = await confirmCompletedOperation(
+        options.supabase,
+        request.auth!,
+        validateOperationId(request.params.operationId),
+      );
+
+      ok(response, operation);
+    }),
+  );
+
+  router.post(
+    '/api/operations/:operationId/reject-completed',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const operation = await rejectCompletedOperation(
         options.supabase,
         request.auth!,
         validateOperationId(request.params.operationId),

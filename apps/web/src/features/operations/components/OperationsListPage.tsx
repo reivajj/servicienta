@@ -7,6 +7,7 @@ import {
   useCreateTechnicianReview,
   useCurrentOperations,
   useCurrentUser,
+  useRejectCompletedOperation,
   useScheduleOperation,
 } from '@servicienta/query-hooks';
 import type {
@@ -22,6 +23,7 @@ import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 import { formatOperationStatus } from '../../shared/utils/operation-status';
 import { AdminOperationsTable } from './AdminOperationsTable';
 import { OperationDetailDialog } from './OperationDetailDialog';
+import { OperationsCalendar } from './OperationsCalendar';
 
 function getStatusBadgeClass(status: string) {
   return `status-badge status-badge--${status}`;
@@ -109,6 +111,7 @@ export function OperationsListPage() {
 
 function CurrentOperationsListPage({ role }: { role: string }) {
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [selectedOperationId, setSelectedOperationId] = useState<string | null>(
     null,
   );
@@ -126,9 +129,11 @@ function CurrentOperationsListPage({ role }: { role: string }) {
   );
   const pageSize: UsersPageSize = 25;
   const { data, error, isLoading } = useCurrentOperations({ page, pageSize });
+  const { data: calendarData } = useCurrentOperations({ page: 1, pageSize: 100 });
   const scheduleMutation = useScheduleOperation();
   const completeTechMutation = useCompleteTechOperation();
   const confirmCompletedMutation = useConfirmCompletedOperation();
+  const rejectCompletedMutation = useRejectCompletedOperation();
   const createReviewMutation = useCreateTechnicianReview();
   const cancelOperation = useCancelOperation();
   const items = data?.items ?? [];
@@ -172,6 +177,12 @@ function CurrentOperationsListPage({ role }: { role: string }) {
     setReviewOperation(null);
   }
 
+  function handleConfirmCompleted(operation: Operation) {
+    confirmCompletedMutation.mutate(operation.id, {
+      onSuccess: (response) => setReviewOperation(response.data),
+    });
+  }
+
   return (
     <main className="users-page">
       <section className="users-layout">
@@ -201,6 +212,25 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           </div>
         </header>
 
+        {role === 'technician' ? (
+          <div className="operations-view-toggle" role="group" aria-label="Vista de visitas">
+            <button
+              type="button"
+              className={viewMode === 'table' ? 'operations-view-toggle__button--active' : ''}
+              onClick={() => setViewMode('table')}
+            >
+              Tabla
+            </button>
+            <button
+              type="button"
+              className={viewMode === 'calendar' ? 'operations-view-toggle__button--active' : ''}
+              onClick={() => setViewMode('calendar')}
+            >
+              Calendario
+            </button>
+          </div>
+        ) : null}
+
         {isLoading ? (
           <section className="users-panel">
             <p>Cargando visitas...</p>
@@ -209,6 +239,12 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           <section className="users-panel">
             <p className="users-message users-message--error">{errorMessage}</p>
           </section>
+        ) : role === 'technician' && viewMode === 'calendar' ? (
+          <OperationsCalendar
+            operations={calendarData?.items ?? []}
+            role="technician"
+            onSelectOperation={setSelectedOperationId}
+          />
         ) : items.length ? (
           <section className="users-table-wrapper">
             <table className="users-table">
@@ -336,16 +372,57 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                         ) : null}
                         {role === 'client' &&
                         operation.status === 'completed_tech' ? (
-                          <button
-                            type="button"
-                            className="users-table__action"
-                            disabled={confirmCompletedMutation.isPending}
-                            onClick={() =>
-                              confirmCompletedMutation.mutate(operation.id)
-                            }
-                          >
-                            Confirmar cierre
-                          </button>
+                          <>
+                            <OperationIconActionButton
+                              label="Confirmar finalización"
+                              tone="success"
+                              disabled={
+                                confirmCompletedMutation.isPending ||
+                                rejectCompletedMutation.isPending
+                              }
+                              onClick={() => handleConfirmCompleted(operation)}
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                className="users-table__action-icon"
+                              >
+                                <path
+                                  d="m5.5 12.5 4.1 4.1 8.9-9.2"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </OperationIconActionButton>
+                            <OperationIconActionButton
+                              label="Rechazar finalización"
+                              tone="danger"
+                              disabled={
+                                confirmCompletedMutation.isPending ||
+                                rejectCompletedMutation.isPending
+                              }
+                              onClick={() =>
+                                rejectCompletedMutation.mutate(operation.id)
+                              }
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                className="users-table__action-icon"
+                              >
+                                <path
+                                  d="m7 7 10 10M17 7 7 17"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </OperationIconActionButton>
+                          </>
                         ) : null}
                         {role === 'client' &&
                         (operation.status === 'completed' ||
@@ -451,7 +528,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           onClick={() => setScheduleOperation(null)}
         >
           <section
-            className="users-modal__panel"
+            className="users-modal__panel users-modal__panel--schedule"
             onClick={(event) => event.stopPropagation()}
           >
             <header className="users-modal__header">
@@ -504,7 +581,7 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           onClick={() => setReviewOperation(null)}
         >
           <section
-            className="users-modal__panel"
+            className="users-modal__panel users-modal__panel--compact"
             onClick={(event) => event.stopPropagation()}
           >
             <header className="users-modal__header">
@@ -521,16 +598,24 @@ function CurrentOperationsListPage({ role }: { role: string }) {
               </button>
             </header>
             <form className="auth-form" onSubmit={handleReviewSubmit}>
-              <label className="auth-form__field">
-                <span>Rating</span>
-                <select name="rating" defaultValue="5">
-                  <option value="5">5</option>
-                  <option value="4">4</option>
-                  <option value="3">3</option>
-                  <option value="2">2</option>
-                  <option value="1">1</option>
-                </select>
-              </label>
+              <fieldset className="operation-review-rating">
+                <legend>Calificación obligatoria</legend>
+                <div className="operation-review-rating__options">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <label key={rating} title={`${rating} estrellas`}>
+                      <input
+                        type="radio"
+                        name="rating"
+                        value={rating}
+                        defaultChecked={rating === 5}
+                        required
+                      />
+                      <span aria-hidden="true">★</span>
+                      <span className="sr-only">{rating} estrellas</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
               <label className="auth-form__field">
                 <span>Comentario</span>
                 <textarea
@@ -570,6 +655,7 @@ function AdminOperationsListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<UsersPageSize>(25);
   const [status, setStatus] = useState<OperationStatus | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [selectedOperationId, setSelectedOperationId] = useState<string | null>(
     null,
   );
@@ -577,6 +663,11 @@ function AdminOperationsListPage() {
   const { data, error, isLoading } = useAdminOperations({
     page,
     pageSize,
+    status: status === 'all' ? undefined : status,
+  });
+  const { data: calendarData } = useAdminOperations({
+    page: 1,
+    pageSize: 100,
     status: status === 'all' ? undefined : status,
   });
 
@@ -634,6 +725,23 @@ function AdminOperationsListPage() {
           </div>
         </header>
 
+        <div className="operations-view-toggle" role="group" aria-label="Vista de visitas">
+          <button
+            type="button"
+            className={viewMode === 'table' ? 'operations-view-toggle__button--active' : ''}
+            onClick={() => setViewMode('table')}
+          >
+            Tabla
+          </button>
+          <button
+            type="button"
+            className={viewMode === 'calendar' ? 'operations-view-toggle__button--active' : ''}
+            onClick={() => setViewMode('calendar')}
+          >
+            Calendario
+          </button>
+        </div>
+
         <section className="users-toolbar">
           <label className="users-toolbar__field">
             <span>Estado</span>
@@ -649,6 +757,9 @@ function AdminOperationsListPage() {
               <option value="pending">Pendiente</option>
               <option value="scheduled">Agendada</option>
               <option value="completed_tech">Completada por técnico</option>
+              <option value="completion_rejected">
+                Finalización rechazada
+              </option>
               <option value="completed">Completada</option>
               <option value="cancelled">Cancelada</option>
             </select>
@@ -728,6 +839,12 @@ function AdminOperationsListPage() {
           <section className="users-panel">
             <p className="users-message users-message--error">{errorMessage}</p>
           </section>
+        ) : viewMode === 'calendar' ? (
+          <OperationsCalendar
+            operations={calendarData?.items ?? []}
+            role="admin"
+            onSelectOperation={setSelectedOperationId}
+          />
         ) : items.length ? (
           <AdminOperationsTable
             operations={items}

@@ -20,6 +20,7 @@ import { Route as TechnicianCatalogsIndexRouteImport } from './routes/technician
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as OperationsIndexRouteImport } from './routes/operations.index'
 import { Route as ClientProfilesIndexRouteImport } from './routes/client-profiles.index'
+import { Route as ChatsIndexRouteImport } from './routes/chats.index'
 import { Route as ActivityEventsIndexRouteImport } from './routes/activity-events.index'
 import { Route as TechniciansTechnicianIdRouteImport } from './routes/technicians.$technicianId'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders.$orderId'
@@ -82,6 +83,11 @@ const ClientProfilesIndexRoute = ClientProfilesIndexRouteImport.update({
   path: '/client-profiles/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatsIndexRoute = ChatsIndexRouteImport.update({
+  id: '/chats/',
+  path: '/chats/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActivityEventsIndexRoute = ActivityEventsIndexRouteImport.update({
   id: '/activity-events/',
   path: '/activity-events/',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
   '/activity-events/': typeof ActivityEventsIndexRoute
+  '/chats/': typeof ChatsIndexRoute
   '/client-profiles/': typeof ClientProfilesIndexRoute
   '/operations/': typeof OperationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
   '/activity-events': typeof ActivityEventsIndexRoute
+  '/chats': typeof ChatsIndexRoute
   '/client-profiles': typeof ClientProfilesIndexRoute
   '/operations': typeof OperationsIndexRoute
   '/orders': typeof OrdersIndexRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/technicians/$technicianId': typeof TechniciansTechnicianIdRoute
   '/activity-events/': typeof ActivityEventsIndexRoute
+  '/chats/': typeof ChatsIndexRoute
   '/client-profiles/': typeof ClientProfilesIndexRoute
   '/operations/': typeof OperationsIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/technicians/$technicianId'
     | '/activity-events/'
+    | '/chats/'
     | '/client-profiles/'
     | '/operations/'
     | '/orders/'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/technicians/$technicianId'
     | '/activity-events'
+    | '/chats'
     | '/client-profiles'
     | '/operations'
     | '/orders'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/technicians/$technicianId'
     | '/activity-events/'
+    | '/chats/'
     | '/client-profiles/'
     | '/operations/'
     | '/orders/'
@@ -243,6 +255,7 @@ export interface RootRouteChildren {
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
   TechniciansTechnicianIdRoute: typeof TechniciansTechnicianIdRoute
   ActivityEventsIndexRoute: typeof ActivityEventsIndexRoute
+  ChatsIndexRoute: typeof ChatsIndexRoute
   ClientProfilesIndexRoute: typeof ClientProfilesIndexRoute
   OperationsIndexRoute: typeof OperationsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientProfilesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chats/': {
+      id: '/chats/'
+      path: '/chats'
+      fullPath: '/chats/'
+      preLoaderRoute: typeof ChatsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/activity-events/': {
       id: '/activity-events/'
       path: '/activity-events'
@@ -387,6 +407,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersOrderIdRoute: OrdersOrderIdRoute,
   TechniciansTechnicianIdRoute: TechniciansTechnicianIdRoute,
   ActivityEventsIndexRoute: ActivityEventsIndexRoute,
+  ChatsIndexRoute: ChatsIndexRoute,
   ClientProfilesIndexRoute: ClientProfilesIndexRoute,
   OperationsIndexRoute: OperationsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,

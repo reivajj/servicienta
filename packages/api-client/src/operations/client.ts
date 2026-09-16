@@ -13,6 +13,7 @@ import type {
   ListAdminOperationsResponse,
   ListCurrentOperationsInput,
   ListCurrentOperationsResponse,
+  RejectCompletedOperationResponse,
   ScheduleOperationInput,
   ScheduleOperationResponse,
   UpdateAdminOperationInput,
@@ -45,6 +46,9 @@ export interface OperationsApiClient {
     confirmCompleted: (
       operationId: string,
     ) => Promise<ConfirmCompletedOperationResponse>;
+    rejectCompleted: (
+      operationId: string,
+    ) => Promise<RejectCompletedOperationResponse>;
     cancel: (operationId: string) => Promise<CancelOperationResponse>;
     complete: (operationId: string) => Promise<CompleteOperationResponse>;
     createReview: (
@@ -120,6 +124,11 @@ export function createOperationsApiClient({
       confirmCompleted: (operationId) =>
         apiFetch<ConfirmCompletedOperationResponse>(
           `/api/operations/${operationId}/confirm-completed`,
+          { method: 'POST' },
+        ),
+      rejectCompleted: (operationId) =>
+        apiFetch<RejectCompletedOperationResponse>(
+          `/api/operations/${operationId}/reject-completed`,
           { method: 'POST' },
         ),
       cancel: (operationId) =>

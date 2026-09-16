@@ -1,6 +1,6 @@
 # Servicienta — Fuente de verdad provisional
 
-_Última actualización: 2026-05-13_
+_Última actualización: 2026-09-15_
 
 ## Propósito de este documento
 
@@ -66,7 +66,10 @@ Regla de ubicacion:
 
 ### Estado del codebase hoy
 
-Hoy el repo implementa solo una porción mínima de esta visión.
+El repo sigue siendo un prototipo, pero ya implementa un recorrido operativo
+usable de `client_selects`: creación de pedido, aceptación técnica, agendado,
+finalización técnica, confirmación o rechazo del cliente, review y chat interno.
+El schema y las reglas de negocio todavía están en evolución.
 
 Existió una prueba funcional con una tabla `technicians` y un flujo simple de listado de técnicos, pero ya fue removida para evitar confusión y no debe tomarse como modelo del negocio.
 
@@ -407,7 +410,7 @@ La crea un cliente.
 | `id` | `uuid` | PK |
 | `client_id` | `uuid` | FK → `User` |
 | `technician_id` | `uuid` | FK → `TechnicianProfile`, nullable para compatibilidad/migraciones |
-| `status` | `enum` | `pending \| accepted \| cancelled \| in_progress \| completed_tech \| completed` |
+| `status` | `enum` | `pending \| accepted \| cancelled \| in_progress \| completed_tech \| completion_rejected \| completed` |
 | `flow_type` | `enum` | `client_selects \| tech_applies` |
 | `description` | `string` | |
 | `service_address_text` | `string` | snapshot de dirección aproximada del servicio |
@@ -438,7 +441,7 @@ una `Order` puede tener múltiples `Operation`, pero una `Operation` corresponde
 | `id` | `uuid` | PK |
 | `order_id` | `uuid` | FK → `Order` |
 | `technician_id` | `uuid` | FK → `TechnicianProfile` |
-| `status` | `enum` | `pending \| scheduled \| completed_tech \| completed \| cancelled` |
+| `status` | `enum` | `pending \| scheduled \| completed_tech \| completion_rejected \| completed \| cancelled` |
 | `scheduled_at` | `timestamp` | nullable |
 | `description` | `string` | nullable, descripción técnica al agendar |
 | `technician_completed_at` | `timestamp` | nullable, base para garantía derivada |
@@ -602,7 +605,8 @@ Es el flujo prioritario por ahora.
 6. El técnico agenda la `Operation`: la `Operation` pasa a `scheduled` y la `Order` a `in_progress`
 7. El técnico completa su parte: la `Operation` y la `Order` pasan a `completed_tech`, y se setea `technician_completed_at`
 8. El client confirma el cierre: la `Operation` y la `Order` pasan a `completed`
-9. La garantía se muestra como dato derivado desde `technician_completed_at`; no es un status persistido
+9. Si el client rechaza la finalización, la `Operation` y la `Order` pasan a `completion_rejected`; la continuidad desde ese estado queda pendiente de definición
+10. La garantía se muestra como dato derivado desde `technician_completed_at`; no es un status persistido
 
 ### Flujo B: `tech_applies`
 
@@ -662,8 +666,12 @@ Implementado hoy:
 - `TechnicianProfile` real en Supabase con `public_slug`, `rating`, `available`, contacto operativo, ubicación base, cobertura y timestamps
 - `ClientProfile` real en Supabase con datos básicos de contacto y dirección base
 - `Order` real en Supabase con contratos compartidos, endpoints y vista admin inicial
-- `Operation` real en Supabase con contratos compartidos, endpoints y vista admin inicial
+- `Operation` real en Supabase con contratos compartidos, endpoints, tablas de
+  gestión y calendario mensual para técnico y admin; cada día muestra hasta tres
+  visitas y permite abrir una agenda diaria completa
 - `ActivityEvent` real en Supabase con endpoint admin y registro de eventos principales del flujo operativo
+- `ChatConversation`, participantes y mensajes reales, con conversaciones por pedido,
+  listado por rol, Realtime de lectura y escrituras mediante API Gateway
 - onboarding público inicial para clientes desde búsqueda de técnicos, con registro/login inline antes de crear `Order`
 - creación de `TechnicianReview` desde UI de cliente sobre `Operation` completada o cancelada
 - escenario de seed `orders-operations-realistic` que resetea dataset seeded y reconstruye `users`, `client_profiles`, `technician_profiles`, `orders`, `operations` y `technician_reviews` con integridad válida
@@ -733,25 +741,15 @@ salvo que en una conversación futura decidamos otra cosa.
 - endpoints de Flujo A
 - endpoints de Flujo B
 - reglas de transición de estados
+- momento exacto de creación de `Payment`
+- estrategia landing: `api-gateway` vs acceso directo a Supabase
 
 ## Próxima prioridad
 
-La siguiente tarea prioritaria pasa a ser poner a punto las tablas y pantallas de `Orders` y `Operations` para que sirvan de verdad como herramientas operativas y no solo como vistas iniciales.
-
-Eso implica al menos:
-
-- mejorar la visualización de `Orders` y `Operations` en `apps/web`
-- agregar popups o drawers de detalle para ver mejor cliente, técnico, dirección, estados y timestamps
-- exponer mejor la información relacionada de `User`, `ClientProfile`, `TechnicianProfile` y `TechnicianReview`
-- revisar si la tabla de `Operations` necesita mostrar también la review asociada o su ausencia
-- validar que los filtros y estados tengan sentido sobre datos seeded reales
-- probar el flujo de crear una `Order` siendo `client`
-- probar el flujo de crear/confirmar/completar `Operation`
-- detectar gaps de autorización o UX antes de pasar a pagos o lógica más avanzada
-
-La prioridad inmediata ya no es solo modelar entidades, sino verificar que el flujo real pueda recorrerse end-to-end desde UI, API y seed consistente.
-- momento exacto de creación de `Payment`
-- estrategia landing: `api-gateway` vs acceso directo a Supabase
+La prioridad inmediata es ejecutar y documentar el recorrido end-to-end con
+cliente, técnico y admin, incluyendo chat, rechazo de finalización y reviews.
+Luego corresponde consolidar autorización/RLS, reemplazar la edición libre de
+estados administrativos y definir la continuidad desde `completion_rejected`.
 
 ### Infraestructura
 

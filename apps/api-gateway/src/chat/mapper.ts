@@ -2,6 +2,7 @@ import type {
   ChatActionType,
   ChatConversation,
   ChatConversationOperation,
+  ChatConversationOrder,
   ChatMessage,
   ChatMessagePreview,
   UserRole,
@@ -12,6 +13,7 @@ export interface MapChatConversationOptions {
   participantCount: number;
   unreadCount: number;
   lastMessage: ChatMessagePreview | null;
+  order: ChatConversationOrder | null;
   operations: ChatConversationOperation[];
 }
 
@@ -31,6 +33,7 @@ export function mapChatConversationRow(
     participant_count: options.participantCount,
     unread_count: options.unreadCount,
     last_message: options.lastMessage,
+    order: options.order,
     operations: options.operations,
   };
 }

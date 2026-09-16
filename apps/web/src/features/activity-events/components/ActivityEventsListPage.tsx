@@ -106,6 +106,9 @@ export function ActivityEventsListPage() {
               <option value="operation.completed_by_client">
                 Completada por el usuario
               </option>
+              <option value="operation.completion_rejected_by_client">
+                Finalización rechazada por el usuario
+              </option>
               <option value="operation.cancelled">Visita cancelada</option>
               <option value="technician_review.created">Reseña creada</option>
               <option value="admin.order_updated">

@@ -85,6 +85,7 @@ function isActivityEventType(value: string): value is ActivityEventType {
     value === 'operation.scheduled' ||
     value === 'operation.completed_by_technician' ||
     value === 'operation.completed_by_client' ||
+    value === 'operation.completion_rejected_by_client' ||
     value === 'operation.cancelled' ||
     value === 'technician_review.created' ||
     value === 'admin.order_updated' ||

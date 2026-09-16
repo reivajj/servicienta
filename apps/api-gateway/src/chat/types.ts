@@ -57,3 +57,27 @@ export interface ChatOrderRow {
   client_id: string;
   technician_id: string | null;
 }
+
+export interface ChatConversationOrderRow {
+  id: string;
+  status: string;
+  created_at: string;
+  client:
+    | { name: string | null; surname: string | null }
+    | Array<{ name: string | null; surname: string | null }>
+    | null;
+  technician:
+    | {
+        user:
+          | { name: string | null; surname: string | null }
+          | Array<{ name: string | null; surname: string | null }>
+          | null;
+      }
+    | Array<{
+        user:
+          | { name: string | null; surname: string | null }
+          | Array<{ name: string | null; surname: string | null }>
+          | null;
+      }>
+    | null;
+}

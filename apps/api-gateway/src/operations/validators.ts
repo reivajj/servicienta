@@ -113,8 +113,12 @@ export function validateListCurrentOperationsInput(input: {
   page?: string;
   pageSize?: string;
   status?: string;
+  orderId?: string;
 }): ListCurrentOperationsInput {
-  return validatePaginatedOperationsInput(input);
+  return {
+    ...validatePaginatedOperationsInput(input),
+    order_id: input.orderId ? validateOrderId(input.orderId) : undefined,
+  };
 }
 
 export function validateListAdminOperationsInput(input: {
@@ -212,6 +216,7 @@ function isOperationStatus(value: string): value is OperationStatus {
     value === 'pending' ||
     value === 'scheduled' ||
     value === 'completed_tech' ||
+    value === 'completion_rejected' ||
     value === 'completed' ||
     value === 'cancelled'
   );

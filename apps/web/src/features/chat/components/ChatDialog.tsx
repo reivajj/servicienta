@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   useChatMessages,
   useCreateChatMessage,
+  useAdminOrder,
+  useCurrentOrder,
   useCurrentUser,
   useMarkChatConversationRead,
   useOrderChatConversation,
@@ -11,31 +13,9 @@ import {
 import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
 import type { ChatMessage } from '@servicienta/types';
 import { getSupabaseBrowserClient } from '../../../lib/supabase';
+import { DateTimePickerField } from '../../shared/components/DateTimePickerField';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
-
-const SCHEDULE_HOURS = Array.from({ length: 24 }, (_, hour) =>
-  String(hour).padStart(2, '0'),
-);
-const SCHEDULE_MINUTES = Array.from(
-  { length: 60 / OPERATION_SCHEDULE_STEP_MINUTES },
-  (_, index) =>
-    String(index * OPERATION_SCHEDULE_STEP_MINUTES).padStart(2, '0'),
-);
-
-function formatLocalDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-function formatLocalTime(date: Date) {
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-
-  return `${hours}:${minutes}`;
-}
+import { formatOrderStatus } from '../../shared/utils/operation-status';
 
 function getDefaultSchedule() {
   const now = new Date();
@@ -47,12 +27,7 @@ function getDefaultSchedule() {
     0,
   );
 
-  return {
-    minimumDate: formatLocalDate(now),
-    date: formatLocalDate(suggestedDate),
-    hour: formatLocalTime(suggestedDate).slice(0, 2),
-    minute: formatLocalTime(suggestedDate).slice(3, 5),
-  };
+  return suggestedDate.toISOString();
 }
 
 function formatSenderName(message: ChatMessage) {
@@ -72,6 +47,85 @@ function formatMessageTime(value: string) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function formatCounterpartName(name: string | null, surname: string | null) {
+  const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
+
+  return fullName || 'Sin nombre';
+}
+
+function ChatOrderContext({
+  order,
+  role,
+}: {
+  order: {
+    status: Parameters<typeof formatOrderStatus>[0];
+    created_at: string;
+    client_name: string | null;
+    client_surname: string | null;
+    technician_name: string | null;
+    technician_surname: string | null;
+  };
+  role: 'admin' | 'client' | 'technician';
+}) {
+  const isAdmin = role === 'admin';
+  const isTechnician = role === 'technician';
+  const counterpartLabel = isTechnician ? 'Cliente' : 'Técnico';
+  const counterpartName = isTechnician
+    ? formatCounterpartName(order.client_name, order.client_surname)
+    : formatCounterpartName(order.technician_name, order.technician_surname);
+
+  return (
+    <dl className={`chat-order-context chat-order-context--${role}`}>
+      <div>
+        <dt>Estado del pedido</dt>
+        <dd>
+          <span className={`status-badge status-badge--${order.status}`}>
+            {formatOrderStatus(order.status)}
+          </span>
+        </dd>
+      </div>
+      {isAdmin ? (
+        <>
+          <div>
+            <dt>Cliente</dt>
+            <dd
+              title={formatCounterpartName(
+                order.client_name,
+                order.client_surname,
+              )}
+            >
+              {formatCounterpartName(order.client_name, order.client_surname)}
+            </dd>
+          </div>
+          <div>
+            <dt>Técnico</dt>
+            <dd
+              title={formatCounterpartName(
+                order.technician_name,
+                order.technician_surname,
+              )}
+            >
+              {formatCounterpartName(
+                order.technician_name,
+                order.technician_surname,
+              )}
+            </dd>
+          </div>
+        </>
+      ) : (
+        <div>
+          <dt>{counterpartLabel}</dt>
+          <dd title={counterpartName}>{counterpartName}</dd>
+        </div>
+      )}
+      <div>
+        <dt>Creado el</dt>
+        <dd>{formatMessageTime(order.created_at)}</dd>
+      </div>
+    </dl>
+  );
 }
 
 function getMessageClass(message: ChatMessage, currentUserId: string | null) {
@@ -122,21 +176,63 @@ function ChatMessageList({
   );
 }
 
-function ChatComposer({ conversationId }: { conversationId: string }) {
+function ChatComposer({
+  conversationId,
+  currentUser,
+}: {
+  conversationId: string;
+  currentUser: {
+    id: string;
+    email: string;
+    name: string | null;
+    surname: string | null;
+    role: ChatMessage['sender_role'];
+  } | null;
+}) {
   const [body, setBody] = useState('');
+  const [sendError, setSendError] = useState<string | null>(null);
   const createMessage = useCreateChatMessage();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedBody = body.trim();
 
     if (!trimmedBody) return;
 
-    await createMessage.mutateAsync({
-      conversationId,
-      input: { body: trimmedBody },
-    });
     setBody('');
+    setSendError(null);
+    createMessage.mutate(
+      {
+        conversationId,
+        input: { body: trimmedBody },
+        optimisticMessage: {
+          id: `optimistic:${Date.now()}:${Math.random().toString(36).slice(2)}`,
+          conversation_id: conversationId,
+          sender_id: currentUser?.id ?? null,
+          sender_email: currentUser?.email ?? null,
+          sender_name: currentUser?.name ?? null,
+          sender_surname: currentUser?.surname ?? null,
+          sender_role: currentUser?.role ?? null,
+          message_type: 'text',
+          body: trimmedBody,
+          action_type: null,
+          action_payload: null,
+          related_order_id: null,
+          related_operation_id: null,
+          created_at: new Date().toISOString(),
+        },
+      },
+      {
+        onError: (mutationError) => {
+          setBody((currentBody) => currentBody || trimmedBody);
+          setSendError(
+            mutationError instanceof Error
+              ? mutationError.message
+              : 'No se pudo enviar el mensaje. Intentá nuevamente.',
+          );
+        },
+      },
+    );
   }
 
   return (
@@ -171,6 +267,18 @@ function ChatComposer({ conversationId }: { conversationId: string }) {
       >
         {createMessage.isPending ? 'Enviando...' : 'Enviar'}
       </button>
+      {sendError ? (
+        <div className="chat-composer__error">
+          <p className="users-message users-message--error">{sendError}</p>
+          <button
+            type="submit"
+            className="users-table__action"
+            disabled={createMessage.isPending || !body.trim()}
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : null}
     </form>
   );
 }
@@ -193,16 +301,13 @@ function ChatActionBar({
   async function handleScheduleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const date = String(formData.get('schedule_date') ?? '');
-    const hour = String(formData.get('schedule_hour') ?? '');
-    const minute = String(formData.get('schedule_minute') ?? '');
-    const scheduledAt = new Date(`${date}T${hour}:${minute}`).toISOString();
+    const scheduledAt = String(formData.get('scheduled_at') ?? '');
 
     await scheduleFromChat.mutateAsync({
       conversationId,
       input: {
         operation_id: operationId!,
-        scheduled_at: scheduledAt,
+        scheduled_at: new Date(scheduledAt).toISOString(),
         description: String(formData.get('description') ?? ''),
       },
     });
@@ -253,41 +358,15 @@ function ChatActionBar({
           className="auth-form chat-action-card__form"
           onSubmit={handleScheduleSubmit}
         >
-          <div className="chat-action-card__schedule-fields">
-            <label className="auth-form__field">
-              <span>Fecha</span>
-              <input
-                name="schedule_date"
-                type="date"
-                min={defaultSchedule.minimumDate}
-                defaultValue={defaultSchedule.date}
-                required
-              />
-            </label>
-            <label className="auth-form__field">
-              <span>Hora</span>
-              <select name="schedule_hour" defaultValue={defaultSchedule.hour}>
-                {SCHEDULE_HOURS.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {hour}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="auth-form__field">
-              <span>Minutos</span>
-              <select
-                name="schedule_minute"
-                defaultValue={defaultSchedule.minute}
-              >
-                {SCHEDULE_MINUTES.map((minute) => (
-                  <option key={minute} value={minute}>
-                    {minute}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <DateTimePickerField
+            name="scheduled_at"
+            label="Fecha y horario"
+            initialValue={defaultSchedule}
+            required
+            disablePastDates
+            preventPastTimeSelection
+            minuteStep={OPERATION_SCHEDULE_STEP_MINUTES}
+          />
           <label className="auth-form__field">
             <span>Descripción técnica</span>
             <input name="description" type="text" required />
@@ -361,6 +440,14 @@ export function ChatDialog({
 }) {
   useEscapeKey(onClose);
   const { data: currentUser } = useCurrentUser();
+  const isCurrentParticipant =
+    currentUser?.role === 'client' || currentUser?.role === 'technician';
+  const { data: order } = useCurrentOrder(orderId, {
+    enabled: isCurrentParticipant,
+  });
+  const { data: adminOrder } = useAdminOrder(orderId, {
+    enabled: currentUser?.role === 'admin',
+  });
   const {
     data: conversation,
     isLoading,
@@ -404,6 +491,13 @@ export function ChatDialog({
           <div>
             <p className="users-hero__eyebrow">Chat interno</p>
             <h2 id="chat-dialog-title">Conversación del pedido</h2>
+            {order && currentUser?.role === 'client' ? (
+              <ChatOrderContext order={order} role="client" />
+            ) : order && currentUser?.role === 'technician' ? (
+              <ChatOrderContext order={order} role="technician" />
+            ) : adminOrder && currentUser?.role === 'admin' ? (
+              <ChatOrderContext order={adminOrder} role="admin" />
+            ) : null}
           </div>
           <button
             type="button"
@@ -436,7 +530,10 @@ export function ChatDialog({
               messages={messages}
               currentUserId={currentUser?.id ?? null}
             />
-            <ChatComposer conversationId={conversation.id} />
+            <ChatComposer
+              conversationId={conversation.id}
+              currentUser={currentUser ?? null}
+            />
           </section>
         )}
       </section>

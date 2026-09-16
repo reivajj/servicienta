@@ -37,6 +37,8 @@ export function chatRouter(options: ChatRouterOptions) {
         validateListCurrentChatConversationsInput({
           page: readQueryParam(request.query.page),
           pageSize: readQueryParam(request.query.pageSize),
+          status: readQueryParam(request.query.status),
+          search: readQueryParam(request.query.search),
         }),
       );
 
