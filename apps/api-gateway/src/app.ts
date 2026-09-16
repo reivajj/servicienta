@@ -17,6 +17,8 @@ import { healthRouter } from './system/health.js';
 import { technicianProfilesRouter } from './technician-profiles/router.js';
 import { usersRouter } from './users/router.js';
 
+import { readApiGatewayEnv } from './env.js';
+
 export function createApp(env: ApiGatewayEnv) {
   const app = express();
   const supabase = createServiceSupabaseClient(env);
@@ -41,3 +43,7 @@ export function createApp(env: ApiGatewayEnv) {
 
   return app;
 }
+
+const app = createApp(readApiGatewayEnv(process.env));
+
+export default app;
