@@ -37,4 +37,10 @@ export type {
   ListPublicTechnicianProfilesResponse,
   UpdateTechnicianProfileInput,
   UpdateTechnicianProfileResponse,
+  TechnicianOffer,
+  TechnicianOfferSpecialty,
+  TechnicianOfferCatalogs,
+  TechnicianOfferDetails,
+  GetTechnicianOfferResponse,
+  UpdateTechnicianOfferResponse,
 } from './contracts.js';

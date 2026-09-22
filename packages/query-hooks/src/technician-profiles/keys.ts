@@ -23,6 +23,7 @@ export const technicianProfileKeys = {
   adminDetail: (technicianId: string) =>
     [...technicianProfileKeys.adminDetails(), technicianId] as const,
   current: () => [...technicianProfileKeys.all, 'current'] as const,
+  currentOffer: () => [...technicianProfileKeys.all, 'current-offer'] as const,
   adminCatalogs: () => [...technicianProfileKeys.admin(), 'catalogs'] as const,
   adminCatalogItemTechnicians: () =>
     [...technicianProfileKeys.admin(), 'catalog-item-technicians'] as const,

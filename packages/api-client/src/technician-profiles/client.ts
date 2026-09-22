@@ -12,6 +12,9 @@ import type {
   ListPublicTechnicianProfilesResponse,
   UpdateTechnicianProfileInput,
   UpdateTechnicianProfileResponse,
+  TechnicianOffer,
+  GetTechnicianOfferResponse,
+  UpdateTechnicianOfferResponse,
 } from '@servicienta/types';
 
 interface TechnicianProfilesApiClientDependencies {
@@ -34,6 +37,8 @@ export interface TechnicianProfilesApiClient {
     updateCurrent: (
       input: UpdateTechnicianProfileInput,
     ) => Promise<UpdateTechnicianProfileResponse>;
+    getCurrentOffer: () => Promise<GetTechnicianOfferResponse>;
+    updateCurrentOffer: (input: TechnicianOffer) => Promise<UpdateTechnicianOfferResponse>;
     listPublic: (
       input: ListPublicTechnicianProfilesInput,
     ) => Promise<ListPublicTechnicianProfilesResponse>;
@@ -114,6 +119,11 @@ export function createTechnicianProfilesApiClient({
             body: JSON.stringify(input),
           },
         ),
+      getCurrentOffer: () => apiFetch<GetTechnicianOfferResponse>('/api/technician-profile/me/offer'),
+      updateCurrentOffer: (input) => apiFetch<UpdateTechnicianOfferResponse>(
+        '/api/technician-profile/me/offer',
+        { method: 'PUT', body: JSON.stringify(input) },
+      ),
       listPublicCatalogs: () =>
         apiFetch<ListPublicTechnicianProfileCatalogsResponse>(
           '/api/public/technician-profiles/catalogs',

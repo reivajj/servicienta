@@ -1,6 +1,6 @@
 # Checklist QA - Flujo completo cliente tecnico admin
 
-_Ultima actualizacion: 2026-09-15_
+_Ultima actualizacion: 2026-09-22_
 
 ## Preparacion
 
@@ -46,14 +46,14 @@ _Ultima actualizacion: 2026-09-15_
 
 ## Flujo tecnico
 
-1. Cerrar sesion del cliente o usar otra ventana.
-2. Ingresar con un tecnico seeded.
-3. Abrir `/orders`.
-4. Aceptar la order `pending` creada por el cliente.
-5. Abrir `/operations`.
-6. Agendar la operation.
-7. Marcar `Completar tecnico`.
-8. Verificar que la operation pasa a `completed_tech`.
+1. Cerrar sesión del cliente o usar otra ventana. Ingresar como `tomi.tech@test.com`.
+2. Desde el menú de cuenta abrir «Mi perfil», elegir varias zonas, electrodomésticos y marcas (una especialidad con «Todas las marcas» y otra con marcas específicas). Guardar y volver a entrar para comprobar persistencia.
+3. Como visitante, buscar cada combinación configurada; debe aparecer el técnico. Desactivar su disponibilidad y comprobar que deja de aparecer; volver a activarla.
+4. Comprobar que un cliente no puede leer ni guardar la oferta privada de otro técnico y que IDs de catálogo inválidos no alteran la oferta existente.
+5. Continuar con el pedido del cliente.
+6. Abrir `/orders` y aceptar el pedido pendiente.
+7. Abrir `/operations`, agendar la visita y marcarla como terminada por técnico.
+8. Verificar que la visita pasa a `completed_tech`.
 
 ## Flujo cliente
 

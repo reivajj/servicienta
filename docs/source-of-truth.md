@@ -1,6 +1,6 @@
 # Servicienta — Fuente de verdad provisional
 
-_Última actualización: 2026-09-15_
+_Última actualización: 2026-09-22_
 
 ## Propósito de este documento
 
@@ -681,6 +681,7 @@ Implementado hoy:
 - tipos compartidos, cliente HTTP, query hooks y endpoints del gateway para `technician-profiles`
 - vista operativa `/technicians/:technicianId` con detalle completo del técnico, edición admin y edición propia del técnico vía endpoint `me`
 - endpoints admin y current-technician para editar `TechnicianProfile`: `PATCH /api/admin/technician-profiles/:technicianId` y `PATCH /api/technician-profile/me`
+- el técnico configura desde «Mi perfil» zonas, electrodomésticos y marcas por especialidad; la oferta se guarda de forma transaccional y aparece automáticamente en búsqueda si el usuario está activo y el perfil disponible
 
 No implementado todavía:
 

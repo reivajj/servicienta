@@ -96,21 +96,26 @@ export async function getPublicTechnicianProfileBySlug(
 export async function listPublicTechnicianProfileCatalogs(
   supabase: SupabaseClient,
 ): Promise<PublicTechnicianProfileCatalogs> {
-  const [zones, applianceTypes, coverageZones, applianceSpecialties] = await Promise.all([
+  const [zones, applianceTypes, coverageZones, applianceSpecialties, profiles] = await Promise.all([
     listCatalogItems(supabase, 'zones'),
     listCatalogItems(supabase, 'appliance_types'),
     supabase.from('technician_coverage_zones').select('technician_id, zone_id'),
     supabase.from('technician_appliance_specialties').select('technician_id, appliance_type_id').not('appliance_type_id', 'is', null),
+    supabase.from('technician_profiles').select('id, user:users!technician_profiles_id_fkey!inner(status, role)').eq('available', true).eq('user.status', 'ACTIVE').eq('user.role', 'technician'),
   ]);
 
   if (coverageZones.error) throw new Error(coverageZones.error.message);
   if (applianceSpecialties.error) throw new Error(applianceSpecialties.error.message);
+  if (profiles.error) throw new Error(profiles.error.message);
+
+  const eligibleIds = new Set((profiles.data ?? []).map((profile) => profile.id));
 
   const zoneSlugById = new Map(zones.map((zone) => [zone.id, zone.slug]));
   const applianceSlugById = new Map(applianceTypes.map((item) => [item.id, item.slug]));
   const applianceSlugsByTechnician = new Map<string, Set<string>>();
 
   for (const specialty of applianceSpecialties.data ?? []) {
+    if (!eligibleIds.has(specialty.technician_id)) continue;
     const applianceSlug = specialty.appliance_type_id
       ? applianceSlugById.get(specialty.appliance_type_id)
       : undefined;
@@ -126,6 +131,7 @@ export async function listPublicTechnicianProfileCatalogs(
   ) as Record<string, Set<string>>;
 
   for (const coverage of coverageZones.data ?? []) {
+    if (!eligibleIds.has(coverage.technician_id)) continue;
     const zoneSlug = zoneSlugById.get(coverage.zone_id);
     const applianceSlugs = applianceSlugsByTechnician.get(coverage.technician_id);
     if (!zoneSlug || !applianceSlugs) continue;

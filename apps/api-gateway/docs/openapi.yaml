@@ -1200,6 +1200,39 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/technician-profile/me/offer:
+    get:
+      tags: [Technician Profiles]
+      summary: Get current technician offer and catalogs
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current offer and available catalog items
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    put:
+      tags: [Technician Profiles]
+      summary: Replace current technician offer atomically
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnicianOffer'
+      responses:
+        '200':
+          description: Updated offer and catalog items
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
   /api/admin/technician-profiles/{technicianId}:
     get:
       tags: [Technician Profiles]
@@ -3189,6 +3222,33 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/AdminTechnicianProfile'
+    TechnicianOffer:
+      type: object
+      required: [available, zoneIds, specialties]
+      properties:
+        available:
+          type: boolean
+        zoneIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        specialties:
+          type: array
+          items:
+            type: object
+            required: [applianceTypeId, supportsAllBrands, brandIds]
+            properties:
+              applianceTypeId:
+                type: string
+                format: uuid
+              supportsAllBrands:
+                type: boolean
+              brandIds:
+                type: array
+                items:
+                  type: string
+                  format: uuid
     UpdateTechnicianProfileInput:
       type: object
       required:

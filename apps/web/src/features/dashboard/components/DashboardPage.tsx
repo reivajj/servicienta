@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import type { Operation, Order, User } from '@servicienta/types';
-import { useAdminOperations, useAdminOrders, useAdminTechnicianProfiles, useClientProfiles, useCurrentOperations, useCurrentOrders, useCurrentUser, useUsers } from '@servicienta/query-hooks';
+import { useAdminOperations, useAdminOrders, useAdminTechnicianProfiles, useClientProfiles, useCurrentOperations, useCurrentOrders, useCurrentTechnicianOffer, useCurrentUser, useUsers } from '@servicienta/query-hooks';
 import { UsersTable } from '../../users/components/UsersTable';
 import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
 import { ViewOperationActionLink } from '../../shared/components/ViewOperationActionLink';
@@ -12,10 +12,13 @@ function Card({ to, title, count, copy }: { to: DashboardRoute; title: string; c
   return <Link to={to} className="dashboard-summary-card"><span>{title}</span><strong>{count}</strong><small>{copy}</small></Link>;
 }
 
-function CurrentDashboard({ role }: { role: 'client' | 'technician' }) {
+function CurrentDashboard({ role, userId }: { role: 'client' | 'technician'; userId?: string }) {
   const { data: orders } = useCurrentOrders({ page: 1, pageSize: 25 });
   const { data: operations } = useCurrentOperations({ page: 1, pageSize: 25 });
   const { data: scheduledOperations, error: scheduledOperationsError, isLoading: isLoadingScheduledOperations } = useCurrentOperations({ page: 1, pageSize: 100, status: 'scheduled' });
+  const { data: technicianOffer } = useCurrentTechnicianOffer({ enabled: role === 'technician' });
+  const missingZones = technicianOffer?.offer.zoneIds.length === 0;
+  const missingSpecialties = technicianOffer?.offer.specialties.length === 0;
   const title = role === 'technician' ? 'Panel del técnico' : 'Panel del cliente';
   const now = Date.now();
   const nextOperation = scheduledOperations?.items
@@ -28,6 +31,19 @@ function CurrentDashboard({ role }: { role: 'client' | 'technician' }) {
         <h1>Resumen operativo</h1>
         <span>Pedidos y visitas recientes en un solo lugar.</span>
       </header>
+      {role === 'technician' && userId && (missingZones || missingSpecialties) ? (
+        <Link to="/technicians/$technicianId" params={{ technicianId: userId }} className="dashboard-offer-warning">
+          <span className="dashboard-offer-warning__badge">⚠ Completá tu perfil</span>
+          <span className="dashboard-offer-warning__message">
+            {missingZones && missingSpecialties
+              ? 'Agregá zonas de cobertura y especialidades para aparecer en la búsqueda y recibir pedidos.'
+              : missingZones
+                ? 'Agregá al menos una zona de cobertura para aparecer en la búsqueda y recibir pedidos.'
+                : 'Agregá al menos una especialidad para aparecer en la búsqueda y recibir pedidos.'}
+          </span>
+          <span className="dashboard-offer-warning__action">Configurar oferta <span aria-hidden="true">↗</span></span>
+        </Link>
+      ) : null}
       <section className="dashboard-summary-grid">
         <Card to="/orders" title="Pedidos" count={orders?.summary.totalOrders ?? 0} copy={`${orders?.summary.pendingOrders ?? 0} pendientes`} />
         <div className="dashboard-summary-card dashboard-summary-card--visits">
@@ -122,5 +138,5 @@ function AdminDashboard() {
 
 export function DashboardPage() {
   const { data: user, isLoading } = useCurrentUser();
-  return <main className="dashboard-page dashboard-page--operational">{isLoading ? <p>Cargando panel…</p> : user?.role === 'admin' ? <AdminDashboard /> : <CurrentDashboard role={user?.role === 'technician' ? 'technician' : 'client'} />}</main>;
+  return <main className="dashboard-page dashboard-page--operational">{isLoading ? <p>Cargando panel…</p> : user?.role === 'admin' ? <AdminDashboard /> : <CurrentDashboard role={user?.role === 'technician' ? 'technician' : 'client'} userId={user?.id} />}</main>;
 }

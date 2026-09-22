@@ -4,6 +4,8 @@ export {
   useAdminTechnicianCatalogs,
   useAdminTechniciansByCatalogItem,
   useCurrentTechnicianProfile,
+  useCurrentTechnicianOffer,
+  useUpdateCurrentTechnicianOffer,
   usePublicTechnicianProfileCatalogs,
   usePublicTechnicianProfile,
   usePublicTechnicianProfiles,

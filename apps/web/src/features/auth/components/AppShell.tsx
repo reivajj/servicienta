@@ -234,6 +234,7 @@ export function AppShell() {
                   <strong>{`${currentUser?.name ?? ''} ${currentUser?.surname ?? ''}`.trim() || 'Sin nombre'}</strong>
                   <span>{user.email ?? 'Sin email'}</span>
                   <span>{currentUser ? currentUser.role === 'admin' ? 'Administrador' : currentUser.role === 'technician' ? 'Técnico' : 'Cliente' : 'Cargando rol...'}</span>
+                  {currentUser?.role === 'technician' ? <Link to="/technicians/$technicianId" params={{ technicianId: currentUser.id }} onClick={() => setIsProfileMenuOpen(false)}>Mi perfil</Link> : null}
                   <button type="button" onClick={handleSignOut}>Cerrar sesión</button>
                 </div>
               ) : null}

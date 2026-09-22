@@ -6,6 +6,7 @@ import { requireAuth } from '../middleware/require-auth.js';
 import { ok } from '../core/http-response.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { readQueryParam } from './helpers/http.js';
+import { getTechnicianOffer, updateTechnicianOffer } from './offer.js';
 import {
   getAdminTechnicianProfileById,
   getCurrentTechnicianProfile,
@@ -97,6 +98,22 @@ export function technicianProfilesRouter(
       );
 
       ok(response, profile);
+    }),
+  );
+
+  router.get('/api/technician-profile/me/offer',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      if (request.auth?.role !== 'technician') throw new ForbiddenError('Technician role required');
+      ok(response, await getTechnicianOffer(options.supabase, request.auth.id));
+    }),
+  );
+
+  router.put('/api/technician-profile/me/offer',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      if (request.auth?.role !== 'technician') throw new ForbiddenError('Technician role required');
+      ok(response, await updateTechnicianOffer(options.supabase, request.auth.id, request.body));
     }),
   );
 

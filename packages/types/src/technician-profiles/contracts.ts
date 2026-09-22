@@ -98,6 +98,32 @@ export interface UpdateTechnicianProfileResponse {
   data: AdminTechnicianProfile;
 }
 
+export interface TechnicianOfferSpecialty {
+  applianceTypeId: string;
+  supportsAllBrands: boolean;
+  brandIds: string[];
+}
+
+export interface TechnicianOffer {
+  available: boolean;
+  zoneIds: string[];
+  specialties: TechnicianOfferSpecialty[];
+}
+
+export interface TechnicianOfferCatalogs {
+  zones: import('./domain.js').PublicTechnicianCatalogItem[];
+  applianceTypes: import('./domain.js').PublicTechnicianCatalogItem[];
+  brands: import('./domain.js').PublicTechnicianCatalogItem[];
+}
+
+export interface TechnicianOfferDetails {
+  offer: TechnicianOffer;
+  catalogs: TechnicianOfferCatalogs;
+}
+
+export interface GetTechnicianOfferResponse { data: TechnicianOfferDetails }
+export interface UpdateTechnicianOfferResponse { data: TechnicianOfferDetails }
+
 export interface ListAdminTechniciansByCatalogItemInput {
   kind: TechnicianCatalogKind;
   slug: string;

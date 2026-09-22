@@ -19,6 +19,7 @@ import type {
 import { AdminOperationsTable } from '../../operations/components/AdminOperationsTable';
 import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
 import { TechnicianProfileEditCard } from './TechnicianProfileEditCard';
+import { TechnicianOfferCard } from './TechnicianOfferCard';
 
 function formatTechnicianName(name: string | null, surname: string | null) {
   const fullName = `${name ?? ''} ${surname ?? ''}`.trim();
@@ -331,6 +332,7 @@ export function TechnicianProfilePage({
                 onSave={handleProfileSave}
               />
             ) : null}
+            {canUseCurrentProfile ? <TechnicianOfferCard /> : null}
 
             <section className="users-detail-grid">
               <article className="users-panel">

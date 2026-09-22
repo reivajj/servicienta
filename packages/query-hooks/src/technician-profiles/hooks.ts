@@ -5,6 +5,7 @@ import type {
   ListPublicTechnicianProfilesInput,
   UpdateTechnicianProfileInput,
 } from '@servicienta/api-client';
+import type { TechnicianOffer } from '@servicienta/types';
 import { useApiClient } from '../core/api-client-context.js';
 import { technicianProfileKeys } from './keys.js';
 
@@ -108,6 +109,29 @@ export function useCurrentTechnicianProfile(options?: { enabled?: boolean }) {
       return response.data;
     },
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCurrentTechnicianOffer(options?: { enabled?: boolean }) {
+  const apiClient = useApiClient();
+  return useQuery({
+    queryKey: technicianProfileKeys.currentOffer(),
+    queryFn: async () => (await apiClient.technicianProfiles.getCurrentOffer()).data,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useUpdateCurrentTechnicianOffer() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TechnicianOffer) => apiClient.technicianProfiles.updateCurrentOffer(input),
+    onSuccess: (response) => {
+      queryClient.setQueryData(technicianProfileKeys.currentOffer(), response.data);
+      void queryClient.invalidateQueries({ queryKey: technicianProfileKeys.public() });
+      void queryClient.invalidateQueries({ queryKey: technicianProfileKeys.admin() });
+      void queryClient.invalidateQueries({ queryKey: technicianProfileKeys.current() });
+    },
   });
 }
 
