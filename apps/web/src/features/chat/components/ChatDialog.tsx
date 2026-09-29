@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import {
+  useCancelOperationFromChat,
   useChatMessages,
   useCreateChatMessage,
   useAdminOrder,
@@ -11,7 +13,7 @@ import {
   useScheduleOperationFromChat,
 } from '@servicienta/query-hooks';
 import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
-import type { ChatMessage } from '@servicienta/types';
+import type { ChatConversationOperation, ChatMessage } from '@servicienta/types';
 import { getSupabaseBrowserClient } from '../../../lib/supabase';
 import { DateTimePickerField } from '../../shared/components/DateTimePickerField';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
@@ -58,6 +60,7 @@ function formatCounterpartName(name: string | null, surname: string | null) {
 function ChatOrderContext({
   order,
   role,
+  scheduledAt,
 }: {
   order: {
     status: Parameters<typeof formatOrderStatus>[0];
@@ -68,6 +71,7 @@ function ChatOrderContext({
     technician_surname: string | null;
   };
   role: 'admin' | 'client' | 'technician';
+  scheduledAt?: string | null;
 }) {
   const isAdmin = role === 'admin';
   const isTechnician = role === 'technician';
@@ -124,6 +128,12 @@ function ChatOrderContext({
         <dt>Creado el</dt>
         <dd>{formatMessageTime(order.created_at)}</dd>
       </div>
+      {scheduledAt ? (
+        <div className="chat-order-context__visit">
+          <dt>Fecha y horario de la visita</dt>
+          <dd>{formatMessageTime(scheduledAt)}</dd>
+        </div>
+      ) : null}
     </dl>
   );
 }
@@ -285,18 +295,29 @@ function ChatComposer({
 
 function ChatActionBar({
   conversationId,
-  operationId,
-  canSchedule,
+  operation,
+  canManage,
 }: {
   conversationId: string;
-  operationId?: string | null;
-  canSchedule: boolean;
+  operation?: ChatConversationOperation | null;
+  canManage: boolean;
 }) {
   const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [defaultSchedule] = useState(getDefaultSchedule);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const scheduleFromChat = useScheduleOperationFromChat();
+  const cancelFromChat = useCancelOperationFromChat();
 
-  if (!operationId || !canSchedule) return null;
+  if (
+    !operation ||
+    !canManage ||
+    (operation.status !== 'pending' && operation.status !== 'scheduled')
+  ) {
+    return null;
+  }
+
+  const isScheduled = operation.status === 'scheduled';
+  const isPending = scheduleFromChat.isPending || cancelFromChat.isPending;
+  const initialSchedule = operation.scheduled_at ?? getDefaultSchedule();
 
   async function handleScheduleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -306,7 +327,7 @@ function ChatActionBar({
     await scheduleFromChat.mutateAsync({
       conversationId,
       input: {
-        operation_id: operationId!,
+        operation_id: operation!.id,
         scheduled_at: new Date(scheduledAt).toISOString(),
         description: String(formData.get('description') ?? ''),
       },
@@ -314,43 +335,45 @@ function ChatActionBar({
     setShowScheduleForm(false);
   }
 
+  async function handleCancel() {
+    await cancelFromChat.mutateAsync({
+      conversationId,
+      input: { operation_id: operation!.id },
+    });
+    setShowCancelConfirmation(false);
+  }
+
   return (
     <section className="chat-action-card">
       <div className="chat-action-card__header">
         <div>
-          <p className="user-card__label">Acciones</p>
-          <h3>Coordinar visita</h3>
+          <p className="user-card__label">Acciones rápidas</p>
+          <h3>Gestionar visita</h3>
         </div>
-        <button
-          type="button"
-          className="users-table__action users-table__action--icon users-table__action--chat"
-          aria-label="Agendar visita"
-          title="Agendar visita"
-          onClick={() => setShowScheduleForm((current) => !current)}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            className="users-table__action-icon"
+        <div className="chat-action-card__actions">
+          <button
+            type="button"
+            className="users-table__action"
+            disabled={isPending}
+            onClick={() => {
+              setShowCancelConfirmation(false);
+              setShowScheduleForm((current) => !current);
+            }}
           >
-            <path
-              d="M7 3.5v3M17 3.5v3M4.5 9.5h15M6.5 5h11A2.5 2.5 0 0 1 20 7.5v10A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-10A2.5 2.5 0 0 1 6.5 5Z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="m9 15 1.7 1.7L15.5 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+            {isScheduled ? 'Cambiar fecha y horario' : 'Agendar visita'}
+          </button>
+          <button
+            type="button"
+            className="users-table__action users-table__action--danger"
+            disabled={isPending}
+            onClick={() => {
+              setShowScheduleForm(false);
+              setShowCancelConfirmation(true);
+            }}
+          >
+            Cancelar visita
+          </button>
+        </div>
       </div>
 
       {showScheduleForm ? (
@@ -360,8 +383,8 @@ function ChatActionBar({
         >
           <DateTimePickerField
             name="scheduled_at"
-            label="Fecha y horario"
-            initialValue={defaultSchedule}
+            label={isScheduled ? 'Nueva fecha y horario' : 'Fecha y horario'}
+            initialValue={initialSchedule}
             required
             disablePastDates
             preventPastTimeSelection
@@ -369,27 +392,75 @@ function ChatActionBar({
           />
           <label className="auth-form__field">
             <span>Descripción técnica</span>
-            <input name="description" type="text" required />
+            <input
+              name="description"
+              type="text"
+              defaultValue={operation.description ?? ''}
+              required
+            />
           </label>
-          <button
-            type="submit"
-            className="orders-dialog__primary-action"
-            disabled={scheduleFromChat.isPending}
-          >
-            {scheduleFromChat.isPending ? 'Agendando...' : 'Agendar'}
-          </button>
-          <p
-            className={
-              scheduleFromChat.error
-                ? 'users-message users-message--error'
-                : 'users-message'
-            }
-          >
-            {scheduleFromChat.error instanceof Error
-              ? scheduleFromChat.error.message
-              : ' '}
-          </p>
+          <div className="chat-action-card__form-actions">
+            <button
+              type="submit"
+              className="orders-dialog__primary-action"
+              disabled={isPending}
+            >
+              {scheduleFromChat.isPending
+                ? isScheduled
+                  ? 'Reprogramando...'
+                  : 'Agendando...'
+                : isScheduled
+                  ? 'Guardar nuevo horario'
+                  : 'Agendar'}
+            </button>
+            <button
+              type="button"
+              className="users-table__action"
+              disabled={isPending}
+              onClick={() => setShowScheduleForm(false)}
+            >
+              Volver
+            </button>
+          </div>
         </form>
+      ) : null}
+
+      {showCancelConfirmation ? (
+        <div className="chat-action-card__confirmation">
+          <p>¿Confirmás que querés cancelar esta visita?</p>
+          <p className="chat-action-card__confirmation-warning">
+            Esta acción es irrevocable. Si sólo necesitás cambiar la fecha o el
+            horario, volvé y usá “Cambiar fecha y horario” en lugar de cancelar.
+          </p>
+          <div className="chat-action-card__form-actions">
+            <button
+              type="button"
+              className="users-table__action users-table__action--danger"
+              disabled={isPending}
+              onClick={() => void handleCancel()}
+            >
+              {cancelFromChat.isPending ? 'Cancelando...' : 'Sí, cancelar visita'}
+            </button>
+            <button
+              type="button"
+              className="users-table__action"
+              disabled={isPending}
+              onClick={() => setShowCancelConfirmation(false)}
+            >
+              Volver
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {scheduleFromChat.error || cancelFromChat.error ? (
+        <p className="users-message users-message--error">
+          {scheduleFromChat.error instanceof Error
+            ? scheduleFromChat.error.message
+            : cancelFromChat.error instanceof Error
+              ? cancelFromChat.error.message
+              : 'No se pudo actualizar la visita'}
+        </p>
       ) : null}
     </section>
   );
@@ -490,13 +561,50 @@ export function ChatDialog({
         <header className="users-modal__header">
           <div>
             <p className="users-hero__eyebrow">Chat interno</p>
-            <h2 id="chat-dialog-title">Conversación del pedido</h2>
+            <h2 id="chat-dialog-title">
+              Conversación del{' '}
+              <Link
+                className="chat-dialog__order-link"
+                to="/orders/$orderId"
+                params={{ orderId }}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Abrir pedido en una nueva ventana"
+                title="Abrir pedido en una nueva ventana"
+              >
+                pedido
+              </Link>
+            </h2>
             {order && currentUser?.role === 'client' ? (
-              <ChatOrderContext order={order} role="client" />
+              <ChatOrderContext
+                order={order}
+                role="client"
+                scheduledAt={
+                  resolvedOperation?.status === 'scheduled'
+                    ? resolvedOperation.scheduled_at
+                    : null
+                }
+              />
             ) : order && currentUser?.role === 'technician' ? (
-              <ChatOrderContext order={order} role="technician" />
+              <ChatOrderContext
+                order={order}
+                role="technician"
+                scheduledAt={
+                  resolvedOperation?.status === 'scheduled'
+                    ? resolvedOperation.scheduled_at
+                    : null
+                }
+              />
             ) : adminOrder && currentUser?.role === 'admin' ? (
-              <ChatOrderContext order={adminOrder} role="admin" />
+              <ChatOrderContext
+                order={adminOrder}
+                role="admin"
+                scheduledAt={
+                  resolvedOperation?.status === 'scheduled'
+                    ? resolvedOperation.scheduled_at
+                    : null
+                }
+              />
             ) : null}
           </div>
           <button
@@ -520,11 +628,8 @@ export function ChatDialog({
           <section className="chat-thread">
             <ChatActionBar
               conversationId={conversation.id}
-              operationId={resolvedOperation?.id}
-              canSchedule={
-                currentUser?.role === 'technician' &&
-                resolvedOperation?.status === 'pending'
-              }
+              operation={resolvedOperation}
+              canManage={currentUser?.role === 'technician'}
             />
             <ChatMessageList
               messages={messages}

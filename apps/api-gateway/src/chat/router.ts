@@ -4,6 +4,7 @@ import { ok } from '../core/http-response.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { requireAuth } from '../middleware/require-auth.js';
 import {
+  cancelOperationFromChat,
   createChatMessage,
   getOrCreateOrderChatConversation,
   listChatMessages,
@@ -12,6 +13,7 @@ import {
   scheduleOperationFromChat,
 } from './service.js';
 import {
+  validateCancelOperationFromChatInput,
   validateConversationId,
   validateCreateChatMessageInput,
   validateListChatMessagesInput,
@@ -116,6 +118,21 @@ export function chatRouter(options: ChatRouterOptions) {
         request.auth!,
         validateConversationId(request.params.conversationId),
         validateScheduleOperationFromChatInput(request.body),
+      );
+
+      ok(response, result);
+    }),
+  );
+
+  router.post(
+    '/api/chat/conversations/:conversationId/actions/cancel-operation',
+    requireAuth({ supabase: options.supabase }),
+    asyncHandler(async (request, response) => {
+      const result = await cancelOperationFromChat(
+        options.supabase,
+        request.auth!,
+        validateConversationId(request.params.conversationId),
+        validateCancelOperationFromChatInput(request.body),
       );
 
       ok(response, result);

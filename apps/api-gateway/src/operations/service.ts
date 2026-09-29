@@ -265,9 +265,13 @@ export async function scheduleOperation(
 
   if (operationError) throw new Error(operationError.message);
   if (!operation) throw new NotFoundError('No se encontró la visita');
-  if (operation.status !== 'pending') {
-    throw new ValidationError('Solo se pueden agendar visitas pendientes');
+  if (operation.status !== 'pending' && operation.status !== 'scheduled') {
+    throw new ValidationError(
+      'Solo se pueden agendar o reprogramar visitas pendientes o agendadas',
+    );
   }
+
+  const isReschedule = operation.status === 'scheduled';
 
   const { data, error } = await supabase
     .from('operations')
@@ -297,7 +301,7 @@ export async function scheduleOperation(
     actorId: auth.id,
     entityType: 'operation',
     entityId: mappedOperation.id,
-    eventType: 'operation.scheduled',
+    eventType: isReschedule ? 'operation.rescheduled' : 'operation.scheduled',
     payload: {
       order_id: operation.order_id,
       scheduled_at: payload.scheduled_at,

@@ -73,3 +73,14 @@ export interface ScheduleOperationFromChatResponse {
     message: ChatMessage;
   };
 }
+
+export interface CancelOperationFromChatInput {
+  operation_id: string;
+}
+
+export interface CancelOperationFromChatResponse {
+  data: {
+    conversation: ChatConversation;
+    message: ChatMessage;
+  };
+}

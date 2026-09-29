@@ -1,4 +1,5 @@
 export {
+  useCancelOperationFromChat,
   useChatMessages,
   useCreateChatMessage,
   useCurrentChatConversations,

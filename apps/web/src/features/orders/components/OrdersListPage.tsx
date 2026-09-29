@@ -13,6 +13,7 @@ import type {
 import { AcceptOrderActionButton } from '../../shared/components/AcceptOrderActionButton';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
+import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 import {
   formatOrderFlowType,
   formatOrderStatus,
@@ -26,8 +27,86 @@ function formatClientName(name: string | null, surname: string | null) {
   return fullName || 'Sin nombre';
 }
 
+function formatSlugLabel(value: string | null) {
+  if (!value) return 'Sin definir';
+
+  return value
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map(
+      (word) =>
+        word.charAt(0).toLocaleUpperCase('es-AR') +
+        word.slice(1).toLocaleLowerCase('es-AR'),
+    )
+    .join(' ');
+}
+
 function getStatusBadgeClass(status: OrderStatus) {
   return `status-badge status-badge--${status}`;
+}
+
+const PROBLEM_PREVIEW_LENGTH = 50;
+
+function ProblemDetailDialog({
+  problem,
+  onClose,
+}: {
+  problem: string;
+  onClose: () => void;
+}) {
+  useEscapeKey(onClose);
+
+  return (
+    <div
+      className="users-modal users-modal--stacked"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="order-problem-dialog-title"
+      onClick={onClose}
+    >
+      <section
+        className="users-modal__panel users-modal__panel--compact order-problem-dialog"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="users-modal__header">
+          <div>
+            <p className="users-hero__eyebrow">Problema informado</p>
+            <h2 id="order-problem-dialog-title">Descripción completa</h2>
+          </div>
+          <button
+            type="button"
+            className="users-modal__close"
+            onClick={onClose}
+          >
+            Cerrar
+          </button>
+        </header>
+        <p className="order-problem-dialog__text">{problem}</p>
+      </section>
+    </div>
+  );
+}
+
+function ProblemTableCell({
+  problem,
+  onOpen,
+}: {
+  problem: string;
+  onOpen: () => void;
+}) {
+  if (problem.length <= PROBLEM_PREVIEW_LENGTH) return problem;
+
+  return (
+    <button
+      type="button"
+      className="orders-table__problem-preview"
+      onClick={onOpen}
+      title="Ver problema completo"
+      aria-label="Ver descripción completa del problema"
+    >
+      {problem.slice(0, PROBLEM_PREVIEW_LENGTH).trimEnd()}…
+    </button>
+  );
 }
 
 export function OrdersListPage() {
@@ -67,6 +146,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
   const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [visitsOrderId, setVisitsOrderId] = useState<string | null>(null);
+  const [selectedProblem, setSelectedProblem] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search.trim());
   const { data, error, isLoading } = useCurrentOrders({
     page,
@@ -95,7 +175,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                 ? 'Pedidos del técnico'
                 : 'Pedidos del usuario'}
             </p>
-            <h1>{role === 'technician' ? 'Pedidos' : 'Mis órdenes'}</h1>
+            <h1>{role === 'technician' ? 'Pedidos' : 'Mis pedidos'}</h1>
             <p className="users-hero__copy">
               {role === 'technician'
                 ? 'Aceptá solicitudes pendientes para crear la visita vinculada.'
@@ -104,7 +184,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
           </div>
 
           <div className="users-hero__summary">
-            <span>{data?.summary.totalOrders ?? 0} órdenes</span>
+            <span>{data?.summary.totalOrders ?? 0} pedidos</span>
             <span>{data?.summary.pendingOrders ?? 0} pendientes</span>
             <span>{data?.summary.acceptedOrders ?? 0} aceptados</span>
             <span>{data?.summary.completedOrders ?? 0} completados</span>
@@ -133,7 +213,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
 
         {isLoading ? (
           <section className="users-panel">
-            <p>Cargando órdenes...</p>
+            <p>Cargando pedidos...</p>
           </section>
         ) : error ? (
           <section className="users-panel">
@@ -180,9 +260,14 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                       </span>
                     </td>
                     <td>{order.service_address_text}</td>
-                    <td>{order.description}</td>
-                    <td>{order.zone_slug ?? 'Sin definir'}</td>
-                    <td>{order.appliance_type_slug ?? 'Sin definir'}</td>
+                    <td>
+                      <ProblemTableCell
+                        problem={order.description}
+                        onOpen={() => setSelectedProblem(order.description)}
+                      />
+                    </td>
+                    <td>{formatSlugLabel(order.zone_slug)}</td>
+                    <td>{formatSlugLabel(order.appliance_type_slug)}</td>
                     <td><OrderVisitsActionButton onClick={() => setVisitsOrderId(order.id)} /></td>
                   </tr>
                 ))}
@@ -191,7 +276,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
           </section>
         ) : (
           <section className="users-panel">
-            <p>{role === 'technician' && hasActiveFilters ? 'No hay pedidos para los filtros actuales.' : 'No hay órdenes por ahora.'}</p>
+            <p>{role === 'technician' && hasActiveFilters ? 'No hay pedidos para los filtros actuales.' : 'No hay pedidos por ahora.'}</p>
           </section>
         )}
 
@@ -232,6 +317,12 @@ function CurrentOrdersListPage({ role }: { role: string }) {
           />
         ) : null}
         {visitsOrderId ? <OrderVisitsDialog orderId={visitsOrderId} mode="current" onClose={() => setVisitsOrderId(null)} /> : null}
+        {selectedProblem ? (
+          <ProblemDetailDialog
+            problem={selectedProblem}
+            onClose={() => setSelectedProblem(null)}
+          />
+        ) : null}
       </section>
     </main>
   );

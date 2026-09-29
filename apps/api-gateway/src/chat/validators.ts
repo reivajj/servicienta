@@ -2,6 +2,7 @@ import type {
   CreateChatMessageInput,
   ListChatMessagesInput,
   ListCurrentChatConversationsInput,
+  CancelOperationFromChatInput,
   ScheduleOperationFromChatInput,
   UsersPageSize,
 } from '@servicienta/types';
@@ -57,6 +58,14 @@ export function validateCreateChatMessageInput(
   }
 
   return { body };
+}
+
+export function validateCancelOperationFromChatInput(
+  input: CancelOperationFromChatInput,
+): CancelOperationFromChatInput {
+  return {
+    operation_id: validateOperationId(input.operation_id),
+  };
 }
 
 export function validateScheduleOperationFromChatInput(

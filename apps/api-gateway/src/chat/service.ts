@@ -1,4 +1,5 @@
 import type {
+  CancelOperationFromChatInput,
   ChatConversation,
   ChatConversationOrder,
   ChatMessage,
@@ -16,7 +17,10 @@ import {
 } from '../core/errors.js';
 import type { RequestAuth } from '../core/http.js';
 import { recordActivityEvent } from '../activity-events/service.js';
-import { scheduleOperation } from '../operations/service.js';
+import {
+  cancelOperation,
+  scheduleOperation,
+} from '../operations/service.js';
 import {
   mapChatConversationRow,
   mapChatMessageRow,
@@ -29,6 +33,7 @@ import type {
   ChatOrderRow,
 } from './types.js';
 import {
+  validateCancelOperationFromChatInput,
   validateCreateChatMessageInput,
   validateScheduleOperationFromChatInput,
 } from './validators.js';
@@ -224,13 +229,15 @@ export async function scheduleOperationFromChat(
 
   const { data: operation, error: operationError } = await supabase
     .from('operations')
-    .select('id, order_id')
+    .select('id, order_id, status')
     .eq('id', payload.operation_id)
     .eq('order_id', conversation.order_id)
     .maybeSingle();
 
   if (operationError) throw new Error(operationError.message);
   if (!operation) throw new NotFoundError('No se encontró la visita');
+
+  const isReschedule = operation.status === 'scheduled';
 
   await scheduleOperation(supabase, auth, payload.operation_id, {
     scheduled_at: payload.scheduled_at,
@@ -246,7 +253,9 @@ export async function scheduleOperationFromChat(
     conversationId: conversation.id,
     senderId: auth.id,
     messageType: 'action',
-    body: `Visita agendada para ${formattedDate}.`,
+    body: isReschedule
+      ? `Visita reprogramada para ${formattedDate}.`
+      : `Visita agendada para ${formattedDate}.`,
     actionType: 'operation.schedule',
     actionPayload: {
       scheduled_at: payload.scheduled_at,
@@ -261,11 +270,71 @@ export async function scheduleOperationFromChat(
     actorId: auth.id,
     entityType: 'chat_conversation',
     entityId: conversation.id,
-    eventType: 'chat.operation_scheduled_from_chat',
+    eventType: isReschedule
+      ? 'chat.operation_rescheduled_from_chat'
+      : 'chat.operation_scheduled_from_chat',
     payload: {
       order_id: conversation.order_id,
       operation_id: payload.operation_id,
       scheduled_at: payload.scheduled_at,
+    },
+  });
+
+  return {
+    conversation: await hydrateConversation(supabase, auth, conversation),
+    message,
+  };
+}
+
+export async function cancelOperationFromChat(
+  supabase: SupabaseClient,
+  auth: RequestAuth,
+  conversationId: string,
+  input: CancelOperationFromChatInput,
+) {
+  const payload = validateCancelOperationFromChatInput(input);
+  const conversation = await getAuthorizedConversation(
+    supabase,
+    auth,
+    conversationId,
+  );
+
+  if (!conversation.order_id) {
+    throw new ValidationError('La conversación no está vinculada a un pedido');
+  }
+
+  const { data: operation, error: operationError } = await supabase
+    .from('operations')
+    .select('id, order_id')
+    .eq('id', payload.operation_id)
+    .eq('order_id', conversation.order_id)
+    .maybeSingle();
+
+  if (operationError) throw new Error(operationError.message);
+  if (!operation) throw new NotFoundError('No se encontró la visita');
+
+  await cancelOperation(supabase, auth, payload.operation_id);
+
+  const message = await insertChatMessage(supabase, {
+    conversationId: conversation.id,
+    senderId: auth.id,
+    messageType: 'action',
+    body: 'Visita cancelada por el técnico.',
+    actionType: 'operation.cancel',
+    actionPayload: {},
+    relatedOrderId: conversation.order_id,
+    relatedOperationId: payload.operation_id,
+    viewerRole: auth.role,
+  });
+
+  await recordActivityEvent(supabase, {
+    actorId: auth.id,
+    entityType: 'chat_conversation',
+    entityId: conversation.id,
+    eventType: 'chat.operation_cancelled_from_chat',
+    payload: {
+      order_id: conversation.order_id,
+      operation_id: payload.operation_id,
     },
   });
 
@@ -615,7 +684,7 @@ async function listConversationOperations(
 
   let query = supabase
     .from('operations')
-    .select('id, status')
+    .select('id, status, scheduled_at, description')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
 
@@ -628,6 +697,8 @@ async function listConversationOperations(
   return (data ?? []).map((operation) => ({
     id: operation.id,
     status: operation.status,
+    scheduled_at: operation.scheduled_at,
+    description: operation.description,
   }));
 }
 

@@ -1004,6 +1004,38 @@ p {
   background: rgba(63, 130, 92, 0.2);
 }
 
+.orders-table__problem-preview {
+  max-width: 320px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  line-height: 1.45;
+  text-align: left;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.orders-table__problem-preview:hover {
+  color: var(--accent);
+}
+
+.orders-table__problem-preview:focus-visible {
+  border-radius: 4px;
+  outline: 3px solid rgba(224, 112, 61, 0.24);
+  outline-offset: 3px;
+}
+
+.order-problem-dialog__text {
+  margin: 0;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .users-modal {
   position: fixed;
   inset: 0;
@@ -2062,6 +2094,23 @@ p {
   border-bottom: 1px solid var(--border);
 }
 
+.chat-dialog__order-link {
+  color: var(--accent-strong);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.chat-dialog__order-link:hover {
+  color: var(--accent);
+}
+
+.chat-dialog__order-link:focus-visible {
+  border-radius: 4px;
+  outline: 3px solid rgba(224, 112, 61, 0.24);
+  outline-offset: 3px;
+}
+
 .chat-order-context {
   display: grid;
   grid-template-columns: minmax(126px, auto) minmax(0, 1fr) minmax(130px, auto);
@@ -2098,6 +2147,12 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chat-order-context .chat-order-context__visit {
+  grid-column: 1 / -1;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 .chat-thread {
@@ -2224,6 +2279,45 @@ p {
 
 .chat-action-card__header h3 {
   margin: 0;
+}
+
+.chat-action-card__actions,
+.chat-action-card__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.chat-action-card__form-actions {
+  padding-top: 10px;
+}
+
+.chat-action-card__form-actions > button {
+  min-height: 46px;
+  margin: 0;
+  padding: 12px 20px;
+}
+
+.chat-action-card__confirmation {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(180, 55, 45, 0.2);
+  border-radius: 14px;
+  background: rgba(180, 55, 45, 0.06);
+}
+
+.chat-action-card__confirmation p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.chat-action-card__confirmation .chat-action-card__confirmation-warning {
+  color: #8d3a19;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .chat-action-card__form {

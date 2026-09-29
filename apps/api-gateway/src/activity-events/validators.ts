@@ -71,7 +71,9 @@ function isActivityEventEntityType(
     value === 'user' ||
     value === 'order' ||
     value === 'operation' ||
-    value === 'technician_review'
+    value === 'technician_review' ||
+    value === 'chat_conversation' ||
+    value === 'chat_message'
   );
 }
 
@@ -83,11 +85,17 @@ function isActivityEventType(value: string): value is ActivityEventType {
     value === 'order.cancelled' ||
     value === 'operation.created' ||
     value === 'operation.scheduled' ||
+    value === 'operation.rescheduled' ||
     value === 'operation.completed_by_technician' ||
     value === 'operation.completed_by_client' ||
     value === 'operation.completion_rejected_by_client' ||
     value === 'operation.cancelled' ||
     value === 'technician_review.created' ||
+    value === 'chat.message_created' ||
+    value === 'chat.admin_joined' ||
+    value === 'chat.operation_scheduled_from_chat' ||
+    value === 'chat.operation_rescheduled_from_chat' ||
+    value === 'chat.operation_cancelled_from_chat' ||
     value === 'admin.order_updated' ||
     value === 'admin.operation_updated'
   );

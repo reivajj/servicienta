@@ -19,6 +19,8 @@ export type ChatActionType =
 export interface ChatConversationOperation {
   id: string;
   status: OperationStatus;
+  scheduled_at: string | null;
+  description: string | null;
 }
 
 export interface ChatConversation {

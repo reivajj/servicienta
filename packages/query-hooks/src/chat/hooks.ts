@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  CancelOperationFromChatInput,
   ChatMessage,
   CreateChatMessageInput,
   ListChatMessagesInput,
@@ -152,6 +153,39 @@ export function useMarkChatConversationRead() {
   });
 }
 
+export function useCancelOperationFromChat() {
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      conversationId,
+      input,
+    }: {
+      conversationId: string;
+      input: CancelOperationFromChatInput;
+    }) => apiClient.chat.actions.cancelOperation(conversationId, input),
+    onSuccess: (response, variables) => {
+      if (response.data.conversation.order_id) {
+        queryClient.setQueryData(
+          chatKeys.orderConversation(response.data.conversation.order_id),
+          response.data.conversation,
+        );
+      }
+      void queryClient.invalidateQueries({
+        queryKey: chatKeys.messages(variables.conversationId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: chatKeys.conversationLists(),
+      });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.current() });
+      void queryClient.invalidateQueries({ queryKey: orderKeys.admin() });
+    },
+  });
+}
+
 export function useScheduleOperationFromChat() {
   const apiClient = useApiClient();
   const queryClient = useQueryClient();
@@ -164,7 +198,13 @@ export function useScheduleOperationFromChat() {
       conversationId: string;
       input: ScheduleOperationFromChatInput;
     }) => apiClient.chat.actions.scheduleOperation(conversationId, input),
-    onSuccess: (_response, variables) => {
+    onSuccess: (response, variables) => {
+      if (response.data.conversation.order_id) {
+        queryClient.setQueryData(
+          chatKeys.orderConversation(response.data.conversation.order_id),
+          response.data.conversation,
+        );
+      }
       void queryClient.invalidateQueries({
         queryKey: chatKeys.messages(variables.conversationId),
       });

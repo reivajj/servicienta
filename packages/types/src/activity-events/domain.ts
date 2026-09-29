@@ -13,6 +13,7 @@ export type ActivityEventType =
   | 'order.cancelled'
   | 'operation.created'
   | 'operation.scheduled'
+  | 'operation.rescheduled'
   | 'operation.completed_by_technician'
   | 'operation.completed_by_client'
   | 'operation.completion_rejected_by_client'
@@ -21,6 +22,8 @@ export type ActivityEventType =
   | 'chat.message_created'
   | 'chat.admin_joined'
   | 'chat.operation_scheduled_from_chat'
+  | 'chat.operation_rescheduled_from_chat'
+  | 'chat.operation_cancelled_from_chat'
   | 'admin.order_updated'
   | 'admin.operation_updated';
 

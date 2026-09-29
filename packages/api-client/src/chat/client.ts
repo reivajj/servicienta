@@ -1,4 +1,6 @@
 import type {
+  CancelOperationFromChatInput,
+  CancelOperationFromChatResponse,
   CreateChatMessageInput,
   CreateChatMessageResponse,
   GetOrderChatConversationResponse,
@@ -43,6 +45,10 @@ export interface ChatApiClient {
         conversationId: string,
         input: ScheduleOperationFromChatInput,
       ) => Promise<ScheduleOperationFromChatResponse>;
+      cancelOperation: (
+        conversationId: string,
+        input: CancelOperationFromChatInput,
+      ) => Promise<CancelOperationFromChatResponse>;
     };
   };
 }
@@ -103,6 +109,14 @@ export function createChatApiClient({
         scheduleOperation: (conversationId, input) =>
           apiFetch<ScheduleOperationFromChatResponse>(
             `/api/chat/conversations/${conversationId}/actions/schedule-operation`,
+            {
+              method: 'POST',
+              body: JSON.stringify(input),
+            },
+          ),
+        cancelOperation: (conversationId, input) =>
+          apiFetch<CancelOperationFromChatResponse>(
+            `/api/chat/conversations/${conversationId}/actions/cancel-operation`,
             {
               method: 'POST',
               body: JSON.stringify(input),
