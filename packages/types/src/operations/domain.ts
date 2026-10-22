@@ -1,4 +1,4 @@
-export const OPERATION_SCHEDULE_STEP_MINUTES = 10;
+export const OPERATION_SCHEDULE_STEP_MINUTES = 5;
 
 export type OperationStatus =
   | 'pending'

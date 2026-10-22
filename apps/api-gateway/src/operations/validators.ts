@@ -1,3 +1,4 @@
+import { validateDateFilters } from '../core/date-filters.js';
 import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
 import type {
   CreateOperationInput,
@@ -110,6 +111,8 @@ export function validateScheduleOperationInput(
 }
 
 export function validateListCurrentOperationsInput(input: {
+  date_from?: string;
+  date_to?: string;
   page?: string;
   pageSize?: string;
   status?: string;
@@ -117,8 +120,10 @@ export function validateListCurrentOperationsInput(input: {
   search?: string;
 }): ListCurrentOperationsInput {
   const search = input.search?.trim();
-  if (search && search.length > 100) throw new ValidationError('La búsqueda es demasiado larga');
+  if (search && search.length > 100)
+    throw new ValidationError('La búsqueda es demasiado larga');
   return {
+    ...validateDateFilters(input),
     ...validatePaginatedOperationsInput(input),
     order_id: input.orderId ? validateOrderId(input.orderId) : undefined,
     search: search && search.length >= 3 ? search : undefined,

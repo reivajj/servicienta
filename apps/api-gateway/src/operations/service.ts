@@ -1,3 +1,5 @@
+import { applyTextSearch } from '../core/text-search.js';
+import { applyDateFilters } from '../core/date-filters.js';
 import type {
   CreateOperationInput,
   CreateTechnicianReviewInput,
@@ -1055,9 +1057,10 @@ function buildClientOperationsQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
-  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
+  if (input.search)
+    query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return query;
+  return applyDateFilters(query, input, 'scheduled_at');
 }
 
 function buildClientOperationsCountQuery(
@@ -1072,9 +1075,10 @@ function buildClientOperationsCountQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
-  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
+  if (input.search)
+    query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return query;
+  return applyDateFilters(query, input, 'scheduled_at');
 }
 
 function buildClientOperationsStatusCountQuery(
@@ -1090,9 +1094,11 @@ function buildClientOperationsStatusCountQuery(
     .eq('status', status);
 
   if (input.order_id) query = query.eq('order_id', input.order_id);
-  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
+  if (input.search)
+    query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return query;
+  if (input.status) query = query.eq('status', input.status);
+  return applyDateFilters(query, input, 'scheduled_at');
 }
 
 function buildTechnicianOperationsQuery(
@@ -1111,9 +1117,10 @@ function buildTechnicianOperationsQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
-  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
+  if (input.search)
+    query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return query;
+  return applyDateFilters(query, input, 'scheduled_at');
 }
 
 function buildTechnicianOperationsCountQuery(
@@ -1128,9 +1135,10 @@ function buildTechnicianOperationsCountQuery(
 
   if (input.status) query = query.eq('status', input.status);
   if (input.order_id) query = query.eq('order_id', input.order_id);
-  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
+  if (input.search)
+    query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return query;
+  return applyDateFilters(query, input, 'scheduled_at');
 }
 
 function buildTechnicianOperationsStatusCountQuery(
@@ -1146,9 +1154,11 @@ function buildTechnicianOperationsStatusCountQuery(
     .eq('status', status);
 
   if (input.order_id) query = query.eq('order_id', input.order_id);
-  if (input.search) query = query.ilike('description', `%${input.search.replace(/[%_]/g, '')}%`);
+  if (input.search)
+    query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return query;
+  if (input.status) query = query.eq('status', input.status);
+  return applyDateFilters(query, input, 'scheduled_at');
 }
 
 function buildAdminOperationsQuery(

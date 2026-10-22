@@ -10,6 +10,7 @@ export {
   useCreateTechnicianReview,
   useCurrentOperation,
   useCurrentOperations,
+  useCurrentScheduledOperations,
   useScheduleOperation,
   useUpdateAdminOperation,
 } from './hooks.js';

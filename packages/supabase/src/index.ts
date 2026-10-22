@@ -17,6 +17,7 @@ export interface BrowserSupabaseConfig {
 }
 
 export type BrowserSupabaseClient = SupabaseClient<Database>;
+export type ServicientaSupabaseClient = SupabaseClient<Database>;
 
 let browserClient: BrowserSupabaseClient | undefined;
 
@@ -38,6 +39,12 @@ export function readSupabaseBrowserEnv(
 export function createBrowserSupabaseClient(
   config: BrowserSupabaseConfig,
 ): BrowserSupabaseClient {
+  return createServicientaSupabaseClient(config);
+}
+
+export function createServicientaSupabaseClient(
+  config: BrowserSupabaseConfig,
+): ServicientaSupabaseClient {
   return createClient<Database>(config.url, config.anonKey, {
     ...config.options,
     auth: {

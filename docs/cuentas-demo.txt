@@ -1,5 +1,9 @@
 tomi.tech@test.com
 tomi.admin@test.com
 
+Users:
+test-signup@test.com
+juan-user@lopez.com.ar
+
 Passwords: 
 servicienta123

@@ -6,6 +6,8 @@ import type {
 export const operationKeys = {
   all: ['operations'] as const,
   current: () => [...operationKeys.all, 'current'] as const,
+  currentScheduled: () =>
+    [...operationKeys.current(), 'scheduled-agenda'] as const,
   currentLists: () => [...operationKeys.current(), 'list'] as const,
   currentList: (input: ListCurrentOperationsInput) =>
     [...operationKeys.currentLists(), input] as const,

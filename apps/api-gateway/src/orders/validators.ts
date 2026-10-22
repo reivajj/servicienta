@@ -1,3 +1,4 @@
+import { validateDateFilters } from '../core/date-filters.js';
 import type {
   CreateOrderInput,
   ListAdminOrdersInput,
@@ -80,6 +81,8 @@ export function validateUpdateAdminOrderInput(
 }
 
 export function validateListMyOrdersInput(input: {
+  date_from?: string;
+  date_to?: string;
   page?: string;
   pageSize?: string;
   status?: string;
@@ -91,8 +94,12 @@ export function validateListMyOrdersInput(input: {
   }
 
   return {
+    ...validateDateFilters(input),
     ...validatePaginatedOrdersInput(input),
-    flow_type: input.flowType && isOrderFlowType(input.flowType) ? input.flowType : undefined,
+    flow_type:
+      input.flowType && isOrderFlowType(input.flowType)
+        ? input.flowType
+        : undefined,
   };
 }
 

@@ -61,6 +61,9 @@ export interface UpdateAdminOperationResponse {
 }
 
 export interface ListCurrentOperationsInput {
+  /** Inclusive calendar days in Argentina (YYYY-MM-DD). */
+  date_from?: string;
+  date_to?: string;
   page: number;
   pageSize: UsersPageSize;
   status?: OperationStatus;

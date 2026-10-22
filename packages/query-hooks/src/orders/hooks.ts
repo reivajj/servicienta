@@ -8,6 +8,7 @@ import type {
 import { useApiClient } from '../core/api-client-context.js';
 import { operationKeys } from '../operations/keys.js';
 import { orderKeys } from './keys.js';
+import { chatKeys } from '../chat/keys.js';
 
 export function useCreateOrder() {
   const apiClient = useApiClient();
@@ -80,6 +81,9 @@ export function useAcceptOrder() {
   return useMutation({
     mutationFn: (orderId: string) => apiClient.orders.accept(orderId),
     onSuccess: (response) => {
+      void queryClient.invalidateQueries({
+        queryKey: chatKeys.conversations(),
+      });
       queryClient.setQueryData(
         orderKeys.currentDetail(response.data.id),
         response.data,

@@ -1,3 +1,5 @@
+import { applyTextSearch } from '../core/text-search.js';
+import { applyDateFilters } from '../core/date-filters.js';
 import type {
   CreateOrderInput,
   ListAdminOrdersInput,
@@ -628,7 +630,7 @@ function buildMyOrdersQuery(
   if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
-  return query;
+  return applyDateFilters(query, input, 'created_at');
 }
 
 function buildMyOrdersCountQuery(
@@ -646,7 +648,7 @@ function buildMyOrdersCountQuery(
   if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
-  return query;
+  return applyDateFilters(query, input, 'created_at');
 }
 
 function buildMyOrdersStatusCountQuery(
@@ -671,7 +673,8 @@ function buildMyOrdersStatusCountQuery(
   if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
-  return query;
+  if (input.status) query = query.eq('status', input.status);
+  return applyDateFilters(query, input, 'created_at');
 }
 
 function buildAdminOrdersQuery(
@@ -746,15 +749,10 @@ function buildOrdersStatusCountQuery(
   return query;
 }
 
-function applyOrderSearch<TQuery extends { or(filters: string): TQuery }>(
-  query: TQuery,
-  search: string,
-) {
-  const escapedSearch = search.replace(/[%]/g, '');
-
-  return query.or(
-    `description.ilike.%${escapedSearch}%,service_address_text.ilike.%${escapedSearch}%`,
-  );
+function applyOrderSearch<
+  TQuery extends { ilike(column: string, pattern: string): TQuery },
+>(query: TQuery, search: string) {
+  return applyTextSearch(query, 'order_search_text', search);
 }
 
 function applyAdminOrderSearch<TQuery extends { or(filters: string): TQuery }>(

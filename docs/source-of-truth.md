@@ -769,3 +769,19 @@ Usar este documento como referencia de trabajo para:
 - detectar qué partes del repo actual son prototipo y cuáles son base real
 
 Si aparece nueva información o cambiamos de opinión, este documento debe actualizarse.
+
+
+### Búsqueda operativa de pedidos y visitas (mobile)
+
+La búsqueda de los listados actuales del técnico combina notas, nombre y
+apellido del cliente, zona y artefacto. Pedidos conserva la búsqueda por
+dirección; Visitas incorpora también la nota del pedido asociado. Cada palabra
+puede coincidir en un campo distinto y en cualquier orden, sin distinguir
+mayúsculas y minúsculas. Los filtros de estado, fecha y pertenencia se mantienen
+tanto para resultados como para contadores.
+
+La migración `202610220001_add_order_operation_search_fields.sql` agrega los
+campos virtuales PostgREST `order_search_text` y `operation_search_text` mediante
+funciones SQL `STABLE SECURITY INVOKER`, ejecutables solo por `service_role`.
+No añade columnas ni duplica datos; requiere aplicar la migración antes de usar
+el gateway actualizado. Estos campos no se incluyen en las respuestas de la API.

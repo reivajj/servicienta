@@ -141,3 +141,18 @@ Sirve para:
 5. Consumirla desde `apps/api-gateway`
 6. Evitar duplicar la lógica SQL en TypeScript
 7. Documentarla en este archivo si queda como contrato relevante del sistema
+
+
+## Campos calculados para búsqueda operativa
+
+`public.order_search_text(public.orders)` y
+`public.operation_search_text(public.operations)` son campos virtuales para
+filtrar con PostgREST, no endpoints RPC. Usan argumentos de fila sin nombre y
+no se incluyen en las respuestas salvo selección explícita. Implementación:
+`supabase/migrations/202610220001_add_order_operation_search_fields.sql`.
+
+El gateway los filtra con `ilike` para cada palabra de búsqueda, tanto en listas
+como en contadores. Combinan notas, nombre completo del cliente, nombres y slugs
+de zona/artefacto y dirección. Visitas incluye la nota técnica y el texto del
+pedido. Son `STABLE SECURITY INVOKER`, con `search_path` vacío y permisos solo
+para `service_role`; no se exponen para búsquedas directas anónimas o de usuarios.

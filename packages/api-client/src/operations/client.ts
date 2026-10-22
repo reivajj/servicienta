@@ -76,8 +76,13 @@ function buildPaginatedOperationsQuery(
     pageSize: String(input.pageSize),
   });
 
+  if ('date_from' in input && input.date_from)
+    searchParams.set('date_from', input.date_from);
+  if ('date_to' in input && input.date_to)
+    searchParams.set('date_to', input.date_to);
   if (input.status) searchParams.set('status', input.status);
-  if ('search' in input && input.search) searchParams.set('search', input.search);
+  if ('search' in input && input.search)
+    searchParams.set('search', input.search);
   if ('order_id' in input && input.order_id) {
     searchParams.set('orderId', input.order_id);
   }

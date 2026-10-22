@@ -131,3 +131,16 @@ SEED_DEFAULT_PASSWORD=servicienta123
 SEED_TAG=local-seed
 SEED_TARGET=local
 ```
+
+## Escenario móvil de Tomi
+
+`pnpm seed:mobile-tomi -- --apply` agrega 40 pedidos y 20 visitas para las
+cuentas existentes de Tomi y dos clientes, con el tag `mobile-tomi-oct-nov-2026`.
+No resetea otros datasets. Para eliminar exclusivamente este escenario:
+
+```bash
+pnpm seed:mobile-tomi -- --cleanup --apply
+```
+
+Sin `--apply`, ambos comandos solo consultan y muestran el plan. Ver la
+[distribución, fechas y reglas de limpieza](../apps/mobile/docs/test-data.md).

@@ -400,8 +400,21 @@ paths:
             $ref: '#/components/schemas/OrderStatus'
         - name: search
           in: query
+          description: Search notes, client full name, zone, appliance and address.
           schema:
             type: string
+        - name: date_from
+          in: query
+          description: First included day for created_at, in Argentina (UTC-03).
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: Last included day for created_at, in Argentina (UTC-03).
+          schema:
+            type: string
+            format: date
       responses:
         '200':
           description: Paginated current client orders
@@ -725,6 +738,24 @@ paths:
           in: query
           schema:
             $ref: '#/components/schemas/OperationStatus'
+        - name: date_from
+          in: query
+          description: First included day for scheduled_at, in Argentina (UTC-03).
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: Last included day for scheduled_at, in Argentina (UTC-03).
+          schema:
+            type: string
+            format: date
+        - name: search
+          in: query
+          description: Search notes, client full name, zone and appliance (minimum 3 characters).
+          schema:
+            type: string
+            maxLength: 100
       responses:
         '200':
           description: Paginated current operations

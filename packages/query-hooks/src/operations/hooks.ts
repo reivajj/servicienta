@@ -1,3 +1,4 @@
+import type { Operation } from '@servicienta/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateOperationInput,
@@ -8,6 +9,7 @@ import type {
   UpdateAdminOperationInput,
 } from '@servicienta/api-client';
 import { useApiClient } from '../core/api-client-context.js';
+import { chatKeys } from '../chat/keys.js';
 import { orderKeys } from '../orders/keys.js';
 import { operationKeys } from './keys.js';
 
@@ -72,9 +74,21 @@ export function useCompleteTechOperation() {
     mutationFn: (operationId: string) =>
       apiClient.operations.completeTech(operationId),
     onSuccess: (response) => {
-      queryClient.setQueryData(
+      void queryClient.invalidateQueries({
+        queryKey: chatKeys.conversations(),
+      });
+      queryClient.setQueryData<Operation>(
         operationKeys.currentDetail(response.data.id),
-        response.data,
+        (current) =>
+          current
+            ? {
+                ...current,
+                status: response.data.status,
+                technician_completed_at: response.data.technician_completed_at,
+                updated_at: response.data.updated_at,
+                order_status: 'completed_tech',
+              }
+            : undefined,
       );
       void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
       void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
@@ -92,6 +106,9 @@ export function useConfirmCompletedOperation() {
     mutationFn: (operationId: string) =>
       apiClient.operations.confirmCompleted(operationId),
     onSuccess: (response) => {
+      void queryClient.invalidateQueries({
+        queryKey: chatKeys.conversations(),
+      });
       queryClient.setQueryData(
         operationKeys.currentDetail(response.data.id),
         response.data,
@@ -112,6 +129,9 @@ export function useRejectCompletedOperation() {
     mutationFn: (operationId: string) =>
       apiClient.operations.rejectCompleted(operationId),
     onSuccess: (response) => {
+      void queryClient.invalidateQueries({
+        queryKey: chatKeys.conversations(),
+      });
       queryClient.setQueryData(
         operationKeys.currentDetail(response.data.id),
         response.data,
@@ -157,6 +177,9 @@ export function useCreateTechnicianReview() {
       input: CreateTechnicianReviewInput;
     }) => apiClient.operations.createReview(operationId, input),
     onSuccess: (response) => {
+      void queryClient.invalidateQueries({
+        queryKey: chatKeys.conversations(),
+      });
       queryClient.setQueryData(
         operationKeys.currentDetail(response.data.id),
         response.data,
@@ -175,6 +198,30 @@ export function useCurrentOperations(input: ListCurrentOperationsInput) {
     queryFn: async () => {
       const response = await apiClient.operations.current.list(input);
       return response.data;
+    },
+  });
+}
+
+/** Fetch every scheduled page so a daily agenda never silently omits visits. */
+export function useCurrentScheduledOperations() {
+  const apiClient = useApiClient();
+
+  return useQuery({
+    queryKey: operationKeys.currentScheduled(),
+    queryFn: async () => {
+      const items: Operation[] = [];
+      let page = 1;
+      while (true) {
+        const { data } = await apiClient.operations.current.list({
+          page,
+          pageSize: 100,
+          status: 'scheduled',
+        });
+        items.push(...data.items);
+        if (page >= data.pagination.totalPages) break;
+        page += 1;
+      }
+      return items;
     },
   });
 }

@@ -545,17 +545,10 @@ function CurrentOperationDetailView({
             }
             actionSlot={
               isTechnician ? (
-                <>
-                  <InternalChatActionButton
-                    label="Abrir chat interno"
-                    onClick={() => setIsChatOpen(true)}
-                  />
-                  <ViewClientProfileActionLink
-                    clientProfileId={operation.client_id}
-                    label="Ver cliente"
-                    icon="person"
-                  />
-                </>
+                <InternalChatActionButton
+                  label="Abrir chat interno"
+                  onClick={() => setIsChatOpen(true)}
+                />
               ) : (
                 <>
                   <InternalChatActionButton

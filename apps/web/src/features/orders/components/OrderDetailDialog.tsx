@@ -20,6 +20,7 @@ import { ChatDialog } from '../../chat/components/ChatDialog';
 import { AdminOperationsTable } from '../../operations/components/AdminOperationsTable';
 import { OperationDetailDialog } from '../../operations/components/OperationDetailDialog';
 import { InternalChatActionButton } from '../../shared/components/InternalChatActionButton';
+import { PendingActionOverlay } from '../../shared/components/PendingActionOverlay';
 import { ViewClientProfileActionLink } from '../../shared/components/ViewClientProfileActionLink';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
 import {
@@ -493,7 +494,11 @@ function CurrentOrderDetailView({
                   type="button"
                   className="users-table__action users-table__action--success"
                   disabled={isMutating}
-                  onClick={() => acceptOrder.mutate(order.id)}
+                  onClick={() =>
+                    acceptOrder.mutate(order.id, {
+                      onSuccess: () => setIsChatOpen(true),
+                    })
+                  }
                 >
                   {acceptOrder.isPending ? 'Aceptando...' : 'Aceptar'}
                 </button>
@@ -567,6 +572,9 @@ function CurrentOrderDetailView({
       )}
       {isChatOpen && order ? (
         <ChatDialog orderId={order.id} onClose={() => setIsChatOpen(false)} />
+      ) : null}
+      {acceptOrder.isPending ? (
+        <PendingActionOverlay message="Aceptando pedido y abriendo chat…" />
       ) : null}
     </>
   );

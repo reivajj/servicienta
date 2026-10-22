@@ -10,7 +10,9 @@ import type {
   OrderStatus,
   UsersPageSize,
 } from '@servicienta/types';
+import { ChatDialog } from '../../chat/components/ChatDialog';
 import { AcceptOrderActionButton } from '../../shared/components/AcceptOrderActionButton';
+import { PendingActionOverlay } from '../../shared/components/PendingActionOverlay';
 import { SettingsActionButton } from '../../shared/components/SettingsActionButton';
 import { ViewOrderActionLink } from '../../shared/components/ViewOrderActionLink';
 import { useEscapeKey } from '../../shared/hooks/useEscapeKey';
@@ -146,6 +148,7 @@ function CurrentOrdersListPage({ role }: { role: string }) {
   const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [visitsOrderId, setVisitsOrderId] = useState<string | null>(null);
+  const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [selectedProblem, setSelectedProblem] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search.trim());
   const { data, error, isLoading } = useCurrentOrders({
@@ -249,7 +252,11 @@ function CurrentOrdersListPage({ role }: { role: string }) {
                           <AcceptOrderActionButton
                             label="Aceptar pedido"
                             disabled={acceptOrder.isPending}
-                            onClick={() => acceptOrder.mutate(order.id)}
+                            onClick={() =>
+                              acceptOrder.mutate(order.id, {
+                                onSuccess: () => setChatOrderId(order.id),
+                              })
+                            }
                           />
                         ) : null}
                       </div>
@@ -317,6 +324,15 @@ function CurrentOrdersListPage({ role }: { role: string }) {
           />
         ) : null}
         {visitsOrderId ? <OrderVisitsDialog orderId={visitsOrderId} mode="current" onClose={() => setVisitsOrderId(null)} /> : null}
+        {chatOrderId ? (
+          <ChatDialog
+            orderId={chatOrderId}
+            onClose={() => setChatOrderId(null)}
+          />
+        ) : null}
+        {acceptOrder.isPending ? (
+          <PendingActionOverlay message="Aceptando pedido y abriendo chat…" />
+        ) : null}
         {selectedProblem ? (
           <ProblemDetailDialog
             problem={selectedProblem}

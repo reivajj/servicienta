@@ -19,6 +19,7 @@ HECHA: 6. Accion de Agendar para el Tech dentro del chat.
 
 Reemplazar edición libre de status por acciones de negocio:
 
+HECHOS pero cancelar VISITA por parte de TECH, cancela pedido, ver eso...
 Confirmar operation con la Agenda, ver UI de eso que esta mal/basico todavia
 Completar operation
 Cancelar operation

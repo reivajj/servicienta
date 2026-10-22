@@ -47,6 +47,9 @@ export interface AcceptOrderResponse {
 }
 
 export interface ListMyOrdersInput {
+  /** Inclusive calendar days in Argentina (YYYY-MM-DD). */
+  date_from?: string;
+  date_to?: string;
   page: number;
   pageSize: UsersPageSize;
   status?: OrderStatus;
