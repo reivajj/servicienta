@@ -1,5 +1,5 @@
 import { applyTextSearch } from '../core/text-search.js';
-import { applyDateFilters } from '../core/date-filters.js';
+import { applyOrderWorklist } from './helpers/worklist.js';
 import type {
   CreateOrderInput,
   ListAdminOrdersInput,
@@ -150,7 +150,12 @@ export async function listMyOrders(
   input: ListMyOrdersInput,
 ): Promise<PaginatedOrders> {
   if (auth.role === 'client') {
-    return listOrdersCore(supabase, input, 'client_id', auth.id);
+    return listOrdersCore(
+      supabase,
+      { ...input, view: undefined },
+      'client_id',
+      auth.id,
+    );
   }
   if (auth.role === 'technician') {
     return listOrdersCore(supabase, input, 'technician_id', auth.id);
@@ -550,7 +555,38 @@ async function listOrdersCore(
     'completed',
   );
 
+  const shortcutInput = {
+    ...input,
+    status: undefined,
+    date_from: undefined,
+    date_to: undefined,
+  };
+  const shortcutQueries =
+    ownerColumn === 'technician_id' && input.view
+      ? [
+          buildMyOrdersCountQuery(
+            supabase,
+            { ...shortcutInput, view: 'pending' },
+            ownerColumn,
+            ownerId,
+          ),
+          buildMyOrdersCountQuery(
+            supabase,
+            { ...shortcutInput, view: 'waiting' },
+            ownerColumn,
+            ownerId,
+          ),
+          buildMyOrdersCountQuery(
+            supabase,
+            { ...shortcutInput, view: 'history' },
+            ownerColumn,
+            ownerId,
+          ),
+        ]
+      : [];
+
   const [
+    shortcutResults,
     ordersResult,
     totalResult,
     pendingCountResult,
@@ -560,6 +596,7 @@ async function listOrdersCore(
     completedTechCountResult,
     completedCountResult,
   ] = await Promise.all([
+    Promise.all(shortcutQueries),
     ordersQuery,
     totalQuery,
     pendingCountQuery,
@@ -589,6 +626,8 @@ async function listOrdersCore(
     throw new Error(completedCountResult.error.message);
   }
 
+  for (const result of shortcutResults)
+    if (result.error) throw new Error(result.error.message);
   const total = totalResult.count ?? ordersResult.count ?? 0;
 
   return {
@@ -600,6 +639,15 @@ async function listOrdersCore(
       totalPages: total === 0 ? 1 : Math.ceil(total / input.pageSize),
     },
     summary: {
+      ...(shortcutResults.length
+        ? {
+            attentionCounts: {
+              pending: shortcutResults[0]!.count ?? 0,
+              waiting: shortcutResults[1]!.count ?? 0,
+              history: shortcutResults[2]!.count ?? 0,
+            },
+          }
+        : {}),
       totalOrders: total,
       pendingOrders: pendingCountResult.count ?? 0,
       acceptedOrders: acceptedCountResult.count ?? 0,
@@ -621,16 +669,30 @@ function buildMyOrdersQuery(
 ) {
   let query = supabase
     .from('orders')
-    .select(ORDER_DETAIL_SELECT, { count: 'exact' })
+    .select(
+      input.view
+        ? `${ORDER_DETAIL_SELECT},next_visit_at:order_next_visit_at`
+        : ORDER_DETAIL_SELECT,
+      { count: 'exact' },
+    )
     .eq(ownerColumn, ownerId)
-    .order('created_at', { ascending: false })
     .range(from, to);
+
+  if (input.view && input.view !== 'history')
+    query = query
+      .order('order_next_visit_at', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true });
+  else
+    query = query
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true });
 
   if (input.status) query = query.eq('status', input.status);
   if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
-  return applyDateFilters(query, input, 'created_at');
+  return applyOrderWorklist(query, input).returns<OrderRow[]>();
 }
 
 function buildMyOrdersCountQuery(
@@ -648,7 +710,7 @@ function buildMyOrdersCountQuery(
   if (input.flow_type) query = query.eq('flow_type', input.flow_type);
   if (input.search) query = applyOrderSearch(query, input.search);
 
-  return applyDateFilters(query, input, 'created_at');
+  return applyOrderWorklist(query, input);
 }
 
 function buildMyOrdersStatusCountQuery(
@@ -674,7 +736,7 @@ function buildMyOrdersStatusCountQuery(
   if (input.search) query = applyOrderSearch(query, input.search);
 
   if (input.status) query = query.eq('status', input.status);
-  return applyDateFilters(query, input, 'created_at');
+  return applyOrderWorklist(query, input);
 }
 
 function buildAdminOrdersQuery(

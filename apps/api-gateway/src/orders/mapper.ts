@@ -23,6 +23,9 @@ export function mapOrderRow(row: OrderRow): Order {
     : null;
 
   return {
+    ...(row.next_visit_at !== undefined
+      ? { next_visit_at: row.next_visit_at }
+      : {}),
     id: row.id,
     client_id: row.client_id,
     client_name: client?.name ?? null,

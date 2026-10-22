@@ -12,6 +12,8 @@ export type OrderStatus =
 export type OrderFlowType = 'client_selects' | 'tech_applies';
 
 export interface Order {
+  /** Available on operational lists; null when no scheduled visit exists. */
+  next_visit_at?: string | null;
   id: string;
   client_id: string;
   client_name: string | null;

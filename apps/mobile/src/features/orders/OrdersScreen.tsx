@@ -1,3 +1,8 @@
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { argentinaDay } from '@/features/today/agenda';
+import { OrderWorklistFilters } from './OrderWorklistFilters';
+import type { OrderView } from './OrderWorklistFilters';
 import {
   ListFilters,
   ListPagination,
@@ -38,13 +43,38 @@ const filterStatuses: { value: OrderStatus; label: string }[] = [
 export function OrdersScreen() {
   const { data: currentUser } = useCurrentUser();
   const { filters, change, page, setPage } = useListFilters<OrderStatus>();
+  const [view, setView] = useState<OrderView>('main');
   const isTechnician = currentUser?.role === 'technician';
   const router = useRouter();
   const { data, error, isLoading, isRefetching, refetch } = useCurrentOrders({
     page,
     pageSize: 25,
-    ...(isTechnician ? filters : {}),
+    ...(isTechnician ? { ...filters, view } : {}),
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+      let day = argentinaDay(new Date());
+      const interval = setInterval(() => {
+        const nextDay = argentinaDay(new Date());
+        if (nextDay !== day) {
+          day = nextDay;
+          void refetch();
+        }
+      }, 60_000);
+      return () => clearInterval(interval);
+    }, [refetch]),
+  );
+  function selectView(next: OrderView) {
+    setView(next);
+    change({
+      ...filters,
+      status: undefined,
+      date_from: undefined,
+      date_to: undefined,
+    });
+  }
 
   return (
     <SafeAreaView edges={['left', 'right']} style={styles.screen}>
@@ -56,7 +86,9 @@ export function OrdersScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.eyebrow}>Solicitudes</Text>
-            <Text style={styles.title}>Pedidos</Text>
+            <Text style={styles.title}>
+              {view === 'history' ? 'Historial de pedidos' : 'Pedidos'}
+            </Text>
             {data ? (
               <Text style={styles.copy}>
                 {data?.summary.totalOrders ?? 0} pedidos ·{' '}
@@ -64,13 +96,43 @@ export function OrdersScreen() {
               </Text>
             ) : null}
             {isTechnician ? (
-              <ListFilters
-                value={filters}
-                onChange={change}
-                statuses={filterStatuses}
-                dateLabel="Fecha de creación"
-                searchHint="Buscá por nota, nombre del cliente, zona o artefacto."
-              />
+              <>
+                <ListFilters
+                  value={filters}
+                  onChange={(next) => {
+                    if (
+                      !next.search &&
+                      !next.status &&
+                      !next.date_from &&
+                      !next.date_to
+                    )
+                      setView('main');
+                    else if (next.status !== filters.status)
+                      setView(
+                        next.status === 'completed' ||
+                          next.status === 'cancelled'
+                          ? 'history'
+                          : next.status === 'completed_tech' ||
+                              next.status === 'completion_rejected'
+                            ? 'waiting'
+                            : next.status === 'pending'
+                              ? 'pending'
+                              : 'main',
+                      );
+                    change(next);
+                  }}
+                  statuses={filterStatuses}
+                  dateLabel={
+                    view === 'history' ? 'Fecha de creación' : 'Fecha de visita'
+                  }
+                  searchHint="Buscá por nota, nombre del cliente, zona o artefacto."
+                />
+                <OrderWorklistFilters
+                  value={view}
+                  counts={data?.summary.attentionCounts}
+                  onChange={selectView}
+                />
+              </>
             ) : null}
             {isLoading ? <ActivityIndicator color={colors.accent} /> : null}
             {error ? (
@@ -133,7 +195,13 @@ function OrderCard({ order, onPress }: { order: Order; onPress: () => void }) {
         </View>
       </View>
 
-      <CardSchedule value={order.created_at} label="Creado" />
+      <Text style={styles.secondaryText}>
+        {order.next_visit_at ? 'Visita agendada' : 'Creado'}
+      </Text>
+      <CardSchedule
+        value={order.next_visit_at ?? order.created_at}
+        label={order.next_visit_at ? 'Visita agendada' : 'Creado'}
+      />
       <View style={styles.infoRow}>
         <Ionicons
           name="build-outline"

@@ -10,6 +10,7 @@ El codebase está en etapa de prototipo.
 
 Hoy ya existe una base técnica funcional para:
 
+- `apps/mobile`: Expo + React Native para técnico y cliente
 - `apps/web`: SPA en React + Vite
 - `apps/api-gateway`: API Gateway en Node/Express
 - `packages/api-client`: cliente HTTP tipado
@@ -24,6 +25,7 @@ Todavía hay partes incompletas, placeholders y decisiones abiertas.
 La referencia principal del proyecto está en:
 
 - [docs/source-of-truth.md](./docs/source-of-truth.md)
+- [docs/mobile-current-state.md](./docs/mobile-current-state.md): estado de mobile y guía para retomar
 - [docs/supabase-rpcs.md](./docs/supabase-rpcs.md)
 - [docs/supabase-workflow.md](./docs/supabase-workflow.md)
 
@@ -51,6 +53,7 @@ apps/
   api-gateway/   API Gateway Express
   landing/       Landing SSR (placeholder)
   web/           Frontend SPA React + Vite
+  mobile/        App Expo para técnico y cliente
 
 packages/
   api-client/    Cliente HTTP tipado

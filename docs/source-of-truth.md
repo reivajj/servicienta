@@ -1,6 +1,6 @@
 # Servicienta — Fuente de verdad provisional
 
-_Última actualización: 2026-09-22_
+_Última actualización: 2026-10-22_
 
 ## Propósito de este documento
 
@@ -22,6 +22,14 @@ Seguramente vamos a:
 La idea es tener una base común para trabajar, no congelar el diseño.
 
 ## Estado actual del proyecto
+
+### App mobile: punto de reanudación
+
+La implementación de Expo ya incluye agenda, aceptación y cierre de visitas,
+reseñas, filtros y bandejas de atención/historial. El estado técnico, las
+migraciones no verificadas en remoto y el recorrido de QA para continuar están
+en [mobile-current-state.md](./mobile-current-state.md). Esa guía distingue
+código preparado de funcionalidad validada contra base y dispositivo reales.
 
 ### Stack definido
 
@@ -785,3 +793,15 @@ campos virtuales PostgREST `order_search_text` y `operation_search_text` mediant
 funciones SQL `STABLE SECURITY INVOKER`, ejecutables solo por `service_role`.
 No añade columnas ni duplica datos; requiere aplicar la migración antes de usar
 el gateway actualizado. Estos campos no se incluyen en las respuestas de la API.
+
+
+### Agenda operativa de pedidos del técnico
+
+En mobile, los pedidos se separan en vista principal (activos y pendientes de
+aceptación), atención (visitas agendadas anteriores a hoy, cierre pendiente de
+confirmación o finalización rechazada) e historial (completados/cancelados).
+La vista principal usa la próxima visita agendada para ordenar, dejando los
+pedidos sin fecha después. Aceptados sin agenda permanecen en la vista principal.
+Los contadores de accesos rápidos respetan búsqueda y dueño; al activarlos se
+reemplazan fecha y estado. La migración `202610220002_add_order_worklist_fields.sql`
+agrega las funciones calculadas necesarias, sin columnas persistidas nuevas.

@@ -1,3 +1,8 @@
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { argentinaDay } from '@/features/today/agenda';
+import { VisitAttentionFilters } from './VisitAttentionFilters';
+import type { VisitView } from './VisitAttentionFilters';
 import { useCompleteVisit } from './CompleteVisitProvider';
 import {
   ListFilters,
@@ -44,13 +49,42 @@ const filterStatuses: { value: OperationStatus; label: string }[] = [
 export function OperationsScreen() {
   const { data: currentUser } = useCurrentUser();
   const { filters, change, page, setPage } = useListFilters<OperationStatus>();
+  const [view, setView] = useState<VisitView>('main');
+  const [now, setNow] = useState(() => Date.now());
   const isTechnician = currentUser?.role === 'technician';
   const { data, error, isLoading, isRefetching, refetch } =
     useCurrentOperations({
       page,
       pageSize: 25,
-      ...(isTechnician ? filters : {}),
+      ...(isTechnician ? { ...filters, view } : {}),
     });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+      setNow(Date.now());
+      let day = argentinaDay(new Date());
+      const interval = setInterval(() => {
+        setNow(Date.now());
+        const currentDay = argentinaDay(new Date());
+        if (currentDay !== day) {
+          day = currentDay;
+          void refetch();
+        }
+      }, 60_000);
+      return () => clearInterval(interval);
+    }, [refetch]),
+  );
+
+  function selectView(next: VisitView) {
+    setView(next);
+    change({
+      ...filters,
+      status: undefined,
+      date_from: undefined,
+      date_to: undefined,
+    });
+  }
 
   return (
     <SafeAreaView edges={['left', 'right']} style={styles.screen}>
@@ -70,13 +104,32 @@ export function OperationsScreen() {
               </Text>
             ) : null}
             {isTechnician ? (
-              <ListFilters
-                value={filters}
-                onChange={change}
-                statuses={filterStatuses}
-                dateLabel="Fecha de la visita"
-                searchHint="Buscá por nota, nombre del cliente, zona o artefacto."
-              />
+              <>
+                <ListFilters
+                  value={filters}
+                  onChange={(next) => {
+                    if (
+                      next.status !== filters.status ||
+                      next.date_from !== filters.date_from ||
+                      next.date_to !== filters.date_to ||
+                      (!next.search &&
+                        !next.status &&
+                        !next.date_from &&
+                        !next.date_to)
+                    )
+                      setView('main');
+                    change(next);
+                  }}
+                  statuses={filterStatuses}
+                  dateLabel="Fecha de la visita"
+                  searchHint="Buscá por nota, nombre del cliente, zona o artefacto."
+                />
+                <VisitAttentionFilters
+                  value={view}
+                  counts={data?.summary.attentionCounts}
+                  onChange={selectView}
+                />
+              </>
             ) : null}
             {isLoading ? <ActivityIndicator color={colors.accent} /> : null}
             {error ? (
@@ -106,7 +159,8 @@ export function OperationsScreen() {
         }
         onRefresh={() => void refetch()}
         refreshing={isRefetching}
-        renderItem={({ item }) => <OperationCard operation={item} />}
+        extraData={now}
+        renderItem={({ item }) => <OperationCard operation={item} now={now} />}
       />
     </SafeAreaView>
   );
@@ -116,10 +170,12 @@ export function OperationCard({
   operation,
   timeZone,
   today = false,
+  now = Date.now(),
 }: {
   operation: Operation;
   timeZone?: string;
   today?: boolean;
+  now?: number;
 }) {
   const router = useRouter();
   const openCompleteVisit = useCompleteVisit();
@@ -132,6 +188,33 @@ export function OperationCard({
           operation.technician_surname,
         )
       : formatPersonName(operation.client_name, operation.client_surname);
+  const canComplete =
+    user?.role === 'technician' &&
+    user.id === operation.technician_id &&
+    operation.status === 'scheduled' &&
+    (today ||
+      Boolean(
+        operation.scheduled_at && Date.parse(operation.scheduled_at) <= now,
+      ));
+  const completionButton = canComplete ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Completar visita de ${name}`}
+      onPress={(event) => {
+        event.stopPropagation();
+        openCompleteVisit({ ...operation, clientName: name });
+      }}
+      hitSlop={8}
+      style={styles.completeIcon}
+    >
+      <Ionicons
+        name="checkmark-outline"
+        size={20}
+        color={colors.accent}
+        accessible={false}
+      />
+    </Pressable>
+  ) : null;
   return (
     <Pressable
       accessibilityRole="button"
@@ -165,27 +248,7 @@ export function OperationCard({
             <View>
               <StatusChip>{formatOperationStatus(operation.status)}</StatusChip>
             </View>
-            {user?.role === 'technician' &&
-            user.id === operation.technician_id &&
-            operation.status === 'scheduled' ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Completar visita de ${name}`}
-                onPress={(event) => {
-                  event.stopPropagation();
-                  openCompleteVisit({ ...operation, clientName: name });
-                }}
-                hitSlop={8}
-                style={styles.completeIcon}
-              >
-                <Ionicons
-                  name="checkmark-outline"
-                  size={20}
-                  color={colors.accent}
-                  accessible={false}
-                />
-              </Pressable>
-            ) : null}
+            {completionButton}
           </View>
         </View>
       ) : null}
@@ -194,8 +257,11 @@ export function OperationCard({
           <Text style={styles.cardTitle}>{name}</Text>
         </View>
         {!today ? (
-          <View>
-            <StatusChip>{formatOperationStatus(operation.status)}</StatusChip>
+          <View style={styles.statusActions}>
+            <View>
+              <StatusChip>{formatOperationStatus(operation.status)}</StatusChip>
+            </View>
+            {completionButton}
           </View>
         ) : null}
       </View>
@@ -317,6 +383,7 @@ const styles = StyleSheet.create({
     gap: 6,
     transform: [{ translateY: -3 }],
   },
+  statusActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   completeIcon: {
     width: 32,
     alignSelf: 'stretch',

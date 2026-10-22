@@ -686,7 +686,8 @@ async function listConversationOperations(
     .from('operations')
     .select('id, status, scheduled_at, description')
     .eq('order_id', orderId)
-    .order('created_at', { ascending: true });
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
+    .order('id', { ascending: true });
 
   if (auth.role === 'technician') query = query.eq('technician_id', auth.id);
 

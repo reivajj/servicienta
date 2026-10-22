@@ -47,6 +47,8 @@ export interface AcceptOrderResponse {
 }
 
 export interface ListMyOrdersInput {
+  /** Operational technician views; omitted preserves the original full list. */
+  view?: 'main' | 'pending' | 'waiting' | 'history';
   /** Inclusive calendar days in Argentina (YYYY-MM-DD). */
   date_from?: string;
   date_to?: string;
@@ -58,6 +60,7 @@ export interface ListMyOrdersInput {
 }
 
 export interface PaginatedOrdersSummary {
+  attentionCounts?: { pending: number; waiting: number; history: number };
   totalOrders: number;
   pendingOrders: number;
   acceptedOrders: number;

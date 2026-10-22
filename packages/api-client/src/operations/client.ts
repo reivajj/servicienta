@@ -80,6 +80,7 @@ function buildPaginatedOperationsQuery(
     searchParams.set('date_from', input.date_from);
   if ('date_to' in input && input.date_to)
     searchParams.set('date_to', input.date_to);
+  if ('view' in input && input.view) searchParams.set('view', input.view);
   if (input.status) searchParams.set('status', input.status);
   if ('search' in input && input.search)
     searchParams.set('search', input.search);

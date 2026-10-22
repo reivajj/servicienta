@@ -405,16 +405,22 @@ paths:
             type: string
         - name: date_from
           in: query
-          description: First included day for created_at, in Argentina (UTC-03).
+          description: First included day in Argentina. Operational views filter the visit date; history or omitted view filters created_at.
           schema:
             type: string
             format: date
         - name: date_to
           in: query
-          description: Last included day for created_at, in Argentina (UTC-03).
+          description: Last included day in Argentina. Operational views filter the visit date; history or omitted view filters created_at.
           schema:
             type: string
             format: date
+        - name: view
+          in: query
+          description: Technician operational view. main shows active and pending orders by next visit; pending selects acceptance requests; waiting selects overdue scheduled visits, client confirmations and rejected completions; history selects completed/cancelled orders. Omit to preserve the full list.
+          schema:
+            type: string
+            enum: [main, pending, waiting, history]
       responses:
         '200':
           description: Paginated current client orders
@@ -756,6 +762,12 @@ paths:
           schema:
             type: string
             maxLength: 100
+        - name: view
+          in: query
+          description: Technician shortcut. main excludes scheduled visits before today in Argentina; pending selects pending visits; overdue selects scheduled visits before today. Omit to preserve the full list.
+          schema:
+            type: string
+            enum: [main, pending, overdue]
       responses:
         '200':
           description: Paginated current operations
@@ -2463,6 +2475,10 @@ components:
         - created_at
         - updated_at
       properties:
+        next_visit_at:
+          type: [string, 'null']
+          format: date-time
+          description: Present on operational lists. Nearest scheduled visit today or later, otherwise the most recent overdue scheduled visit; null without a scheduled visit.
         id:
           type: string
           format: uuid
@@ -2622,6 +2638,17 @@ components:
           completedOrders,
         ]
       properties:
+        attentionCounts:
+          type: object
+          description: Technician shortcuts scoped to owner, flow and text search, independent of date, status and view.
+          required: [pending, waiting, history]
+          properties:
+            pending:
+              type: integer
+            waiting:
+              type: integer
+            history:
+              type: integer
         totalOrders:
           type: integer
         pendingOrders:
@@ -2922,6 +2949,15 @@ components:
           cancelledOperations,
         ]
       properties:
+        attentionCounts:
+          type: object
+          description: Technician shortcut counts, scoped to owner, order and text search, independent of status, date and view. Mobile shortcuts clear date and status when selected.
+          required: [pending, overdue]
+          properties:
+            pending:
+              type: integer
+            overdue:
+              type: integer
         totalOperations:
           type: integer
         pendingOperations:

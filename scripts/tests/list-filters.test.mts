@@ -135,6 +135,9 @@ function database(column: string, selectedStatus: string) {
         operation_search_text: `${row.description} María Pérez Villa Urquiza`,
       })) as Record<string, string | null>[];
       const query = {
+        returns() {
+          return this;
+        },
         select() {
           return this;
         },

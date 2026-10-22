@@ -50,6 +50,7 @@ export function ordersRouter(options: OrdersRouterOptions) {
         options.supabase,
         request.auth!,
         validateListMyOrdersInput({
+          view: readQueryParam(request.query.view),
           date_from: readQueryParam(request.query.date_from),
           date_to: readQueryParam(request.query.date_to),
           page: readQueryParam(request.query.page),

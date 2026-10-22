@@ -111,6 +111,7 @@ export function validateScheduleOperationInput(
 }
 
 export function validateListCurrentOperationsInput(input: {
+  view?: string;
   date_from?: string;
   date_to?: string;
   page?: string;
@@ -119,10 +120,13 @@ export function validateListCurrentOperationsInput(input: {
   orderId?: string;
   search?: string;
 }): ListCurrentOperationsInput {
+  if (input.view && !['main', 'pending', 'overdue'].includes(input.view))
+    throw new ValidationError('El acceso rápido de visitas no es válido');
   const search = input.search?.trim();
   if (search && search.length > 100)
     throw new ValidationError('La búsqueda es demasiado larga');
   return {
+    view: input.view as ListCurrentOperationsInput['view'],
     ...validateDateFilters(input),
     ...validatePaginatedOperationsInput(input),
     order_id: input.orderId ? validateOrderId(input.orderId) : undefined,

@@ -1,4 +1,5 @@
 export interface OrderRow {
+  next_visit_at?: string | null;
   id: string;
   client_id: string;
   client?:

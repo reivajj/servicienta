@@ -1,3 +1,5 @@
+import { applyVisitView, technicianVisitFilters } from './helpers/attention.js';
+import type { TechnicianVisitFilters } from './helpers/attention.js';
 import { applyTextSearch } from '../core/text-search.js';
 import { applyDateFilters } from '../core/date-filters.js';
 import type {
@@ -934,8 +936,9 @@ async function listClientOperations(
 async function listTechnicianOperations(
   supabase: SupabaseClient,
   technicianId: string,
-  input: ListCurrentOperationsInput,
+  rawInput: ListCurrentOperationsInput,
 ): Promise<PaginatedOperations> {
+  const input = technicianVisitFilters(rawInput);
   const from = (input.page - 1) * input.pageSize;
   const to = from + input.pageSize - 1;
 
@@ -982,7 +985,28 @@ async function listTechnicianOperations(
     'cancelled',
   );
 
+  const shortcutInput = {
+    ...input,
+    status: undefined,
+    date_from: undefined,
+    date_to: undefined,
+  };
+  const pendingShortcutQuery = buildTechnicianOperationsStatusCountQuery(
+    supabase,
+    { ...shortcutInput, view: 'pending' },
+    technicianId,
+    'pending',
+  );
+  const overdueShortcutQuery = buildTechnicianOperationsStatusCountQuery(
+    supabase,
+    { ...shortcutInput, view: 'overdue' },
+    technicianId,
+    'scheduled',
+  );
+
   const [
+    pendingShortcutResult,
+    overdueShortcutResult,
     operationsResult,
     totalResult,
     pendingCountResult,
@@ -991,6 +1015,8 @@ async function listTechnicianOperations(
     completedCountResult,
     cancelledCountResult,
   ] = await Promise.all([
+    pendingShortcutQuery,
+    overdueShortcutQuery,
     operationsQuery,
     totalQuery,
     pendingCountQuery,
@@ -1000,6 +1026,10 @@ async function listTechnicianOperations(
     cancelledCountQuery,
   ]);
 
+  if (pendingShortcutResult.error)
+    throw new Error(pendingShortcutResult.error.message);
+  if (overdueShortcutResult.error)
+    throw new Error(overdueShortcutResult.error.message);
   if (operationsResult.error) throw new Error(operationsResult.error.message);
   if (totalResult.error) throw new Error(totalResult.error.message);
   if (pendingCountResult.error)
@@ -1031,6 +1061,10 @@ async function listTechnicianOperations(
       totalPages: total === 0 ? 1 : Math.ceil(total / input.pageSize),
     },
     summary: {
+      attentionCounts: {
+        pending: pendingShortcutResult.count ?? 0,
+        overdue: overdueShortcutResult.count ?? 0,
+      },
       totalOperations: total,
       pendingOperations: pendingCountResult.count ?? 0,
       scheduledOperations: scheduledCountResult.count ?? 0,
@@ -1052,7 +1086,8 @@ function buildClientOperationsQuery(
     .from('operations')
     .select(CURRENT_OPERATION_SELECT, { count: 'exact' })
     .eq('order.client_id', clientId)
-    .order('created_at', { ascending: false })
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
+    .order('id', { ascending: true })
     .range(from, to);
 
   if (input.status) query = query.eq('status', input.status);
@@ -1103,7 +1138,7 @@ function buildClientOperationsStatusCountQuery(
 
 function buildTechnicianOperationsQuery(
   supabase: SupabaseClient,
-  input: ListCurrentOperationsInput,
+  input: TechnicianVisitFilters,
   technicianId: string,
   from: number,
   to: number,
@@ -1112,7 +1147,9 @@ function buildTechnicianOperationsQuery(
     .from('operations')
     .select(CURRENT_OPERATION_SELECT, { count: 'exact' })
     .eq('technician_id', technicianId)
-    .order('created_at', { ascending: false })
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
     .range(from, to);
 
   if (input.status) query = query.eq('status', input.status);
@@ -1120,12 +1157,12 @@ function buildTechnicianOperationsQuery(
   if (input.search)
     query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return applyDateFilters(query, input, 'scheduled_at');
+  return applyVisitView(applyDateFilters(query, input, 'scheduled_at'), input);
 }
 
 function buildTechnicianOperationsCountQuery(
   supabase: SupabaseClient,
-  input: ListCurrentOperationsInput,
+  input: TechnicianVisitFilters,
   technicianId: string,
 ) {
   let query = supabase
@@ -1138,12 +1175,12 @@ function buildTechnicianOperationsCountQuery(
   if (input.search)
     query = applyTextSearch(query, 'operation_search_text', input.search);
 
-  return applyDateFilters(query, input, 'scheduled_at');
+  return applyVisitView(applyDateFilters(query, input, 'scheduled_at'), input);
 }
 
 function buildTechnicianOperationsStatusCountQuery(
   supabase: SupabaseClient,
-  input: ListCurrentOperationsInput,
+  input: TechnicianVisitFilters,
   technicianId: string,
   status: OperationStatus,
 ) {
@@ -1158,7 +1195,7 @@ function buildTechnicianOperationsStatusCountQuery(
     query = applyTextSearch(query, 'operation_search_text', input.search);
 
   if (input.status) query = query.eq('status', input.status);
-  return applyDateFilters(query, input, 'scheduled_at');
+  return applyVisitView(applyDateFilters(query, input, 'scheduled_at'), input);
 }
 
 function buildAdminOperationsQuery(
@@ -1170,7 +1207,8 @@ function buildAdminOperationsQuery(
   let query = supabase
     .from('operations')
     .select(ADMIN_OPERATION_SELECT, { count: 'exact' })
-    .order('created_at', { ascending: false })
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
+    .order('id', { ascending: true })
     .range(from, to);
 
   if (input.status) query = query.eq('status', input.status);

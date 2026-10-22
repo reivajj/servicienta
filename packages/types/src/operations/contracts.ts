@@ -61,6 +61,8 @@ export interface UpdateAdminOperationResponse {
 }
 
 export interface ListCurrentOperationsInput {
+  /** Technician shortcuts. main excludes scheduled visits before today in Argentina. */
+  view?: 'main' | 'pending' | 'overdue';
   /** Inclusive calendar days in Argentina (YYYY-MM-DD). */
   date_from?: string;
   date_to?: string;
@@ -72,6 +74,8 @@ export interface ListCurrentOperationsInput {
 }
 
 export interface PaginatedOperationsSummary {
+  /** Shortcut counts match the search, independent of status/date/view. */
+  attentionCounts?: { pending: number; overdue: number };
   totalOperations: number;
   pendingOperations: number;
   scheduledOperations: number;

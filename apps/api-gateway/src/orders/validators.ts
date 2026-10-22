@@ -81,6 +81,7 @@ export function validateUpdateAdminOrderInput(
 }
 
 export function validateListMyOrdersInput(input: {
+  view?: string;
   date_from?: string;
   date_to?: string;
   page?: string;
@@ -89,11 +90,17 @@ export function validateListMyOrdersInput(input: {
   search?: string;
   flowType?: string;
 }): ListMyOrdersInput {
+  if (
+    input.view &&
+    !['main', 'pending', 'waiting', 'history'].includes(input.view)
+  )
+    throw new ValidationError('La vista de pedidos no es válida');
   if (input.flowType && !isOrderFlowType(input.flowType)) {
     throw new ValidationError('El filtro de flujo no es válido');
   }
 
   return {
+    view: input.view as ListMyOrdersInput['view'],
     ...validateDateFilters(input),
     ...validatePaginatedOrdersInput(input),
     flow_type:

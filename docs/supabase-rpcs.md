@@ -156,3 +156,16 @@ como en contadores. Combinan notas, nombre completo del cliente, nombres y slugs
 de zona/artefacto y dirección. Visitas incluye la nota técnica y el texto del
 pedido. Son `STABLE SECURITY INVOKER`, con `search_path` vacío y permisos solo
 para `service_role`; no se exponen para búsquedas directas anónimas o de usuarios.
+
+
+### Agenda operativa de pedidos
+
+`public.order_next_visit_at(public.orders)` y `public.order_worklist(public.orders)`
+son campos calculados PostgREST con argumento sin nombre, usados para ordenar y
+filtrar las listas de pedidos del técnico. La primera calcula la próxima visita
+agendada desde hoy (o la última agendada vencida); la segunda devuelve `main`,
+`pending`, `waiting` o `history`. Se definen en
+`supabase/migrations/202610220002_add_order_worklist_fields.sql`, con
+`STABLE SECURITY INVOKER`, `search_path` vacío y ejecución solo por `service_role`.
+La API sigue restringiendo cada consulta al dueño del pedido. No son RPCs
+públicas y no almacenan copias de los datos.

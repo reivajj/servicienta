@@ -1,6 +1,14 @@
 # Pasos iniciales para crear la app móvil de Servicienta
 
-_Última actualización: 2026-10-12_
+_Última actualización: 2026-10-22_
+
+## Estado de implementación
+
+La app ya existe y tiene flujos operativos implementados. Para retomar, leer
+primero [Mobile: estado actual y cómo retomar](./mobile-current-state.md): incluye
+los pendientes de migración, reglas de las bandejas, validaciones y QA restante.
+Las fases de este documento conservan el plan original; no deben interpretarse
+como un listado de funcionalidades todavía sin implementar.
 
 ## Objetivo
 
@@ -346,11 +354,12 @@ y permisos existentes del gateway y los hooks compartidos.
 ### Filtros mobile para técnicos
 
 Pedidos y Visitas ofrecen una barra compacta de búsqueda, estado y fecha que
-abre paneles con Aplicar y Cancelar. Los filtros se combinan y pueden limpiarse.
+abre paneles con Aplicar filtros y Atrás. Los filtros se combinan y pueden limpiarse.
 El texto busca en nota, nombre y apellido del cliente, zona y artefacto en
 ambos listados. Pedidos conserva la búsqueda por dirección. En Visitas incluye
-la nota técnica y la nota del pedido. La fecha corresponde a `created_at` en
-Pedidos y a `scheduled_at` en Visitas.
+la nota técnica y la nota del pedido. Visitas filtra `scheduled_at`. En las vistas
+operativas de Pedidos se usa la fecha de visita; en Historial y consultas sin
+`view`, la fecha de creación.
 Los accesos rápidos incluyen Hoy, Mañana, 7 días (hoy y los seis días siguientes) y 30 días
 (hoy y los 29 días siguientes), con días de Argentina. También se puede elegir un día o rango, incluyendo
 fechas pasadas. Las visitas sin agenda no aparecen al seleccionar una fecha.
@@ -369,9 +378,53 @@ El técnico puede iniciar el mismo pop-up de confirmación desde el OK del chat,
 la card de HOY, la card explicativa del detalle o el botón fijo del detalle.
 El estado encabeza la barra de acciones del chat; calendario y OK tienen el
 mismo tamaño, y el OK solo aparece para visitas agendadas. En el detalle,
-CHAT y PEDIDO comparten la primera fila fija, con Completar visita debajo.
+Chat y Pedido comparten la primera fila fija, con Completar visita debajo.
 El pop-up explica que el cliente podrá confirmar el trabajo y dejar una reseña,
 permite volver atrás y evita reenvíos mientras se guarda. En HOY, tocar el OK
 abre la confirmación directamente sin navegar al detalle. Al confirmar, se
 actualizan el chat, los pedidos, las visitas y la agenda mediante los hooks
 existentes. No requiere cambios de base de datos.
+
+
+### Accesos a visitas que requieren atención
+
+Debajo de los filtros de VISITAS, los técnicos tienen Pendientes (tono warning
+suave) y Sin completar, cada uno con un contador del servidor. Pendientes
+selecciona estado `pending`, ordenando por fecha agendada si existe y después
+por antigüedad de creación para las que no tienen fecha. Sin completar muestra
+solo estado `scheduled` con fecha anterior al inicio de hoy en Argentina.
+
+La vista principal (`view=main`) excluye esas visitas agendadas de días anteriores,
+pero mantiene las de hoy aunque su hora ya haya pasado, además de las pendientes.
+Los accesos `view=pending` y `view=overdue` reemplazan fecha y estado y conservan
+la búsqueda textual. Sus contadores reflejan exactamente ese alcance, sin limitarse
+a la página cargada. Se puede volver a la vista principal tocando otra vez el
+acceso activo o usando el enlace para volver. Cambiar fecha/estado en los filtros
+normales regresa a la vista principal. La pantalla refresca al recuperar foco y
+al cambiar el día argentino mientras está abierta. No requiere migración SQL.
+
+Prueba del límite de día y contadores: `node --import tsx scripts/tests/visit-attention.test.mts`.
+
+
+### Agenda e historial de pedidos técnicos
+
+PEDIDOS abre `view=main`: pedidos activos y pendientes de aceptar, ordenados por
+la visita agendada más próxima desde hoy en Argentina; después aparecen los que
+no tienen fecha, por antigüedad de creación. Se excluyen los pedidos de atención
+y los terminales. Los accesos debajo de los filtros son Pendientes de aceptar
+(warning suave), Sin completar / En espera e Historial, cada uno con contador.
+
+En espera incluye visitas agendadas de días anteriores, estado `completed_tech`
+y `completion_rejected`. Historial incluye `completed` y `cancelled`, ordenados
+por creación descendente. Los aceptados sin agenda siguen en la vista principal.
+Al pulsar un acceso se conserva la búsqueda y se reemplazan fecha y estado.
+Los contadores de acceso usan ese mismo alcance, sin limitarse a la página.
+
+El calendario de las vistas operativas filtra la fecha de visita; en Historial
+filtra la fecha de creación. Las cards identifican si muestran visita agendada o
+fecha de creación. La API incorpora `next_visit_at` opcional en las listas
+operativas. Requiere aplicar `202610220002_add_order_worklist_fields.sql`, que
+agrega funciones calculadas sin columnas nuevas. Las listas de clientes y las
+consultas sin `view` conservan el comportamiento anterior.
+
+Pruebas: `node --import tsx scripts/tests/order-worklist.test.mts`.

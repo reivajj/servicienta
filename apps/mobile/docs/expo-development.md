@@ -3,6 +3,13 @@
 Todos los comandos se ejecutan desde la raíz del monorepo, salvo que se indique
 lo contrario.
 
+## Estado actual antes de probar
+
+Leer [Mobile: estado actual y cómo retomar](../../../docs/mobile-current-state.md).
+Contiene las migraciones necesarias para búsqueda y agenda de pedidos, los
+flujos implementados y el recorrido de QA pendiente. Para el login del CLI y
+la aplicación de migraciones, consultar [Supabase workflow](../../../docs/supabase-workflow.md).
+
 ## Preparación inicial
 
 Instalar las dependencias con la versión de pnpm indicada en el `package.json`
