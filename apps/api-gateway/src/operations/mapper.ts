@@ -55,6 +55,8 @@ export function mapOperationRow(row: OperationRow): Operation {
     description: row.description,
     completed_at: row.completed_at,
     technician_completed_at: row.technician_completed_at,
+    completion_rejection_reason: row.completion_rejection_reason ?? null,
+    completion_rejected_at: row.completion_rejected_at ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     technician_review: null,

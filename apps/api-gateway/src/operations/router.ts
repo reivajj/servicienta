@@ -139,6 +139,7 @@ export function operationsRouter(options: OperationsRouterOptions) {
         options.supabase,
         request.auth!,
         validateOperationId(request.params.operationId),
+        request.body,
       );
 
       ok(response, operation);

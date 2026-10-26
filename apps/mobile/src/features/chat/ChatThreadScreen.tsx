@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { ActionLabel } from '@/components/ActionLabel';
 import { AddressLink } from '@/components/AddressLink';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -131,7 +133,9 @@ export function ChatThreadScreen({
           }}
           style={styles.retryButton}
         >
-          <Text style={styles.retryText}>Reintentar</Text>
+          <ActionLabel icon="refresh-outline" textStyle={styles.retryText}>
+            Reintentar
+          </ActionLabel>
         </Pressable>
       </View>
     );
@@ -195,7 +199,9 @@ export function ChatThreadScreen({
             router.push({ pathname: '/orders/[orderId]', params: { orderId } })
           }
         >
-          <Text style={styles.sender}>Ver pedido</Text>
+          <ActionLabel icon="clipboard-outline" textStyle={styles.sender}>
+            Ver pedido
+          </ActionLabel>
         </Pressable>
       </View>
       {(conversation.operations ?? [])
@@ -261,7 +267,9 @@ function MessageBubble({
         message.message_type === 'action' && styles.actionBubble,
       ]}
     >
-      {!isOwn ? <Text style={styles.sender}>{sender}</Text> : null}
+      {!isOwn || message.message_type === 'action' ? (
+        <Text style={styles.sender}>{isOwn ? 'Vos' : sender}</Text>
+      ) : null}
       <Text style={styles.messageText}>{message.body}</Text>
       <Text style={styles.messageTime}>{formatTime(message.created_at)}</Text>
     </View>
@@ -348,6 +356,12 @@ function ChatComposer({
           value={body}
         />
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Enviar mensaje"
+          accessibilityState={{
+            disabled: !body.trim() || createMessage.isPending,
+            busy: createMessage.isPending,
+          }}
           disabled={!body.trim() || createMessage.isPending}
           onPress={handleSend}
           style={[
@@ -358,7 +372,12 @@ function ChatComposer({
           {createMessage.isPending ? (
             <ActivityIndicator color={colors.text} />
           ) : (
-            <Text style={styles.sendText}>Enviar</Text>
+            <Ionicons
+              name="send-outline"
+              size={24}
+              color={colors.text}
+              accessible={false}
+            />
           )}
         </Pressable>
       </View>
@@ -476,6 +495,7 @@ const styles = StyleSheet.create({
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   input: {
     flex: 1,
+    minWidth: 0,
     maxHeight: 120,
     minHeight: 46,
     paddingHorizontal: 14,
@@ -488,13 +508,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   sendButton: {
-    minHeight: 46,
+    width: 46,
+    height: 46,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
     borderRadius: 16,
     backgroundColor: colors.accent,
   },
   disabled: { opacity: 0.45 },
-  sendText: { color: colors.text, fontWeight: '900' },
 });

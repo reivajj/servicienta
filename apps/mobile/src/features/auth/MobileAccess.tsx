@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import type { PropsWithChildren } from 'react';
 import { Redirect } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -69,11 +70,21 @@ function AccessState({
       <Text style={styles.accessDescription}>{description}</Text>
       {onPrimary && primaryLabel ? (
         <Pressable onPress={onPrimary} style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>{primaryLabel}</Text>
+          <ActionLabel
+            icon="refresh-outline"
+            textStyle={styles.primaryButtonText}
+          >
+            {primaryLabel}
+          </ActionLabel>
         </Pressable>
       ) : null}
       <Pressable onPress={onSignOut} style={styles.secondaryButton}>
-        <Text style={styles.secondaryButtonText}>Cerrar sesión</Text>
+        <ActionLabel
+          icon="log-out-outline"
+          textStyle={styles.secondaryButtonText}
+        >
+          Cerrar sesión
+        </ActionLabel>
       </Pressable>
     </View>
   );

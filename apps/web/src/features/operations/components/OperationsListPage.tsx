@@ -1,4 +1,4 @@
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useRef, useState } from 'react';
 import {
   useAdminOperations,
   useCancelOperation,
@@ -131,20 +131,69 @@ function CurrentOperationsListPage({ role }: { role: string }) {
     setReviewOperation(null),
   );
   const deferredSearch = useDeferredValue(search.trim());
-  const filters = { status: status === 'all' ? undefined : status, search: deferredSearch.length >= 3 ? deferredSearch : undefined };
-  const { data, error, isLoading } = useCurrentOperations({ page, pageSize, ...filters });
-  const { data: calendarData } = useCurrentOperations({ page: 1, pageSize: 100, ...filters });
+  const filters = {
+    status: status === 'all' ? undefined : status,
+    search: deferredSearch.length >= 3 ? deferredSearch : undefined,
+  };
+  const { data, error, isLoading } = useCurrentOperations({
+    page,
+    pageSize,
+    ...filters,
+  });
+  const { data: calendarData } = useCurrentOperations({
+    page: 1,
+    pageSize: 100,
+    ...filters,
+  });
   const scheduleMutation = useScheduleOperation();
   const completeTechMutation = useCompleteTechOperation();
   const confirmCompletedMutation = useConfirmCompletedOperation();
   const rejectCompletedMutation = useRejectCompletedOperation();
+  const [rejectOperation, setRejectOperation] = useState<Operation | null>(
+    null,
+  );
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionError, setRejectionError] = useState('');
+  const rejecting = useRef(false);
+  function closeRejection() {
+    if (!rejecting.current) setRejectOperation(null);
+  }
+  const rejectModalRef = useEscapeKey<HTMLDivElement>(closeRejection);
+  async function handleRejectSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!rejectOperation || rejecting.current) return;
+    if (!rejectionReason.trim()) {
+      setRejectionError('Explicá qué quedó pendiente.');
+      return;
+    }
+    rejecting.current = true;
+    setRejectionError('');
+    try {
+      await rejectCompletedMutation.mutateAsync({
+        operationId: rejectOperation.id,
+        input: { reason: rejectionReason.trim() },
+      });
+      setRejectOperation(null);
+    } catch (error) {
+      setRejectionError(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo enviar el rechazo. Reintentá.',
+      );
+    } finally {
+      rejecting.current = false;
+    }
+  }
   const createReviewMutation = useCreateTechnicianReview();
   const cancelOperation = useCancelOperation();
   const items = data?.items ?? [];
   const pagination = data?.pagination;
-  const start = pagination?.total ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
+  const start = pagination?.total
+    ? (pagination.page - 1) * pagination.pageSize + 1
+    : 0;
   const end = pagination?.total ? start + items.length - 1 : 0;
-  const hasActiveFilters = search.length > 0 || status !== 'all' || pageSize !== 25 || page !== 1;
+  const hasActiveFilters =
+    search.length > 0 || status !== 'all' || pageSize !== 25 || page !== 1;
   const errorMessage =
     error instanceof Error
       ? error.message
@@ -223,34 +272,101 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           <section className="users-toolbar">
             <label className="users-toolbar__field">
               <span>Buscar</span>
-              <input type="search" value={search} placeholder="Descripción de la visita" onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
-              <small className="users-toolbar__hint">{search.trim().length > 0 && search.trim().length < 3 ? 'Escribí al menos 3 caracteres para buscar' : ' '}</small>
+              <input
+                type="search"
+                value={search}
+                placeholder="Descripción de la visita"
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+              />
+              <small className="users-toolbar__hint">
+                {search.trim().length > 0 && search.trim().length < 3
+                  ? 'Escribí al menos 3 caracteres para buscar'
+                  : ' '}
+              </small>
             </label>
             <label className="users-toolbar__field">
               <span>Estado</span>
-              <select value={status} onChange={(event) => { setStatus(event.target.value as OperationStatus | 'all'); setPage(1); }}>
-                <option value="all">Todos</option><option value="pending">Pendiente</option><option value="scheduled">Agendada</option><option value="completed_tech">Completada por técnico</option><option value="completion_rejected">Finalización rechazada</option><option value="completed">Completada</option><option value="cancelled">Cancelada</option>
+              <select
+                value={status}
+                onChange={(event) => {
+                  setStatus(event.target.value as OperationStatus | 'all');
+                  setPage(1);
+                }}
+              >
+                <option value="all">Todos</option>
+                <option value="pending">Pendiente</option>
+                <option value="scheduled">Agendada</option>
+                <option value="completed_tech">Completada por técnico</option>
+                <option value="completion_rejected">
+                  Finalización rechazada
+                </option>
+                <option value="completed">Completada</option>
+                <option value="cancelled">Cancelada</option>
               </select>
             </label>
             <div className="users-toolbar__group">
-              <label className="users-toolbar__field"><span>Resultados por página</span><select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value) as UsersPageSize); setPage(1); }}><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label>
-              <div className="users-toolbar__actions"><button type="button" className="users-toolbar__clear" disabled={!hasActiveFilters} aria-label="Quitar filtros" title="Quitar filtros" onClick={() => { setSearch(''); setStatus('all'); setPageSize(25); setPage(1); }}>×</button></div>
+              <label className="users-toolbar__field">
+                <span>Resultados por página</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value) as UsersPageSize);
+                    setPage(1);
+                  }}
+                >
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
+              <div className="users-toolbar__actions">
+                <button
+                  type="button"
+                  className="users-toolbar__clear"
+                  disabled={!hasActiveFilters}
+                  aria-label="Quitar filtros"
+                  title="Quitar filtros"
+                  onClick={() => {
+                    setSearch('');
+                    setStatus('all');
+                    setPageSize(25);
+                    setPage(1);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
             </div>
           </section>
         ) : null}
 
         {role === 'technician' ? (
-          <div className="operations-view-toggle" role="group" aria-label="Vista de visitas">
+          <div
+            className="operations-view-toggle"
+            role="group"
+            aria-label="Vista de visitas"
+          >
             <button
               type="button"
-              className={viewMode === 'table' ? 'operations-view-toggle__button--active' : ''}
+              className={
+                viewMode === 'table'
+                  ? 'operations-view-toggle__button--active'
+                  : ''
+              }
               onClick={() => setViewMode('table')}
             >
               Tabla
             </button>
             <button
               type="button"
-              className={viewMode === 'calendar' ? 'operations-view-toggle__button--active' : ''}
+              className={
+                viewMode === 'calendar'
+                  ? 'operations-view-toggle__button--active'
+                  : ''
+              }
               onClick={() => setViewMode('calendar')}
             >
               Calendario
@@ -431,9 +547,11 @@ function CurrentOperationsListPage({ role }: { role: string }) {
                                 confirmCompletedMutation.isPending ||
                                 rejectCompletedMutation.isPending
                               }
-                              onClick={() =>
-                                rejectCompletedMutation.mutate(operation.id)
-                              }
+                              onClick={() => {
+                                setRejectionReason('');
+                                setRejectionError('');
+                                setRejectOperation(operation);
+                              }}
                             >
                               <svg
                                 viewBox="0 0 24 24"
@@ -510,13 +628,19 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           </section>
         ) : (
           <section className="users-panel">
-            <p>{role === 'technician' && hasActiveFilters ? 'No hay visitas para los filtros actuales.' : 'No hay visitas por ahora.'}</p>
+            <p>
+              {role === 'technician' && hasActiveFilters
+                ? 'No hay visitas para los filtros actuales.'
+                : 'No hay visitas por ahora.'}
+            </p>
           </section>
         )}
 
         <section className="users-pagination">
           <p className="users-pagination__summary">
-            {pagination?.total ? `Mostrando ${start}-${end} de ${pagination.total}` : 'Sin resultados'}
+            {pagination?.total
+              ? `Mostrando ${start}-${end} de ${pagination.total}`
+              : 'Sin resultados'}
           </p>
           <div className="users-pagination__controls">
             <button
@@ -543,6 +667,66 @@ function CurrentOperationsListPage({ role }: { role: string }) {
           </div>
         </section>
       </section>
+
+      {rejectOperation ? (
+        <div
+          ref={rejectModalRef}
+          data-escape-modal="true"
+          className="users-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-operation-title"
+          onClick={closeRejection}
+        >
+          <section
+            className="users-modal__panel users-modal__panel--compact"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="users-modal__header">
+              <h2 id="reject-operation-title">Rechazar finalización</h2>
+            </header>
+            <p>
+              Contanos qué quedó pendiente. Al confirmar, se rechazará la
+              finalización de la visita y se enviará tu explicación al chat del
+              pedido en tu nombre para coordinar con el técnico cómo continuar.
+            </p>
+            <form className="auth-form" onSubmit={handleRejectSubmit}>
+              <label className="auth-form__field">
+                <span>Motivo del rechazo (obligatorio)</span>
+                <textarea
+                  required
+                  maxLength={2000}
+                  value={rejectionReason}
+                  onChange={(event) => setRejectionReason(event.target.value)}
+                  disabled={rejectCompletedMutation.isPending}
+                />
+              </label>
+              {rejectionError ? (
+                <p role="alert" className="users-message users-message--error">
+                  {rejectionError}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={
+                  rejectCompletedMutation.isPending || !rejectionReason.trim()
+                }
+              >
+                {rejectCompletedMutation.isPending
+                  ? 'Enviando...'
+                  : 'Confirmar rechazo y enviar mensaje'}
+              </button>
+              <button
+                type="button"
+                disabled={rejectCompletedMutation.isPending}
+                onClick={closeRejection}
+              >
+                Atrás
+              </button>
+            </form>
+          </section>
+        </div>
+      ) : null}
 
       {scheduleOperation ? (
         <div
@@ -752,17 +936,29 @@ function AdminOperationsListPage() {
           </div>
         </header>
 
-        <div className="operations-view-toggle" role="group" aria-label="Vista de visitas">
+        <div
+          className="operations-view-toggle"
+          role="group"
+          aria-label="Vista de visitas"
+        >
           <button
             type="button"
-            className={viewMode === 'table' ? 'operations-view-toggle__button--active' : ''}
+            className={
+              viewMode === 'table'
+                ? 'operations-view-toggle__button--active'
+                : ''
+            }
             onClick={() => setViewMode('table')}
           >
             Tabla
           </button>
           <button
             type="button"
-            className={viewMode === 'calendar' ? 'operations-view-toggle__button--active' : ''}
+            className={
+              viewMode === 'calendar'
+                ? 'operations-view-toggle__button--active'
+                : ''
+            }
             onClick={() => setViewMode('calendar')}
           >
             Calendario

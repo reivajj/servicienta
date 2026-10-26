@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
@@ -45,7 +46,9 @@ export function ClientDetailScreen({ orderId }: { orderId: string }) {
           onPress={() => void refetch()}
           style={styles.button}
         >
-          <Text style={styles.buttonText}>Reintentar</Text>
+          <ActionLabel icon="refresh-outline" textStyle={styles.buttonText}>
+            Reintentar
+          </ActionLabel>
         </Pressable>
       </View>
     );
@@ -131,7 +134,9 @@ export function ClientDetailScreen({ orderId }: { orderId: string }) {
           }
           style={styles.button}
         >
-          <Text style={styles.buttonText}>Ver pedido</Text>
+          <ActionLabel icon="clipboard-outline" textStyle={styles.buttonText}>
+            Ver pedido
+          </ActionLabel>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

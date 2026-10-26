@@ -437,6 +437,11 @@ Notas:
 - hoy también existe un seed operativo desde cero en `scripts/` para poblar `client_profiles`, `orders`, `operations` y `technician_reviews` con relaciones válidas
 - sigue siendo un modelo provisional: el hecho de que ya exista en runtime no implica que su contrato esté cerrado
 
+En web, el detalle administrativo de pedidos y visitas muestra el selector de
+estado y “Guardar cambios” al comienzo. Usa los endpoints administrativos existentes,
+restringidos a `admin`, y conserva la edición completa de datos y fechas más abajo.
+El guardado utiliza el mismo formulario, con las validaciones y auditoría existentes.
+
 ### Operation
 
 Una `Operation` vincula un técnico concreto con una `Order`.
@@ -453,6 +458,8 @@ una `Order` puede tener múltiples `Operation`, pero una `Operation` corresponde
 | `scheduled_at` | `timestamp` | nullable |
 | `description` | `string` | nullable, descripción técnica al agendar |
 | `technician_completed_at` | `timestamp` | nullable, base para garantía derivada |
+| `completion_rejection_reason` | `text` | nullable; motivo del cliente (1–2000 caracteres), separado de las notas técnicas |
+| `completion_rejected_at` | `timestamp` | nullable; fecha de confirmación del rechazo |
 | `completed_at` | `timestamp` | nullable |
 
 Notas:
@@ -613,7 +620,7 @@ Es el flujo prioritario por ahora.
 6. El técnico agenda la `Operation`: la `Operation` pasa a `scheduled` y la `Order` a `in_progress`
 7. El técnico completa su parte: la `Operation` y la `Order` pasan a `completed_tech`, y se setea `technician_completed_at`
 8. El client confirma el cierre: la `Operation` y la `Order` pasan a `completed`
-9. Si el client rechaza la finalización, la `Operation` y la `Order` pasan a `completion_rejected`; la continuidad desde ese estado queda pendiente de definición
+9. Para rechazar la finalización, el cliente debe explicar el motivo y confirmar en un diálogo. Una RPC guarda `completion_rejection_reason` y `completion_rejected_at`, pasa la `Operation` y la `Order` a `completion_rejected`, publica `operation.reject_completed` en el chat del pedido con el cliente como autor y registra auditoría, todo en una transacción. Reintentos idénticos no duplican el mensaje. La continuidad posterior desde ese estado queda pendiente de definición
 10. La garantía se muestra como dato derivado desde `technician_completed_at`; no es un status persistido
 
 ### Flujo B: `tech_applies`

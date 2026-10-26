@@ -87,7 +87,8 @@ function normalizeActionType(value: string | null): ChatActionType | null {
     value === 'operation.schedule' ||
     value === 'operation.cancel' ||
     value === 'operation.complete_tech' ||
-    value === 'operation.confirm_completed'
+    value === 'operation.confirm_completed' ||
+    value === 'operation.reject_completed'
   ) {
     return value;
   }

@@ -43,6 +43,8 @@ export interface Operation {
   description: string | null;
   completed_at: string | null;
   technician_completed_at: string | null;
+  completion_rejection_reason: string | null;
+  completion_rejected_at: string | null;
   created_at: string;
   updated_at: string;
   technician_review: OperationTechnicianReview | null;

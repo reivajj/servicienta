@@ -1,3 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import { CardSchedule } from '@/components/CardSchedule';
+import { ActionLabel } from '@/components/ActionLabel';
 import { AddressLink } from '@/components/AddressLink';
 import { useRef } from 'react';
 import { useRouter } from 'expo-router';
@@ -71,7 +75,9 @@ export function OrderDetailScreen({ orderId }: { orderId: string }) {
           onPress={() => void refetch()}
           style={styles.button}
         >
-          <Text style={styles.buttonText}>Reintentar</Text>
+          <ActionLabel icon="refresh-outline" textStyle={styles.buttonText}>
+            Reintentar
+          </ActionLabel>
         </Pressable>
       </View>
     );
@@ -92,34 +98,74 @@ export function OrderDetailScreen({ orderId }: { orderId: string }) {
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
-        <StatusChip>{formatOrderStatus(order.status)}</StatusChip>
-        <Text style={styles.title}>
-          {currentUser?.role === 'client'
-            ? formatPersonName(order.technician_name, order.technician_surname)
-            : formatPersonName(order.client_name, order.client_surname)}
-        </Text>
-        <Text selectable style={styles.muted}>
-          Pedido {order.id}
-        </Text>
         <View style={styles.card}>
-          <Field label="Equipo" value={formatSlug(order.appliance_type_slug)} />
-          <Field label="Problema informado" value={order.description} />
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>
+              {currentUser?.role === 'client'
+                ? formatPersonName(
+                    order.technician_name,
+                    order.technician_surname,
+                  )
+                : formatPersonName(order.client_name, order.client_surname)}
+            </Text>
+            <View>
+              <StatusChip>{formatOrderStatus(order.status)}</StatusChip>
+            </View>
+          </View>
+          <Text style={styles.muted}>
+            {order.next_visit_at ? 'Visita agendada' : 'Fecha de creación'}
+          </Text>
+          <CardSchedule value={order.next_visit_at ?? order.created_at} />
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="build-outline"
+              size={20}
+              color={colors.muted}
+              accessible={false}
+            />
+            <Text style={styles.equipment}>
+              {formatSlug(order.appliance_type_slug)}
+            </Text>
+          </View>
+          <View style={styles.divider} />
+          <Field
+            icon="document-text-outline"
+            label="Problema informado"
+            value={order.description}
+          />
         </View>
         <View style={styles.card}>
-          <View style={styles.field}>
-            <Text style={styles.muted}>Dirección</Text>
-            <AddressLink
-              address={order.service_address_text}
-              zone={order.zone_slug}
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="location-outline"
+              size={20}
+              color={colors.accent}
+              accessible={false}
             />
+            <View style={styles.field}>
+              <Text style={styles.muted}>Dirección</Text>
+              <AddressLink
+                address={order.service_address_text}
+                zone={order.zone_slug}
+              />
+            </View>
           </View>
-          <Field label="Zona" value={formatSlug(order.zone_slug)} />
+          <Field
+            icon="map-outline"
+            label="Zona"
+            value={formatSlug(order.zone_slug)}
+          />
           {order.address_notes ? (
-            <Field label="Indicaciones" value={order.address_notes} />
+            <Field
+              icon="information-circle-outline"
+              label="Indicaciones"
+              value={order.address_notes}
+            />
           ) : null}
         </View>
         <View style={styles.card}>
           <Field
+            icon="call-outline"
             label="Teléfono"
             value={
               (currentUser?.role === 'client'
@@ -127,8 +173,16 @@ export function OrderDetailScreen({ orderId }: { orderId: string }) {
                 : order.client_phone) ?? 'Sin definir'
             }
           />
-          <Field label="Creado" value={formatDateTime(order.created_at)} />
+          <Field label="Identificador del pedido" value={order.id} />
+          {order.next_visit_at ? (
+            <Field
+              icon="calendar-outline"
+              label="Creado"
+              value={formatDateTime(order.created_at)}
+            />
+          ) : null}
           <Field
+            icon="refresh-outline"
             label="Última actualización"
             value={formatDateTime(order.updated_at)}
           />
@@ -162,13 +216,20 @@ export function OrderDetailScreen({ orderId }: { orderId: string }) {
               {acceptOrder.isPending ? (
                 <ActivityIndicator color={colors.text} />
               ) : null}
-              <Text style={styles.buttonText}>
+              <ActionLabel
+                icon={
+                  canAccept
+                    ? 'checkmark-outline'
+                    : 'chatbubble-ellipses-outline'
+                }
+                textStyle={styles.buttonText}
+              >
                 {acceptOrder.isPending
                   ? 'Aceptando pedido…'
                   : canAccept
                     ? 'Aceptar y abrir chat'
                     : 'Abrir chat'}
-              </Text>
+              </ActionLabel>
             </Pressable>
           ) : null}
         </View>
@@ -177,13 +238,31 @@ export function OrderDetailScreen({ orderId }: { orderId: string }) {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon?: ComponentProps<typeof Ionicons>['name'];
+}) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.muted}>{label}</Text>
-      <Text selectable style={styles.value}>
-        {value}
-      </Text>
+    <View style={styles.infoRow}>
+      {icon ? (
+        <Ionicons
+          name={icon}
+          size={20}
+          color={colors.muted}
+          accessible={false}
+        />
+      ) : null}
+      <View style={styles.field}>
+        <Text style={styles.muted}>{label}</Text>
+        <Text selectable style={styles.value}>
+          {value}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -199,7 +278,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: { padding: 20, gap: 16 },
-  title: { color: colors.text, fontSize: 28, fontWeight: '900' },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  cardTitle: { flex: 1, color: colors.text, fontSize: 20, fontWeight: '900' },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  equipment: { flex: 1, color: colors.muted, fontSize: 15, lineHeight: 22 },
+  divider: { height: 1, backgroundColor: colors.border },
   muted: { color: colors.muted, fontSize: 14, lineHeight: 21 },
   card: {
     padding: 18,
@@ -209,7 +297,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.surface,
   },
-  field: { gap: 4 },
+  field: { flex: 1, gap: 4 },
   value: { color: colors.text, fontSize: 16, lineHeight: 24 },
   actions: {
     padding: 16,

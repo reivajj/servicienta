@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useRouter } from 'expo-router';
 import { StatusChip } from '@/components/StatusChip';
 import { useCompleteVisit } from '@/features/operations/CompleteVisitProvider';
@@ -193,13 +194,22 @@ export function ChatQuickActions({
             }
             style={styles.detailButton}
           >
-            <Text style={styles.copy}>
+            <ActionLabel
+              icon={
+                operation.status === 'completed_tech'
+                  ? 'checkmark-outline'
+                  : operation.status === 'completed'
+                    ? 'star-outline'
+                    : 'calendar-outline'
+              }
+              textStyle={styles.copy}
+            >
               {operation.status === 'completed_tech'
                 ? 'Confirmar visita'
                 : operation.status === 'completed'
                   ? 'Ver visita y reseña'
                   : 'Ver visita'}
-            </Text>
+            </ActionLabel>
           </Pressable>
         ) : null}
       </View>
@@ -276,13 +286,16 @@ export function ChatQuickActions({
                       {schedule.isPending ? (
                         <ActivityIndicator size="small" color={colors.text} />
                       ) : null}
-                      <Text style={styles.text}>
+                      <ActionLabel
+                        icon="calendar-outline"
+                        textStyle={styles.text}
+                      >
                         {pending
                           ? 'Guardando…'
                           : operation?.status === 'scheduled'
                             ? 'Guardar nuevo horario'
                             : 'Agendar visita'}
-                      </Text>
+                      </ActionLabel>
                     </Pressable>
                   </>
                 ) : (
@@ -307,9 +320,12 @@ export function ChatQuickActions({
                       {cancel.isPending ? (
                         <ActivityIndicator size="small" color="#ff8d87" />
                       ) : null}
-                      <Text style={styles.error}>
+                      <ActionLabel
+                        icon="close-outline"
+                        textStyle={styles.error}
+                      >
                         {pending ? 'Cancelando…' : 'Sí, cancelar visita'}
-                      </Text>
+                      </ActionLabel>
                     </Pressable>
                   </>
                 )}
@@ -324,9 +340,14 @@ export function ChatQuickActions({
                   style={styles.button}
                   onPress={close}
                 >
-                  <Text style={styles.text}>
+                  <ActionLabel
+                    icon={
+                      mode === 'cancel' ? 'arrow-back-outline' : 'close-outline'
+                    }
+                    textStyle={styles.text}
+                  >
                     {mode === 'cancel' ? 'Volver' : 'Cerrar'}
-                  </Text>
+                  </ActionLabel>
                 </Pressable>
               </ScrollView>
             </KeyboardAvoidingView>

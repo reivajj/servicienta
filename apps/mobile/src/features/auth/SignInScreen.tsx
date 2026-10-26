@@ -1,3 +1,5 @@
+import type { TextInputInstance } from 'react-native';
+import { ActionLabel } from '@/components/ActionLabel';
 import { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -20,7 +22,7 @@ export function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const passwordRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -153,7 +155,12 @@ export function SignInScreen() {
               {isSubmitting ? (
                 <ActivityIndicator color={colors.text} />
               ) : (
-                <Text style={styles.buttonText}>Ingresar</Text>
+                <ActionLabel
+                  icon="log-in-outline"
+                  textStyle={styles.buttonText}
+                >
+                  Ingresar
+                </ActionLabel>
               )}
             </Pressable>
           </View>

@@ -1,6 +1,6 @@
 # Mobile: estado actual y cómo retomar
 
-_Última actualización: 2026-10-22. Cierre de la sesión de trabajo sobre agenda, filtros y cierre de visitas._
+_Última actualización: 2026-10-26. Inicio del cliente y visitas pendientes de confirmación/opinión._
 
 Este documento describe el código implementado en `apps/mobile` y los cambios
 compartidos que necesita. Es el punto de entrada para retomar el trabajo;
@@ -9,19 +9,22 @@ implementación. El dominio general sigue en [source-of-truth.md](./source-of-tr
 
 ## Primer paso al retomar: verificar Supabase
 
+La última verificación del historial remoto se intentó el **2026-10-26**.
+
 **El código está preparado, pero la nueva agenda de PEDIDOS requiere aplicar
 la migración `202610220002_add_order_worklist_fields.sql`. No fue aplicada por
 el agente.** El último intento de consultar el historial remoto falló con
 `Access token not provided`, por lo que el estado remoto no quedó verificado.
 
-Revisar estas dos migraciones, en orden:
+Revisar estas migraciones, en orden:
 
 | Migración | Para qué se usa | Estado conocido al cierre |
 | --- | --- | --- |
 | [202610220001_add_order_operation_search_fields.sql](../supabase/migrations/202610220001_add_order_operation_search_fields.sql) | Búsqueda por notas, cliente, zona y artefacto. | Existe en el repo; aplicación remota sin verificar en esta sesión. |
 | [202610220002_add_order_worklist_fields.sql](../supabase/migrations/202610220002_add_order_worklist_fields.sql) | Clasificación operativa de pedidos y orden por visita asociada. | Preparada en esta sesión; no aplicada por el agente. |
+| [202610260001_reject_visit_completion_with_reason.sql](../supabase/migrations/202610260001_reject_visit_completion_with_reason.sql) | Motivo de rechazo de visita y evento del chat en una transacción. | Probada localmente; no aplicada al remoto por el agente. |
 
-Ambas agregan funciones calculadas PostgREST, sin tablas ni columnas nuevas.
+Las dos primeras agregan funciones calculadas PostgREST, sin tablas ni columnas nuevas.
 Usan `STABLE SECURITY INVOKER`, `search_path` vacío y ejecución solo para
 `service_role`. Las consultas del gateway mantienen los filtros de pertenencia.
 Las rutas nuevas de búsqueda/agenda necesitan esas funciones en el mismo
@@ -48,6 +51,46 @@ frecuentes está en [supabase-workflow.md](./supabase-workflow.md), enlazado tam
 desde [supabase/README.md](../supabase/README.md). No guardar credenciales en estos
 documentos.
 
+## Rechazo de finalización con motivo (2026-10-26)
+
+El cliente abre un diálogo desde “El trabajo no está terminado”, escribe un motivo
+obligatorio (máximo 2000 caracteres) y pulsa “Confirmar rechazo y enviar mensaje”.
+“Atrás” no modifica la visita ni envía nada. El motivo queda visible en el detalle
+para ambos roles y en el chat como evento escrito por el cliente. Web utiliza el
+mismo contrato y también solicita motivo y confirmación.
+
+**Antes de ejecutar este código contra Supabase, aplicar también
+[202610260001_reject_visit_completion_with_reason.sql](../supabase/migrations/202610260001_reject_visit_completion_with_reason.sql).
+Preparada y probada en PostgreSQL descartable; no aplicada por el agente al remoto.**
+Las consultas de visitas ahora incluyen los nuevos campos, por lo que necesitan
+esta migración, incluso para listar. No se verificó el historial remoto por falta
+de token de acceso del CLI en esta sesión.
+
+`operations.completion_rejection_reason` y `completion_rejected_at` son campos
+propios: la descripción técnica se conserva. La RPC del gateway guarda estado de
+visita/pedido, motivo, evento del chat y auditoría en una transacción. Reintentos
+idénticos no duplican mensajes. Ver [supabase-rpcs.md](./supabase-rpcs.md#reject_operation_completion).
+
+## Actualización de runtime a SDK 58 (2026-10-26)
+
+Mobile está en Expo `58.0.19`, React Native `0.88.0`, React/React DOM `19.3.0`.
+Se actualizaron las dependencias nativas con Expo CLI y se alineó React en web y
+query-hooks para eliminar la copia adicional detectada en mobile. Metro usa
+`@react-native/metro-config@0.88.0`. Se corrigieron refs de instancia, tipos de
+color para iconos y los componentes opcionales de listas (`undefined` en vez de
+`null`) exigidos por la nueva API estricta de React Native.
+
+`newArchEnabled` se eliminó del config por incompatibilidad con el schema nuevo.
+Expo CLI agregó plugins para DateTimePicker, StatusBar y fuentes. Se declararon
+`expo-font`, `@expo/dom-webview` y `@expo/metro-runtime` compatibles con SDK 58.
+El lockfile forma parte de esta actualización.
+
+Validaciones: Expo Doctor 20/20, tipos mobile/query-hooks, build web y exportación
+de bundles Android/iOS/web. No es una compilación APK/IPA ni una prueba en el
+celular. Para retomar, detener el Expo previo y ejecutar `pnpm mobile:start:clear`;
+Expo Go del teléfono debe admitir SDK 58. Detalles y versiones de Node en
+[la guía de Expo](../apps/mobile/docs/expo-development.md#sdk-actual-expo-58).
+
 ## Base de la app
 
 - Expo + React Native + Expo Router, con configuración en `apps/mobile/app.json`.
@@ -55,7 +98,7 @@ documentos.
 - Negocio a través de `query-hooks → api-client → api-gateway → Supabase`.
 - Supabase directo desde mobile para Auth y Realtime del chat.
 - Roles `technician` y `client`. El grupo de rutas `(technician)` contiene tabs
-  compartidas; para cliente la primera pestaña es Búsqueda y para técnico es Hoy.
+  compartidas; para cliente la primera pestaña es Inicio y para técnico es Hoy.
 - El técnico tiene Hoy, Pedidos, Visitas, Chats y Perfil. El cliente también
   puede buscar técnicos, crear pedidos y confirmar/reseñar visitas.
 - Configuración pública en `apps/mobile/.env`: `EXPO_PUBLIC_API_URL`,
@@ -66,6 +109,91 @@ La guía para levantar gateway/Expo, usar QR, túnel o emulador está en
 no publica el API Gateway: su URL debe ser accesible desde el teléfono.
 
 ## Comportamiento acordado de las pantallas
+
+### Inicio del cliente
+
+Desde el 2026-10-26 la primera pestaña del cliente es Inicio (icono de casa).
+`ClientHomeScreen` reutiliza `useCurrentScheduledOperations` y encabeza la misma
+pantalla de búsqueda con una visita destacada. Se consideran `scheduled` desde
+el inicio de hoy en Argentina; una visita de hoy sigue visible aunque su hora
+haya pasado. Las de días anteriores, canceladas o terminadas no se destacan.
+
+Si hay varias, se muestra la más próxima y un enlace con la cantidad al listado
+de visitas. La card reutiliza `OperationCard`: nombre del técnico, estado,
+fecha/horario, equipo, dirección y acceso al detalle. El cliente no recibe el OK
+de cierre técnico. Debajo sigue la búsqueda de técnicos y creación de otro pedido.
+Sin visitas, queda la búsqueda como contenido principal. Un error al consultar
+visitas muestra Reintentar y no bloquea la búsqueda.
+
+Se refresca al recuperar foco y con pull-to-refresh; el día de referencia se
+actualiza cada minuto. La lectura de visitas carga todas las páginas. Este cambio
+no agrega endpoints ni requiere una migración nueva; reutiliza el listado actual
+que autoriza las visitas del cliente.
+
+Archivos: `apps/mobile/src/features/home/ClientHomeScreen.tsx`, `home/visits.ts`,
+`search/TechnicianSearchScreen.tsx` (cabecera y refresh opcionales), y las rutas
+`app/(technician)/today.tsx` y `_layout.tsx`.
+
+Validado con tipos, tres pruebas de selección de visita y exportación web de Expo.
+Pendiente de prueba en celular con agenda/cliente reales. Pruebas:
+`node --import tsx scripts/tests/client-home-visits.test.mts`.
+
+### VISITAS del cliente
+
+`OperationsScreen` selecciona una pantalla específica para cliente:
+`ClientVisitsScreen`. La vista inicial muestra solo la visita pendiente más
+reciente de hoy o de días anteriores, destacada, junto con las próximas visitas.
+Las pendientes anteriores y las finalizadas quedan ocultas hasta pulsar el badge
+Historial con contador. Al activarlo se muestran únicamente esas visitas
+anteriores, sin repetir la destacada ni las próximas. Se puede desactivar el
+badge o usar Volver a mis visitas. Las acciones de completar/opinar también se
+conservan dentro del historial cuando corresponden. Una visita confirmada por
+el cliente sin reseña sigue pendiente de opinión.
+
+La descripción de las cards del cliente se reemplaza por orientación según su
+estado; el detalle conserva la nota técnica completa. Para una agendada de hoy:
+“Tu visita está programada para hoy. Cuando el técnico la marque como terminada,
+podrás confirmar el trabajo y dejar tu opinión.” Para fechas pasadas se explica
+que todavía se espera el cierre técnico y se menciona el chat.
+
+En `completed_tech`, el mensaje se destaca en verde y aparece Completar visita y
+opinar. En `completed` sin review aparece Dejar mi opinión. No se permite
+confirmar ni reseñar mientras siga `scheduled`. Ambos botones abren el detalle
+con `focusCompletion=true`, desplazándolo a la card de confirmación/reseña.
+La confirmación conserva los metadatos cacheados para mostrar a continuación
+el formulario de opinión sin perder identidad/contacto.
+
+`useCurrentClientVisits` consulta todas las páginas autorizadas del cliente para
+que la visita pendiente más reciente no quede oculta por la paginación anterior.
+El orden/agrupación y los textos están en `operations/client-visits.ts`. Se
+refresca al recuperar foco y con pull-to-refresh; cambia el día de referencia
+cada minuto. Este tramo no modifica base, contratos HTTP ni permisos. Evaluar
+paginación más específica si crece mucho el historial del cliente.
+
+Pruebas: `node --import tsx scripts/tests/client-visit-attention.test.mts` (5 casos:
+clasificación, habilitación de acciones por estado, día argentino y colección
+mayor que una página). Pasaron tipos de mobile/query-hooks y exportación web de
+Expo. Falta validar el recorrido y el desplazamiento automático en celular.
+
+### PEDIDOS del cliente
+
+La vista inicial muestra todos los pedidos activos con fecha de hoy o futura,
+ordenados por fecha/hora ascendente (más cercano primero). Los de hoy permanecen
+visibles aunque su horario ya haya pasado. Se usa `next_visit_at` si está
+informado; en el listado actual del cliente se muestra la fecha de creación.
+El corte de día usa Argentina. El badge Historial con contador abre los pedidos
+anteriores, completados y cancelados, sin duplicar los visibles. El historial va
+del más reciente al más antiguo y conserva el acceso al detalle. Se puede volver
+pulsando el badge o Volver a mis pedidos.
+
+Se implementa en `orders/ClientOrdersScreen.tsx` y `orders/client-orders.ts`.
+`useCurrentClientOrders` carga todas las páginas autorizadas antes de separar
+los vigentes y el historial. Refresca al recuperar foco y con pull-to-refresh; las
+mutaciones existentes invalidan su query bajo `orderKeys.current()`.
+No modifica los filtros ni las bandejas del técnico y no requiere migraciones.
+
+Pruebas: `node --import tsx scripts/tests/client-order-history.test.mts` (4 casos:
+pedido activo/historial, colecciones vacías o terminales y más de una página).
 
 ### HOY
 
@@ -169,8 +297,14 @@ fijo del detalle. El pop-up tiene título e icono OK en la misma fila (icono a l
 derecha), explicación, confirmar y Atrás. Evita doble envío, muestra errores
 y mantiene el modal abierto si falla la mutación.
 
-El detalle conserva la card explicativa de cierre. Abajo quedan fijos **Chat |
-Pedido**, con Completar visita debajo cuando corresponde. Tras el cierre técnico,
+El detalle muestra la card explicativa de cierre al principio del contenido.
+Completar visita ya no aparece en la botonera fija. Abajo quedan fijos **Pedido |
+Técnico**, con texto e iconos y tonos ámbar/azul. La segunda fila abre el chat con
+un icono de chat sin texto, en verde. Técnico abre `/technicians/[publicSlug]`, una ficha con
+nombre, bio, valoración, verificación, disponibilidad y antigüedad pública, con
+botón Atrás para regresar. Usa `usePublicTechnicianProfile`; no consulta el perfil
+administrativo ni muestra dirección/contacto privados. Si no hay slug, el enlace
+queda deshabilitado. Tras el cierre técnico,
 el cliente confirma o rechaza. Al confirmar puede enviar una reseña de 1 a 5
 estrellas con comentario opcional; luego queda visible y no se ofrece reenviar.
 
@@ -218,10 +352,14 @@ pnpm --filter @servicienta/api-gateway lint
 node --import tsx scripts/tests/list-filters.test.mts
 node --import tsx scripts/tests/visit-attention.test.mts
 node --import tsx scripts/tests/order-worklist.test.mts
+node --import tsx scripts/tests/client-home-visits.test.mts
+node --import tsx scripts/tests/client-visit-attention.test.mts
+node --import tsx scripts/tests/client-order-history.test.mts
 pnpm --filter @servicienta/mobile exec expo export --platform web --output-dir /tmp/servicienta-mobile-review
 ```
 
-Los tres archivos contienen 7, 2 y 3 pruebas respectivamente. Se ejecutan como
+Los archivos de filtros, atención técnica, pedidos, inicio del cliente y atención
+del cliente contienen 7, 2, 3, 3 y 5 pruebas respectivamente. Se ejecutan como
 scripts con `node --import tsx`, sin cambiar la configuración de módulos del
 monorepo. El comando `mobile lint` sigue siendo un placeholder; no tomarlo como
 validación real de ESLint.
@@ -263,3 +401,56 @@ no resetear ni recrear datos automáticamente para retomar.
 El checkout conserva cambios compartidos y archivos nuevos de estas funciones;
 revisar `git status`/`git diff` antes de continuar. En este cierre solo se actualiza
 documentación; no se aplican migraciones, seeds ni despliegues.
+
+
+### Ficha pública del técnico desde el detalle de visita
+
+Ruta: `apps/mobile/app/technicians/[publicSlug].tsx`. UI:
+`apps/mobile/src/features/profile/PublicTechnicianScreen.tsx`.
+Reutiliza el endpoint público y hook existentes; no requiere migración ni nuevos
+contratos de backend. Contempla carga, error/reintento y regreso al origen.
+Validación de este cambio: tipos de mobile y exportación web de Expo.
+
+
+Ajuste del detalle de visita (2026-10-26): la card de cierre/confirmación/opinión
+se ubica al principio del contenido; el botón técnico de Completar visita se
+elimina del footer. Los botones fijos quedan Pedido | Técnico y, debajo, Chat
+solo con icono. El cierre sigue disponible en la card y conserva su pop-up.
+
+
+El segundo botón fijo del detalle de visita depende del rol: el técnico ve
+Cliente y abre `/orders/[orderId]/client` (ficha con los datos del cliente de
+ese pedido, también accesible desde el chat). El cliente ve Técnico y abre
+su perfil público. Se mantiene el icono de persona y la navegación de regreso.
+
+
+### Iconos de acciones en mobile
+
+`apps/mobile/src/components/ActionLabel.tsx` unifica texto e icono al final del
+botón, respetando su color y tipografía. Se usa para accesos de Pedido (clipboard),
+visitas (calendario), chat, confirmar/completar (check), opinión (estrella),
+volver (flecha), reintentar, buscar, guardar, enviar e iniciar/cerrar sesión.
+Los accesos de Técnico/Cliente mantienen persona; los filtros e historial
+conservan sus iconos existentes. Los botones que ya eran solo icono (p. ej. Chat
+en el footer de la visita, calendario/OK/X del chat) conservan ese formato.
+Los iconos decorativos no agregan lecturas duplicadas de accesibilidad. Este
+cambio no modifica destinos, permisos ni lógica de las acciones.
+
+
+### Presentación del detalle de visita
+
+La card principal reutiliza `CardSchedule` del dashboard: nombre y badge de
+estado en la primera fila, fecha y horario en dos mitades de la misma fila,
+equipo con icono de herramienta y nota completa con icono/separador. Dirección,
+zona, indicaciones y teléfono también tienen iconos. El identificador completo
+de visita se conserva en los datos de referencia inferiores. La card de cierre
+continúa al principio y se mantienen los accesos fijos Pedido | Técnico/Cliente
+y Chat. No se recorta la descripción al abrir el detalle.
+
+
+El detalle de Pedido sigue el mismo diseño: nombre y estado juntos, fecha/hora
+con `CardSchedule`, equipo con herramienta, descripción completa con separador
+e iconos en ubicación/zona/indicaciones/teléfono. La fecha identifica creación
+(o visita si la consulta aporta `next_visit_at`), sin inventar una cita desde
+la fecha de creación. El UUID se conserva en los datos de referencia inferiores;
+se mantienen las reglas y botones de aceptación/apertura de chat.

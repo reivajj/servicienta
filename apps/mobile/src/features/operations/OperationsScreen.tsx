@@ -1,3 +1,6 @@
+import { ActionLabel } from '@/components/ActionLabel';
+import { ClientVisitsScreen } from './ClientVisitsScreen';
+import { clientVisitGuidance } from './client-visits';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { argentinaDay } from '@/features/today/agenda';
@@ -47,6 +50,23 @@ const filterStatuses: { value: OperationStatus; label: string }[] = [
 }));
 
 export function OperationsScreen() {
+  const { data: user } = useCurrentUser();
+  if (user?.role === 'client')
+    return (
+      <ClientVisitsScreen
+        renderVisit={(operation, highlighted, now) => (
+          <OperationCard
+            operation={operation}
+            clientHighlighted={highlighted}
+            now={now}
+          />
+        )}
+      />
+    );
+  return <TechnicianOperationsScreen />;
+}
+
+function TechnicianOperationsScreen() {
   const { data: currentUser } = useCurrentUser();
   const { filters, change, page, setPage } = useListFilters<OperationStatus>();
   const [view, setView] = useState<VisitView>('main');
@@ -145,7 +165,7 @@ export function OperationsScreen() {
                 No hay visitas que coincidan con los filtros.
               </Text>
             </View>
-          ) : null
+          ) : undefined
         }
         ListFooterComponent={
           data ? (
@@ -155,7 +175,7 @@ export function OperationsScreen() {
               onChange={setPage}
               disabled={isLoading || isRefetching}
             />
-          ) : null
+          ) : undefined
         }
         onRefresh={() => void refetch()}
         refreshing={isRefetching}
@@ -171,11 +191,13 @@ export function OperationCard({
   timeZone,
   today = false,
   now = Date.now(),
+  clientHighlighted = false,
 }: {
   operation: Operation;
   timeZone?: string;
   today?: boolean;
   now?: number;
+  clientHighlighted?: boolean;
 }) {
   const router = useRouter();
   const openCompleteVisit = useCompleteVisit();
@@ -188,6 +210,10 @@ export function OperationCard({
           operation.technician_surname,
         )
       : formatPersonName(operation.client_name, operation.client_surname);
+  const guidance =
+    user?.role === 'client'
+      ? clientVisitGuidance(operation, new Date(now))
+      : null;
   const canComplete =
     user?.role === 'technician' &&
     user.id === operation.technician_id &&
@@ -215,21 +241,22 @@ export function OperationCard({
       />
     </Pressable>
   ) : null;
+  function openVisit() {
+    router.push({
+      pathname: '/operations/[operationId]',
+      params: { operationId: operation.id },
+    });
+  }
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Ver visita de ${name}`}
-      onPress={() =>
-        router.push({
-          pathname: '/operations/[operationId]',
-          params: { operationId: operation.id },
-        })
-      }
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.75 }]}
-    >
+    <View style={[styles.card, clientHighlighted && styles.highlightedCard]}>
       {today ? (
         <View style={styles.todayHeader}>
-          <View style={styles.timeRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Ver visita de ${name}`}
+            onPress={openVisit}
+            style={styles.timeRow}
+          >
             <Ionicons
               name="alarm-outline"
               size={31.2}
@@ -243,34 +270,58 @@ export function OperationCard({
                 <Text style={styles.timeUnit}>hs</Text>
               ) : null}
             </Text>
-          </View>
+          </Pressable>
           <View style={styles.todayStatus}>
-            <View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Ver visita de ${name}`}
+              onPress={openVisit}
+            >
               <StatusChip>{formatOperationStatus(operation.status)}</StatusChip>
-            </View>
+            </Pressable>
             {completionButton}
           </View>
         </View>
       ) : null}
       <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderCopy}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ver visita de ${name}`}
+          onPress={openVisit}
+          style={styles.cardHeaderCopy}
+        >
           <Text style={styles.cardTitle}>{name}</Text>
-        </View>
+        </Pressable>
         {!today ? (
           <View style={styles.statusActions}>
-            <View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Ver visita de ${name}`}
+              onPress={openVisit}
+            >
               <StatusChip>{formatOperationStatus(operation.status)}</StatusChip>
-            </View>
+            </Pressable>
             {completionButton}
           </View>
         ) : null}
       </View>
 
       {!today ? (
-        <CardSchedule value={operation.scheduled_at} timeZone={timeZone} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ver visita de ${name}`}
+          onPress={openVisit}
+        >
+          <CardSchedule value={operation.scheduled_at} timeZone={timeZone} />
+        </Pressable>
       ) : null}
       <>
-        <View style={styles.infoRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ver visita de ${name}`}
+          onPress={openVisit}
+          style={styles.infoRow}
+        >
           <Ionicons
             name="build-outline"
             size={19}
@@ -280,7 +331,7 @@ export function OperationCard({
           <Text style={[styles.secondaryText, styles.infoCopy]}>
             {formatSlug(operation.appliance_type_slug)}
           </Text>
-        </View>
+        </Pressable>
         <View style={styles.infoRow}>
           <Ionicons
             name="location-outline"
@@ -298,19 +349,61 @@ export function OperationCard({
           </AddressLink>
         </View>
       </>
-      {!today && operation.description ? (
+      {guidance ? (
+        <View style={[styles.guidance, guidance.ready && styles.readyGuidance]}>
+          <Text
+            style={[styles.description, guidance.ready && styles.readyText]}
+          >
+            {guidance.text}
+          </Text>
+          {guidance.action ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={(event) => {
+                event.stopPropagation();
+                router.push({
+                  pathname: '/operations/[operationId]',
+                  params: {
+                    operationId: operation.id,
+                    focusCompletion: 'true',
+                  },
+                });
+              }}
+              style={styles.clientAction}
+            >
+              <ActionLabel
+                icon={
+                  operation.status === 'completed_tech'
+                    ? 'checkmark-outline'
+                    : 'star-outline'
+                }
+                textStyle={styles.clientActionText}
+              >
+                {guidance.action}
+              </ActionLabel>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      {!today && !guidance && operation.description ? (
         <>
           <View style={styles.divider} />
-          <Text
-            numberOfLines={2}
-            ellipsizeMode="tail"
-            style={styles.description}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Ver visita de ${name}`}
+            onPress={openVisit}
           >
-            {operation.description}
-          </Text>
+            <Text
+              numberOfLines={2}
+              ellipsizeMode="tail"
+              style={styles.description}
+            >
+              {operation.description}
+            </Text>
+          </Pressable>
         </>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -370,6 +463,38 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 20,
     backgroundColor: colors.surface,
+  },
+  highlightedCard: {
+    borderColor: colors.accent,
+    borderWidth: 2,
+    backgroundColor: '#162c29',
+  },
+  guidance: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: 12,
+  },
+  readyGuidance: {
+    backgroundColor: 'rgba(39,180,126,0.1)',
+    borderRadius: 12,
+    padding: 12,
+    borderTopWidth: 0,
+  },
+  readyText: { color: '#71deb1', fontWeight: '600' },
+  clientAction: {
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: colors.accent,
+  },
+  clientActionText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   todayHeader: {
     flexDirection: 'row',

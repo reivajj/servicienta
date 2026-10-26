@@ -167,6 +167,10 @@ export interface Database {
       };
     };
     Functions: {
+      reject_operation_completion: {
+        Args: { _operation_id: string; _client_id: string; _reason: string };
+        Returns: string;
+      };
       search_public_technician_profiles: {
         Args: {
           _zone_slug: string;

@@ -4,7 +4,10 @@ import { OperationDetailScreen } from '@/features/operations/OperationDetailScre
 import { colors } from '@/theme/colors';
 
 export default function OperationDetailRoute() {
-  const { operationId } = useLocalSearchParams<{ operationId: string }>();
+  const { operationId, focusCompletion } = useLocalSearchParams<{
+    operationId: string;
+    focusCompletion?: string;
+  }>();
 
   return (
     <>
@@ -18,7 +21,11 @@ export default function OperationDetailRoute() {
         }}
       />
       <MobileAccess>
-        <OperationDetailScreen key={operationId} operationId={operationId} />
+        <OperationDetailScreen
+          key={`${operationId}:${focusCompletion ?? ''}`}
+          operationId={operationId}
+          focusCompletion={focusCompletion === 'true'}
+        />
       </MobileAccess>
     </>
   );

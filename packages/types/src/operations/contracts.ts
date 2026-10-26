@@ -31,6 +31,10 @@ export interface ConfirmCompletedOperationResponse {
   data: Operation;
 }
 
+export interface RejectCompletedOperationInput {
+  reason: string;
+}
+
 export interface RejectCompletedOperationResponse {
   data: Operation;
 }

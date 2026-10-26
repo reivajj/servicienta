@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, {
@@ -85,7 +86,9 @@ export function TimePickerField({
               onPress={() => setExpanded(false)}
               style={styles.button}
             >
-              <Text style={styles.label}>Cancelar</Text>
+              <ActionLabel icon="close-outline" textStyle={styles.label}>
+                Cancelar
+              </ActionLabel>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -96,7 +99,9 @@ export function TimePickerField({
               }}
               style={styles.button}
             >
-              <Text style={styles.confirm}>Confirmar</Text>
+              <ActionLabel icon="checkmark-outline" textStyle={styles.confirm}>
+                Confirmar
+              </ActionLabel>
             </Pressable>
           </View>
         </View>

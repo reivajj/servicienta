@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
@@ -62,7 +63,12 @@ export function TodayScreen() {
                   onPress={() => void refetch()}
                   style={styles.button}
                 >
-                  <Text style={styles.buttonText}>Reintentar</Text>
+                  <ActionLabel
+                    icon="refresh-outline"
+                    textStyle={styles.buttonText}
+                  >
+                    Reintentar
+                  </ActionLabel>
                 </Pressable>
               </View>
             ) : null}
@@ -88,7 +94,7 @@ export function TodayScreen() {
                 Podés consultar el resto de tus visitas en la pestaña Visitas.
               </Text>
             </View>
-          ) : null
+          ) : undefined
         }
         renderItem={({ item }) => (
           <OperationCard operation={item} timeZone={AGENDA_TIME_ZONE} today />

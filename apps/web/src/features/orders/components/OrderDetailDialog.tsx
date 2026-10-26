@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import {
   useAdminOperations,
   useAdminOrder,
@@ -933,6 +933,7 @@ function AdminOrderDetailView({
 }) {
   const [showOperations, setShowOperations] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const editFormId = useId();
   const summaryRef = useRef<HTMLElement | null>(null);
   const [editCardHeight, setEditCardHeight] = useState<number | null>(null);
   const { data: order, error, isLoading } = useAdminOrder(orderId);
@@ -964,12 +965,12 @@ function AdminOrderDetailView({
     });
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
 
-    await updateOrder.mutateAsync({
+    updateOrder.mutate({
       orderId,
       input: {
         status: (formData.get('status') as OrderStatus | null) ?? 'pending',
@@ -1062,6 +1063,48 @@ function AdminOrderDetailView({
         </section>
       ) : (
         <>
+          <section className="users-panel auth-form admin-status-editor">
+            <label className="auth-form__field">
+              <span>Cambiar estado del pedido</span>
+              <select
+                key={order.status}
+                name="status"
+                form={editFormId}
+                defaultValue={order.status}
+                disabled={updateOrder.isPending}
+                onChange={() => updateOrder.reset()}
+              >
+                <option value="pending">Pendiente</option>
+                <option value="accepted">Aceptado</option>
+                <option value="cancelled">Cancelado</option>
+                <option value="in_progress">En progreso</option>
+                <option value="completed_tech">Completado por técnico</option>
+                <option value="completion_rejected">
+                  Finalización rechazada
+                </option>
+                <option value="completed">Completado</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              form={editFormId}
+              disabled={updateOrder.isPending}
+            >
+              {updateOrder.isPending ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+            {feedbackMessage ? (
+              <p
+                role={updateOrder.isError ? 'alert' : 'status'}
+                className={
+                  updateOrder.isError
+                    ? 'users-message users-message--error'
+                    : 'users-message users-message--success'
+                }
+              >
+                {feedbackMessage}
+              </p>
+            ) : null}
+          </section>
           <article className="users-panel orders-dialog__meta-strip">
             <dl className="user-card__meta orders-dialog__meta-list">
               <div>
@@ -1162,6 +1205,7 @@ function AdminOrderDetailView({
                 <h3>Edición administrativa</h3>
 
                 <form
+                  id={editFormId}
                   key={`${order.id}:${order.status}:${order.flow_type}:${order.updated_at}`}
                   className="auth-form orders-dialog__edit-form"
                   onSubmit={handleSubmit}
@@ -1174,23 +1218,6 @@ function AdminOrderDetailView({
                   />
 
                   <div className="orders-dialog__edit-form-body">
-                    <label className="auth-form__field">
-                      <span>Estado</span>
-                      <select name="status" defaultValue={order.status}>
-                        <option value="pending">Pendiente</option>
-                        <option value="accepted">Aceptado</option>
-                        <option value="cancelled">Cancelado</option>
-                        <option value="in_progress">En progreso</option>
-                        <option value="completed_tech">
-                          Completado por técnico
-                        </option>
-                        <option value="completion_rejected">
-                          Finalización rechazada
-                        </option>
-                        <option value="completed">Completado</option>
-                      </select>
-                    </label>
-
                     <label className="auth-form__field">
                       <span>Flujo</span>
                       <select name="flow_type" defaultValue={order.flow_type}>

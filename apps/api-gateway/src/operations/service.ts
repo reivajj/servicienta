@@ -4,6 +4,7 @@ import { applyTextSearch } from '../core/text-search.js';
 import { applyDateFilters } from '../core/date-filters.js';
 import type {
   CreateOperationInput,
+  RejectCompletedOperationInput,
   CreateTechnicianReviewInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
@@ -30,13 +31,14 @@ import type {
 } from './types.js';
 import {
   validateCreateOperationInput,
+  validateRejectCompletedOperationInput,
   validateCreateTechnicianReviewInput,
   validateScheduleOperationInput,
   validateUpdateAdminOperationInput,
 } from './validators.js';
 
 const OPERATION_SELECT =
-  'id, order_id, technician_id, status, scheduled_at, description, technician_completed_at, completed_at, created_at, updated_at';
+  'id, order_id, technician_id, status, scheduled_at, description, completion_rejection_reason, completion_rejected_at, technician_completed_at, completed_at, created_at, updated_at';
 
 const CURRENT_OPERATION_SELECT = `
   id,
@@ -46,6 +48,8 @@ const CURRENT_OPERATION_SELECT = `
   scheduled_at,
   description,
   technician_completed_at,
+  completion_rejection_reason,
+  completion_rejected_at,
   completed_at,
   created_at,
   updated_at,
@@ -87,6 +91,8 @@ const ADMIN_OPERATION_SELECT = `
   scheduled_at,
   description,
   technician_completed_at,
+  completion_rejection_reason,
+  completion_rejected_at,
   completed_at,
   created_at,
   updated_at,
@@ -406,6 +412,7 @@ export async function confirmCompletedOperation(
       updated_at: completedAt,
     })
     .eq('id', operationId)
+    .eq('status', 'completed_tech')
     .select(OPERATION_SELECT)
     .single();
 
@@ -438,58 +445,21 @@ export async function rejectCompletedOperation(
   supabase: SupabaseClient,
   auth: RequestAuth,
   operationId: string,
+  input: RejectCompletedOperationInput,
 ) {
   ensureClientRole(auth);
-
-  const { data: operation, error: operationError } = await supabase
-    .from('operations')
-    .select('id, order_id, status, order:orders!inner(client_id)')
-    .eq('id', operationId)
-    .eq('order.client_id', auth.id)
-    .maybeSingle();
-
-  if (operationError) throw new Error(operationError.message);
-  if (!operation) throw new NotFoundError('No se encontró la visita');
-  if (operation.status !== 'completed_tech') {
-    throw new ValidationError(
-      'Solo se puede rechazar la finalización informada por el técnico',
-    );
-  }
-
-  const rejectedAt = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('operations')
-    .update({
-      status: 'completion_rejected',
-      updated_at: rejectedAt,
-    })
-    .eq('id', operationId)
-    .select(OPERATION_SELECT)
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  const { error: updateOrderError } = await supabase
-    .from('orders')
-    .update({ status: 'completion_rejected', updated_at: rejectedAt })
-    .eq('id', operation.order_id);
-
-  if (updateOrderError) throw new Error(updateOrderError.message);
-
-  const mappedOperation = mapOperationRow(data as OperationRow);
-
-  await recordActivityEvent(supabase, {
-    actorId: auth.id,
-    entityType: 'operation',
-    entityId: mappedOperation.id,
-    eventType: 'operation.completion_rejected_by_client',
-    payload: {
-      order_id: operation.order_id,
-      rejected_at: rejectedAt,
-    },
+  const { reason } = validateRejectCompletedOperationInput(input);
+  const { error } = await supabase.rpc('reject_operation_completion', {
+    _operation_id: operationId,
+    _client_id: auth.id,
+    _reason: reason,
   });
-
-  return mappedOperation;
+  if (error?.code === 'P0002')
+    throw new NotFoundError('No se encontró la visita');
+  if (error?.code === '22023') throw new ValidationError(error.message);
+  if (error?.code === '42501') throw new ForbiddenError(error.message);
+  if (error) throw new Error(error.message);
+  return getCurrentOperationById(supabase, auth, operationId);
 }
 
 export async function cancelOperation(

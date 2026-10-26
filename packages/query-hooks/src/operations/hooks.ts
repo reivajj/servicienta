@@ -2,6 +2,7 @@ import type { Operation } from '@servicienta/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateOperationInput,
+  RejectCompletedOperationInput,
   CreateTechnicianReviewInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
@@ -109,9 +110,18 @@ export function useConfirmCompletedOperation() {
       void queryClient.invalidateQueries({
         queryKey: chatKeys.conversations(),
       });
-      queryClient.setQueryData(
+      queryClient.setQueryData<Operation>(
         operationKeys.currentDetail(response.data.id),
-        response.data,
+        (current) =>
+          current
+            ? {
+                ...current,
+                status: response.data.status,
+                completed_at: response.data.completed_at,
+                updated_at: response.data.updated_at,
+                order_status: 'completed',
+              }
+            : undefined,
       );
       void queryClient.invalidateQueries({ queryKey: operationKeys.current() });
       void queryClient.invalidateQueries({ queryKey: operationKeys.admin() });
@@ -126,12 +136,15 @@ export function useRejectCompletedOperation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (operationId: string) =>
-      apiClient.operations.rejectCompleted(operationId),
+    mutationFn: ({
+      operationId,
+      input,
+    }: {
+      operationId: string;
+      input: RejectCompletedOperationInput;
+    }) => apiClient.operations.rejectCompleted(operationId, input),
     onSuccess: (response) => {
-      void queryClient.invalidateQueries({
-        queryKey: chatKeys.conversations(),
-      });
+      void queryClient.invalidateQueries({ queryKey: chatKeys.all });
       queryClient.setQueryData(
         operationKeys.currentDetail(response.data.id),
         response.data,
@@ -216,6 +229,28 @@ export function useCurrentScheduledOperations() {
           page,
           pageSize: 100,
           status: 'scheduled',
+        });
+        items.push(...data.items);
+        if (page >= data.pagination.totalPages) break;
+        page += 1;
+      }
+      return items;
+    },
+  });
+}
+
+/** Full client collection so an outstanding recent visit is never hidden on another page. */
+export function useCurrentClientVisits() {
+  const apiClient = useApiClient();
+  return useQuery({
+    queryKey: [...operationKeys.current(), 'client-visits'],
+    queryFn: async () => {
+      const items: Operation[] = [];
+      let page = 1;
+      while (true) {
+        const { data } = await apiClient.operations.current.list({
+          page,
+          pageSize: 100,
         });
         items.push(...data.items);
         if (page >= data.pagination.totalPages) break;

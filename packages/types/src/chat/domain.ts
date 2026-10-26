@@ -14,7 +14,8 @@ export type ChatActionType =
   | 'operation.schedule'
   | 'operation.cancel'
   | 'operation.complete_tech'
-  | 'operation.confirm_completed';
+  | 'operation.confirm_completed'
+  | 'operation.reject_completed';
 
 export interface ChatConversationOperation {
   id: string;

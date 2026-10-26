@@ -10,6 +10,41 @@ Contiene las migraciones necesarias para búsqueda y agenda de pedidos, los
 flujos implementados y el recorrido de QA pendiente. Para el login del CLI y
 la aplicación de migraciones, consultar [Supabase workflow](../../../docs/supabase-workflow.md).
 
+## SDK actual: Expo 58
+
+Actualizado el 2026-10-26 a Expo `58.0.19`, React Native `0.88.0` y React
+`19.3.0`, con las versiones compatibles de Router, Reanimated, Worklets,
+DateTimePicker, Safe Area y Screens. Se alineó React en web/query-hooks para no
+instalar otro runtime dentro de mobile.
+
+Usar Node 22.13+ de la rama 22, 24.3+ de la rama 24 o 26+ (el entorno validado
+usa 22.22.2). No ejecutar Expo con Node 18/20 o las ramas 23/25.
+
+Después de esta actualización, detener cualquier Metro/Expo anterior con
+`Ctrl+C` y arrancar nuevamente desde la raíz:
+
+```bash
+pnpm mobile:start:clear
+```
+
+Abrir el QR con una versión de Expo Go compatible con SDK 58. Si el teléfono
+sigue indicando incompatibilidad, comprobar el SDK que admite su Expo Go;
+[las versiones del proyecto y de Expo Go deben coincidir](https://docs.expo.dev/troubleshooting/expo-go-version-mismatch/).
+En Android se puede obtener una versión compatible desde [expo.dev/go](https://expo.dev/go).
+La prueba en teléfono queda pendiente: exportar bundles no instala la app ni
+comprueba el Expo Go del dispositivo.
+
+Validación de la actualización: Expo Doctor 20/20, tipos de mobile/query-hooks,
+bundles de Android/iOS/web y build de web. Se mantuvo Metro configurado para el
+monorepo. Se retiró `newArchEnabled`, que SDK 58 ya no acepta, y se agregaron los
+plugins/dependencias nativas detectados por Expo CLI/Doctor (`expo-font`,
+DateTimePicker y StatusBar). Las refs de React Native usan los tipos de instancia
+nuevos (`ScrollViewInstance`, `TextInputInstance`).
+
+Referencias: [actualizar SDK](https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/),
+[SDK 58](https://expo.dev/changelog/sdk-58),
+[migración de Router](https://docs.expo.dev/router/migrate/sdk-57-to-58/).
+
 ## Preparación inicial
 
 Instalar las dependencias con la versión de pnpm indicada en el `package.json`
@@ -200,7 +235,7 @@ marcas**. Volver a abrir Perfil permite comprobar la persistencia.
 ## Acceso de clientes
 
 Las cuentas existentes de rol `client` y `technician` pueden iniciar sesión.
-El técnico conserva **Hoy**, mientras el cliente ve **Búsqueda** en la primera
+El técnico conserva **Hoy**, mientras el cliente ve **Inicio** en la primera
 pestaña. Ambos mantienen **Pedidos**, **Visitas**, **Chats** y **Perfil**.
 
 El cliente puede buscar por zona y electrodoméstico, elegir un técnico y enviar
@@ -217,3 +252,16 @@ Prueba manual: iniciar sesión con `juan-user@lopez.com.ar` o
 probar el chat y buscar un técnico para crear un pedido de prueba. Después,
 cerrar sesión e ingresar como técnico para comprobar que vuelve **Hoy** y que
 se conserva la edición de su oferta en Perfil.
+
+
+### Inicio del cliente: visita programada y búsqueda
+
+La pantalla Inicio destaca la próxima visita `scheduled` desde hoy en Argentina,
+con técnico, estado y fecha/horario. Si hay varias, ofrece un enlace al listado.
+La búsqueda para solicitar otro servicio queda debajo. Si no hay visitas, aparece
+la búsqueda; un fallo de agenda permite reintentar sin bloquearla.
+
+Probar con una cuenta cliente con visita hoy y otra futura, abrir el detalle desde
+la card y usar pull-to-refresh después de agendar o completar desde el técnico.
+Comprobar también el caso sin visitas y que una visita de hoy con hora pasada se
+mantiene destacada hasta cambiar su estado o pasar el día.

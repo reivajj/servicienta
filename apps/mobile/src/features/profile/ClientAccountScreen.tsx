@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -55,9 +56,9 @@ export function ClientAccountScreen() {
           style={styles.button}
         >
           {pending ? <ActivityIndicator color={colors.text} /> : null}
-          <Text style={styles.name}>
+          <ActionLabel icon="log-out-outline" textStyle={styles.name}>
             {pending ? 'Cerrando sesión…' : 'Cerrar sesión'}
-          </Text>
+          </ActionLabel>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

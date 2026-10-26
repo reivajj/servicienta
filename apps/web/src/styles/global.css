@@ -368,7 +368,34 @@ p {
 .dashboard-next-visit__heading { display: flex; justify-content: space-between; width: 100%; color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .dashboard-next-visit > strong { font-size: 1.2rem; }
 .dashboard-next-visit > small { color: var(--muted); }
-.dashboard-next-visit .status-badge { margin-top: 4px; }
+.dashboard-next-visit .admin-status-editor {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.users-detail-grid > .admin-status-editor {
+  margin-bottom: 0;
+}
+
+.admin-status-editor > .auth-form__field {
+  flex: 1 1 220px;
+}
+
+.admin-status-editor > button {
+  width: auto;
+  min-height: 44px;
+}
+
+.admin-status-editor > .users-message {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.status-badge { margin-top: 4px; }
 .dashboard-next-visit--empty { color: var(--muted); font-size: .9rem; }
 .dashboard-operational-tables { display: grid; width: 100%; gap: 22px; }
 .dashboard-section { display: grid; gap: 8px; padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface-strong); }
@@ -2471,6 +2498,7 @@ p {
 
 .status-badge {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   min-width: 84px;

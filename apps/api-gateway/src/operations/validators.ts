@@ -2,6 +2,7 @@ import { validateDateFilters } from '../core/date-filters.js';
 import { OPERATION_SCHEDULE_STEP_MINUTES } from '@servicienta/types';
 import type {
   CreateOperationInput,
+  RejectCompletedOperationInput,
   CreateTechnicianReviewInput,
   ListAdminOperationsInput,
   ListCurrentOperationsInput,
@@ -13,6 +14,23 @@ import type {
 import { ValidationError } from '../core/errors.js';
 
 const ALLOWED_PAGE_SIZES: UsersPageSize[] = [25, 50, 100];
+
+export function validateRejectCompletedOperationInput(
+  input: unknown,
+): RejectCompletedOperationInput {
+  const reason =
+    input &&
+    typeof input === 'object' &&
+    'reason' in input &&
+    typeof input.reason === 'string'
+      ? input.reason.trim()
+      : '';
+  if (!reason || reason.length > 2000)
+    throw new ValidationError(
+      'Explicá por qué rechazás la finalización (hasta 2000 caracteres)',
+    );
+  return { reason };
+}
 
 export function validateCreateOperationInput(
   input: CreateOperationInput,

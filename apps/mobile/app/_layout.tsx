@@ -32,6 +32,7 @@ export default function RootLayout() {
               <Stack.Screen name="orders/[orderId]" />
               <Stack.Screen name="orders/[orderId]/client" />
               <Stack.Screen name="operations/[operationId]" />
+              <Stack.Screen name="technicians/[publicSlug]" />
             </Stack>
           </CompleteVisitProvider>
         </ApiClientProvider>

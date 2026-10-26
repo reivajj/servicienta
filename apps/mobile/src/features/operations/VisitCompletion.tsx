@@ -1,3 +1,5 @@
+import { CLIENT_REJECTION_MESSAGE } from './client-visits';
+import { ActionLabel } from '@/components/ActionLabel';
 import {
   useCompleteVisit,
   COMPLETE_VISIT_DESCRIPTION,
@@ -5,6 +7,10 @@ import {
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
   Pressable,
   StyleSheet,
   Text,
@@ -35,6 +41,9 @@ export function VisitCompletion({
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [rejectError, setRejectError] = useState('');
   const pending = confirm.isPending || reject.isPending || review.isPending;
   const technician =
     user.role === 'technician' && user.id === operation.technician_id;
@@ -42,18 +51,31 @@ export function VisitCompletion({
 
   async function submit(action: 'confirm' | 'reject' | 'review') {
     if (busy.current) return;
+    if (action === 'reject' && !reason.trim()) {
+      setRejectError(
+        'Explicá qué quedó pendiente para que el técnico pueda ayudarte.',
+      );
+      return;
+    }
     busy.current = true;
     setError('');
     try {
       if (action === 'confirm') await confirm.mutateAsync(operation.id);
-      if (action === 'reject') await reject.mutateAsync(operation.id);
+      if (action === 'reject') {
+        setRejectError('');
+        await reject.mutateAsync({
+          operationId: operation.id,
+          input: { reason: reason.trim() },
+        });
+        setRejectOpen(false);
+      }
       if (action === 'review')
         await review.mutateAsync({
           operationId: operation.id,
           input: { rating, comment: comment.trim() || null },
         });
     } catch (error) {
-      setError(
+      (action === 'reject' ? setRejectError : setError)(
         error instanceof Error
           ? error.message
           : 'No se pudo guardar. Reintentá.',
@@ -81,7 +103,20 @@ export function VisitCompletion({
           (pending || disabled) && styles.disabled,
         ]}
       >
-        <Text style={styles.buttonText}>{label}</Text>
+        <ActionLabel
+          icon={
+            label === 'Atrás'
+              ? 'arrow-back-outline'
+              : secondary
+                ? 'alert-circle-outline'
+                : label === 'Enviar reseña'
+                  ? 'star-outline'
+                  : 'checkmark-outline'
+          }
+          textStyle={styles.buttonText}
+        >
+          {label}
+        </ActionLabel>
       </Pressable>
     );
   }
@@ -95,6 +130,72 @@ export function VisitCompletion({
     return null;
   return (
     <View style={styles.card}>
+      <Modal
+        visible={rejectOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!busy.current) setRejectOpen(false);
+        }}
+      >
+        <KeyboardAvoidingView
+          style={styles.overlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView
+            contentContainerStyle={styles.dialogContainer}
+            keyboardShouldPersistTaps="always"
+          >
+            <View style={styles.card} accessibilityViewIsModal>
+              <Text accessibilityRole="header" style={styles.title}>
+                Rechazar finalización
+              </Text>
+              <Text style={styles.copy}>
+                Contanos qué quedó pendiente. Al confirmar, se rechazará la
+                finalización de la visita y se enviará tu explicación al chat
+                del pedido en tu nombre para que el técnico pueda coordinar con
+                vos cómo continuar.
+              </Text>
+              <TextInput
+                accessibilityLabel="Motivo del rechazo (obligatorio)"
+                placeholder="¿Por qué el trabajo no está terminado?"
+                placeholderTextColor={colors.muted}
+                value={reason}
+                onChangeText={setReason}
+                maxLength={2000}
+                multiline
+                editable={!pending}
+                style={styles.input}
+              />
+              <Text style={styles.copy}>{reason.length}/2000 caracteres</Text>
+              {rejectError ? (
+                <Text accessibilityRole="alert" style={styles.error}>
+                  {rejectError}
+                </Text>
+              ) : null}
+              {button(
+                'Confirmar rechazo y enviar mensaje',
+                () => void submit('reject'),
+                false,
+                !reason.trim(),
+              )}
+              {button(
+                'Atrás',
+                () => {
+                  if (!busy.current) setRejectOpen(false);
+                },
+                true,
+              )}
+              {reject.isPending ? (
+                <ActivityIndicator
+                  color={colors.accent}
+                  accessibilityLabel="Enviando rechazo"
+                />
+              ) : null}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
       {technician && operation.status === 'scheduled' ? (
         <>
           <Text style={styles.title}>Completar visita</Text>
@@ -111,18 +212,22 @@ export function VisitCompletion({
           </Text>
           <Text style={styles.copy}>
             {client
-              ? 'Confirmá si el trabajo está terminado. Después podrás dejar tu reseña.'
+              ? 'Confirmá si el trabajo está terminado. A continuación podrás compartir tu opinión sobre la atención recibida.'
               : 'El cliente ya puede confirmar el trabajo y calificar la visita.'}
           </Text>
           {client ? (
             <>
               {button(
-                'Confirmar visita completada',
+                'Confirmar visita y dejar mi opinión',
                 () => void submit('confirm'),
               )}
               {button(
                 'El trabajo no está terminado',
-                () => void submit('reject'),
+                () => {
+                  setReason('');
+                  setRejectError('');
+                  setRejectOpen(true);
+                },
                 true,
               )}
             </>
@@ -130,10 +235,23 @@ export function VisitCompletion({
         </>
       ) : null}
       {operation.status === 'completion_rejected' ? (
-        <Text style={styles.copy}>
-          El cliente indicó que el trabajo no está terminado. Coordiná los
-          próximos pasos por el chat del pedido.
-        </Text>
+        <>
+          <Text style={styles.copy}>
+            {client
+              ? operation.completion_rejection_reason
+                ? 'Rechazaste la finalización de esta visita. Tu explicación se envió al chat del pedido. Podés continuar la conversación con el técnico para coordinar cómo resolver lo pendiente.'
+                : CLIENT_REJECTION_MESSAGE
+              : 'El cliente indicó que el trabajo no está terminado. Coordiná los próximos pasos por el chat del pedido.'}
+          </Text>
+          {operation.completion_rejection_reason ? (
+            <>
+              <Text style={styles.title}>Motivo del rechazo</Text>
+              <Text style={styles.copy}>
+                {operation.completion_rejection_reason}
+              </Text>
+            </>
+          ) : null}
+        </>
       ) : null}
       {operation.technician_review ? (
         <>
@@ -216,6 +334,8 @@ export function VisitCompletion({
   );
 }
 const styles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
+  dialogContainer: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   card: {
     padding: 18,
     gap: 14,

@@ -1,6 +1,6 @@
 # Supabase RPCs
 
-_Última actualización: 2026-04-15_
+_Última actualización: 2026-10-26_
 
 ## Propósito
 
@@ -169,3 +169,37 @@ agendada desde hoy (o la última agendada vencida); la segunda devuelve `main`,
 `STABLE SECURITY INVOKER`, `search_path` vacío y ejecución solo por `service_role`.
 La API sigue restringiendo cada consulta al dueño del pedido. No son RPCs
 públicas y no almacenan copias de los datos.
+
+## `reject_operation_completion`
+
+Migración: [202610260001_reject_visit_completion_with_reason.sql](../supabase/migrations/202610260001_reject_visit_completion_with_reason.sql).
+
+Recibe `_operation_id uuid`, `_client_id uuid`, `_reason text` y devuelve el UUID
+de la visita. Solo `service_role` puede ejecutarla; el gateway obtiene el cliente
+de la sesión autenticada, nunca del body. Valida rol, pertenencia, estado
+`completed_tech` y motivo obligatorio de hasta 2000 caracteres.
+
+Bloquea la visita y el pedido, guarda motivo y fecha propios (sin modificar la
+descripción técnica), actualiza ambos estados, crea o reutiliza el chat del pedido,
+asegura participación del cliente/técnico, publica un evento `operation.reject_completed`
+con `sender_id` del cliente y registra auditoría con el ID del mensaje. Si falla
+cualquier escritura, se revierte todo. Una repetición con el mismo motivo para una
+visita ya rechazada devuelve el mismo ID sin duplicar el evento.
+
+El endpoint es `POST /api/operations/:operationId/reject-completed` con
+`{ "reason": "Qué quedó pendiente" }`. Errores SQL `P0002`, `22023` y `42501`
+se traducen a HTTP 404, 400 y 403. El diálogo de mobile y web solicita el motivo
+y confirma el envío explícitamente antes de llamar al endpoint.
+
+Pruebas del contrato: `node --import tsx scripts/tests/reject-completion.test.mts`.
+La prueba de SQL usa PostgreSQL embebido en una base descartable; instalar PGlite
+fuera del repo (no es dependencia de la app) y ejecutar desde la raíz:
+
+```bash
+pnpm --dir /tmp/servicienta-rejection-sql add @electric-sql/pglite@0.5.12
+PGLITE_MODULE=/tmp/servicienta-rejection-sql/node_modules/@electric-sql/pglite/dist/index.js node --import tsx scripts/tests/reject-completion-sql.test.mts
+```
+
+Cubre idempotencia, pertenencia, permisos de ejecución y rollback ante errores
+simulados de chat y auditoría. No modifica Supabase remoto ni reemplaza una
+prueba del flujo en el celular.

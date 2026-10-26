@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import {
   useAdminOperation,
   useCancelOperation,
@@ -661,6 +661,7 @@ function AdminOperationDetailView({
   onClose?: () => void;
 }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const editFormId = useId();
   const { data: operation, error, isLoading } = useAdminOperation(operationId);
   const updateOperation = useUpdateAdminOperation();
   const errorMessage =
@@ -670,12 +671,12 @@ function AdminOperationDetailView({
   const feedbackMessage =
     updateMessage || (updateOperation.isSuccess ? 'Visita actualizada' : '');
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
 
-    await updateOperation.mutateAsync({
+    updateOperation.mutate({
       operationId,
       input: {
         status: (formData.get('status') as OperationStatus | null) ?? 'pending',
@@ -721,6 +722,47 @@ function AdminOperationDetailView({
         </section>
       ) : (
         <section className="users-detail-grid">
+          <section className="users-panel auth-form admin-status-editor">
+            <label className="auth-form__field">
+              <span>Cambiar estado de la visita</span>
+              <select
+                key={operation.status}
+                name="status"
+                form={editFormId}
+                defaultValue={operation.status}
+                disabled={updateOperation.isPending}
+                onChange={() => updateOperation.reset()}
+              >
+                <option value="pending">Pendiente</option>
+                <option value="scheduled">Agendada</option>
+                <option value="completed_tech">Completada por técnico</option>
+                <option value="completion_rejected">
+                  Finalización rechazada
+                </option>
+                <option value="completed">Completada</option>
+                <option value="cancelled">Cancelada</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              form={editFormId}
+              disabled={updateOperation.isPending}
+            >
+              {updateOperation.isPending ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+            {feedbackMessage ? (
+              <p
+                role={updateOperation.isError ? 'alert' : 'status'}
+                className={
+                  updateOperation.isError
+                    ? 'users-message users-message--error'
+                    : 'users-message users-message--success'
+                }
+              >
+                {feedbackMessage}
+              </p>
+            ) : null}
+          </section>
           <article className="users-panel">
             <div className="user-card__header">
               <div>
@@ -888,24 +930,11 @@ function AdminOperationDetailView({
             </p>
 
             <form
+              id={editFormId}
               key={`${operation.id}:${operation.status}:${operation.scheduled_at ?? ''}:${operation.completed_at ?? ''}`}
               className="auth-form operation-admin-edit-form"
               onSubmit={handleSubmit}
             >
-              <label className="auth-form__field operation-admin-edit-form__status">
-                <span>Estado</span>
-                <select name="status" defaultValue={operation.status}>
-                  <option value="pending">Pendiente</option>
-                  <option value="scheduled">Agendada</option>
-                  <option value="completed_tech">Completada por técnico</option>
-                  <option value="completion_rejected">
-                    Finalización rechazada
-                  </option>
-                  <option value="completed">Completada</option>
-                  <option value="cancelled">Cancelada</option>
-                </select>
-              </label>
-
               <label className="auth-form__field operation-admin-edit-form__description">
                 <span>Descripción técnica</span>
                 <input

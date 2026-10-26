@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/theme/colors';
@@ -74,7 +75,9 @@ export function VisitAttentionFilters({
             onPress={() => onChange('main')}
             style={styles.back}
           >
-            <Text style={styles.link}>Volver a la vista principal</Text>
+            <ActionLabel icon="arrow-back-outline" textStyle={styles.link}>
+              Volver a la vista principal
+            </ActionLabel>
           </Pressable>
         </>
       ) : null}

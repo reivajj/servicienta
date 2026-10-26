@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { createContext, useContext, useRef, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import {
@@ -114,11 +115,14 @@ export function CompleteVisitProvider({ children }: PropsWithChildren) {
                 {complete.isPending ? (
                   <ActivityIndicator color={colors.text} />
                 ) : null}
-                <Text style={styles.buttonText}>
+                <ActionLabel
+                  icon="checkmark-outline"
+                  textStyle={styles.buttonText}
+                >
                   {complete.isPending
                     ? 'Completando…'
                     : 'Confirmar y completar visita'}
-                </Text>
+                </ActionLabel>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -130,7 +134,12 @@ export function CompleteVisitProvider({ children }: PropsWithChildren) {
                   complete.isPending && styles.disabled,
                 ]}
               >
-                <Text style={styles.buttonText}>Atrás</Text>
+                <ActionLabel
+                  icon="arrow-back-outline"
+                  textStyle={styles.buttonText}
+                >
+                  Atrás
+                </ActionLabel>
               </Pressable>
             </ScrollView>
           </View>

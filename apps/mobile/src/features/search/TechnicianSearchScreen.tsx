@@ -1,4 +1,6 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -7,6 +9,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -26,7 +29,15 @@ import type {
 import { formatPersonName } from '@/lib/format';
 import { colors } from '@/theme/colors';
 
-export function TechnicianSearchScreen() {
+export function TechnicianSearchScreen({
+  header,
+  onRefresh,
+  refreshing = false,
+}: {
+  header?: ReactNode;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+}) {
   const router = useRouter();
   const {
     data: catalogs,
@@ -106,9 +117,19 @@ export function TechnicianSearchScreen() {
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.screen}>
       <ScrollView
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.accent}
+            />
+          ) : undefined
+        }
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        {header}
         <Text style={styles.eyebrow}>Encontrá ayuda para tu hogar</Text>
         <Text style={styles.title}>Buscar técnicos</Text>
         <Text style={styles.copy}>
@@ -128,7 +149,9 @@ export function TechnicianSearchScreen() {
               style={styles.secondary}
               onPress={() => void refetchCatalogs()}
             >
-              <Text style={styles.buttonText}>Reintentar</Text>
+              <ActionLabel icon="refresh-outline" textStyle={styles.buttonText}>
+                Reintentar
+              </ActionLabel>
             </Pressable>
           </View>
         ) : null}
@@ -176,9 +199,9 @@ export function TechnicianSearchScreen() {
               ]}
             >
               {isFetching ? <ActivityIndicator color={colors.text} /> : null}
-              <Text style={styles.buttonText}>
+              <ActionLabel icon="search-outline" textStyle={styles.buttonText}>
                 {isFetching ? 'Buscando…' : 'Buscar técnicos'}
-              </Text>
+              </ActionLabel>
             </Pressable>
           </View>
         ) : null}
@@ -194,7 +217,9 @@ export function TechnicianSearchScreen() {
               style={styles.secondary}
               onPress={() => void refetch()}
             >
-              <Text style={styles.buttonText}>Reintentar</Text>
+              <ActionLabel icon="refresh-outline" textStyle={styles.buttonText}>
+                Reintentar
+              </ActionLabel>
             </Pressable>
           </View>
         ) : null}
@@ -235,9 +260,12 @@ export function TechnicianSearchScreen() {
                     !profile.available && styles.disabled,
                   ]}
                 >
-                  <Text style={styles.buttonText}>
+                  <ActionLabel
+                    icon="add-circle-outline"
+                    textStyle={styles.buttonText}
+                  >
                     {profile.available ? 'Solicitar servicio' : 'No disponible'}
-                  </Text>
+                  </ActionLabel>
                 </Pressable>
               </View>
             ))
@@ -320,9 +348,9 @@ export function TechnicianSearchScreen() {
                 {createOrder.isPending ? (
                   <ActivityIndicator color={colors.text} />
                 ) : null}
-                <Text style={styles.buttonText}>
+                <ActionLabel icon="send-outline" textStyle={styles.buttonText}>
                   {createOrder.isPending ? 'Enviando…' : 'Enviar pedido'}
-                </Text>
+                </ActionLabel>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -330,7 +358,12 @@ export function TechnicianSearchScreen() {
                 onPress={() => setSelected(null)}
                 style={styles.secondary}
               >
-                <Text style={styles.buttonText}>Volver</Text>
+                <ActionLabel
+                  icon="arrow-back-outline"
+                  textStyle={styles.buttonText}
+                >
+                  Volver
+                </ActionLabel>
               </Pressable>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -426,7 +459,9 @@ function CatalogSelector({
               onPress={() => setOpen(false)}
               style={styles.secondary}
             >
-              <Text style={styles.buttonText}>Cerrar</Text>
+              <ActionLabel icon="close-outline" textStyle={styles.buttonText}>
+                Cerrar
+              </ActionLabel>
             </Pressable>
           </ScrollView>
         </SafeAreaView>

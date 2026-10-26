@@ -6,8 +6,12 @@
     "orientation": "portrait",
     "scheme": "servicienta",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      "expo-status-bar",
+      "expo-font"
+    ],
     "experiments": {
       "typedRoutes": true
     },

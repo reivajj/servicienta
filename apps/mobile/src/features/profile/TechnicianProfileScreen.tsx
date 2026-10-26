@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useCallback, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -143,7 +144,9 @@ export function TechnicianProfileScreen() {
           onPress={() => void refetch()}
           style={styles.secondary}
         >
-          <Text style={styles.buttonText}>Reintentar</Text>
+          <ActionLabel icon="refresh-outline" textStyle={styles.buttonText}>
+            Reintentar
+          </ActionLabel>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -151,7 +154,9 @@ export function TechnicianProfileScreen() {
           onPress={() => void logout()}
           style={styles.secondary}
         >
-          <Text style={styles.buttonText}>Cerrar sesión</Text>
+          <ActionLabel icon="log-out-outline" textStyle={styles.buttonText}>
+            Cerrar sesión
+          </ActionLabel>
         </Pressable>
         {saveError ? (
           <Text accessibilityRole="alert" style={styles.error}>
@@ -329,7 +334,9 @@ export function TechnicianProfileScreen() {
             style={styles.secondary}
           >
             {signingOut ? <ActivityIndicator color={colors.text} /> : null}
-            <Text style={styles.buttonText}>Cerrar sesión</Text>
+            <ActionLabel icon="log-out-outline" textStyle={styles.buttonText}>
+              Cerrar sesión
+            </ActionLabel>
           </Pressable>
         </ScrollView>
         <View style={styles.footer}>
@@ -361,9 +368,9 @@ export function TechnicianProfileScreen() {
             {update.isPending ? (
               <ActivityIndicator color={colors.text} />
             ) : null}
-            <Text style={styles.buttonText}>
+            <ActionLabel icon="save-outline" textStyle={styles.buttonText}>
               {update.isPending ? 'Guardando…' : 'Guardar oferta'}
-            </Text>
+            </ActionLabel>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

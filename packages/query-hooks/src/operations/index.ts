@@ -9,6 +9,7 @@ export {
   useCreateOperation,
   useCreateTechnicianReview,
   useCurrentOperation,
+  useCurrentClientVisits,
   useCurrentOperations,
   useCurrentScheduledOperations,
   useScheduleOperation,

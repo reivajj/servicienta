@@ -1,3 +1,4 @@
+import { ClientOrdersScreen } from './ClientOrdersScreen';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { argentinaDay } from '@/features/today/agenda';
@@ -41,6 +42,28 @@ const filterStatuses: { value: OrderStatus; label: string }[] = [
 }));
 
 export function OrdersScreen() {
+  const { data: user } = useCurrentUser();
+  const router = useRouter();
+  if (user?.role === 'client')
+    return (
+      <ClientOrdersScreen
+        renderOrder={(order) => (
+          <OrderCard
+            order={order}
+            onPress={() =>
+              router.push({
+                pathname: '/orders/[orderId]',
+                params: { orderId: order.id },
+              })
+            }
+          />
+        )}
+      />
+    );
+  return <TechnicianOrdersScreen />;
+}
+
+function TechnicianOrdersScreen() {
   const { data: currentUser } = useCurrentUser();
   const { filters, change, page, setPage } = useListFilters<OrderStatus>();
   const [view, setView] = useState<OrderView>('main');
@@ -143,7 +166,7 @@ export function OrdersScreen() {
         ListEmptyComponent={
           !isLoading && !error ? (
             <EmptyState message="No hay pedidos que coincidan con los filtros." />
-          ) : null
+          ) : undefined
         }
         ListFooterComponent={
           data ? (
@@ -153,7 +176,7 @@ export function OrdersScreen() {
               onChange={setPage}
               disabled={isLoading || isRefetching}
             />
-          ) : null
+          ) : undefined
         }
         onRefresh={() => void refetch()}
         refreshing={isRefetching}

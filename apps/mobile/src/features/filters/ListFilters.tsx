@@ -1,3 +1,4 @@
+import { ActionLabel } from '@/components/ActionLabel';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -83,7 +84,13 @@ export function ListFilters<T extends string>({
         onPress={onPress}
         style={[styles.choice, selected && styles.selected]}
       >
-        <Text style={styles.text}>{label}</Text>
+        {label === 'Atrás' ? (
+          <ActionLabel icon="arrow-back-outline" textStyle={styles.text}>
+            {label}
+          </ActionLabel>
+        ) : (
+          <Text style={styles.text}>{label}</Text>
+        )}
       </Pressable>
     );
   }
@@ -143,7 +150,9 @@ export function ListFilters<T extends string>({
             onPress={() => onChange({})}
             style={styles.clear}
           >
-            <Text style={styles.link}>Limpiar filtros</Text>
+            <ActionLabel icon="close-circle-outline" textStyle={styles.link}>
+              Limpiar filtros
+            </ActionLabel>
           </Pressable>
         </View>
       ) : null}
@@ -306,7 +315,12 @@ export function ListPagination({
         onPress={() => onChange(page - 1)}
         style={styles.choice}
       >
-        <Text style={[styles.text, page <= 1 && styles.muted]}>Anterior</Text>
+        <ActionLabel
+          icon="chevron-back-outline"
+          textStyle={[styles.text, page <= 1 && styles.muted]}
+        >
+          Anterior
+        </ActionLabel>
       </Pressable>
       <Text style={styles.muted}>
         {page} / {totalPages}
@@ -317,9 +331,12 @@ export function ListPagination({
         onPress={() => onChange(page + 1)}
         style={styles.choice}
       >
-        <Text style={[styles.text, page >= totalPages && styles.muted]}>
+        <ActionLabel
+          icon="chevron-forward-outline"
+          textStyle={[styles.text, page >= totalPages && styles.muted]}
+        >
           Siguiente
-        </Text>
+        </ActionLabel>
       </Pressable>
     </View>
   );

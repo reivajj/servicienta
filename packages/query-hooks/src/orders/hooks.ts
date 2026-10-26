@@ -1,3 +1,4 @@
+import type { Order } from '@servicienta/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateOrderInput,
@@ -31,6 +32,28 @@ export function useCurrentOrders(input: ListMyOrdersInput) {
     queryFn: async () => {
       const response = await apiClient.orders.current.list(input);
       return response.data;
+    },
+  });
+}
+
+/** Load the client collection before splitting current order and history. */
+export function useCurrentClientOrders() {
+  const apiClient = useApiClient();
+  return useQuery({
+    queryKey: [...orderKeys.current(), 'client-orders'],
+    queryFn: async () => {
+      const items: Order[] = [];
+      let page = 1;
+      while (true) {
+        const { data } = await apiClient.orders.current.list({
+          page,
+          pageSize: 100,
+        });
+        items.push(...data.items);
+        if (page >= data.pagination.totalPages) break;
+        page += 1;
+      }
+      return items;
     },
   });
 }

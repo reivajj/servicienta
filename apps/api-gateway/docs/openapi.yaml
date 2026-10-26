@@ -991,6 +991,45 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/operations/{operationId}/reject-completed:
+    post:
+      tags: [Operations]
+      summary: Reject completion with a mandatory explanation as client
+      description: Atomically rejects the visit and order, saves the reason and publishes a chat action authored by the authenticated client. Identical retries do not duplicate the message.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+                  description: Required explanation; whitespace is trimmed and blank values are rejected.
+      responses:
+        '200':
+          $ref: '#/components/responses/OperationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Visit not found for this client
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/operations/{operationId}/cancel:
     post:
       tags: [Operations]
@@ -2724,6 +2763,8 @@ components:
         - scheduled_at
         - description
         - technician_completed_at
+        - completion_rejection_reason
+        - completion_rejected_at
         - completed_at
         - created_at
         - updated_at
@@ -2812,6 +2853,13 @@ components:
           type:
             - string
             - 'null'
+          format: date-time
+        completion_rejection_reason:
+          type: [string, 'null']
+          maxLength: 2000
+          description: Client explanation, separate from technical visit notes.
+        completion_rejected_at:
+          type: [string, 'null']
           format: date-time
         completed_at:
           type:

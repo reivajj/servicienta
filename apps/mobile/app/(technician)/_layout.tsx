@@ -1,7 +1,7 @@
+import type { ColorValue } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useCurrentUser } from '@servicienta/query-hooks';
-import type { ColorValue } from 'react-native';
 import { MobileAccess } from '@/features/auth/MobileAccess';
 import { colors } from '@/theme/colors';
 
@@ -16,7 +16,15 @@ function tabIcon(name: TabIconName) {
     color: ColorValue;
     size: number;
   }) {
-    return <Ionicons name={name} color={color} size={size} />;
+    return (
+      <Ionicons
+        name={name}
+        color={
+          color == null || typeof color === 'number' ? colors.accent : color
+        }
+        size={size}
+      />
+    );
   };
 }
 
@@ -48,8 +56,8 @@ function MainTabs() {
       <Tabs.Screen
         name="today"
         options={{
-          title: isClient ? 'Búsqueda' : 'Hoy',
-          tabBarIcon: tabIcon(isClient ? 'search-outline' : 'calendar-outline'),
+          title: isClient ? 'Inicio' : 'Hoy',
+          tabBarIcon: tabIcon(isClient ? 'home-outline' : 'calendar-outline'),
         }}
       />
       <Tabs.Screen
