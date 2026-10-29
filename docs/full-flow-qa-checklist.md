@@ -1,16 +1,24 @@
 # Checklist QA - Flujo completo cliente tecnico admin
 
-_Ultima actualizacion: 2026-09-22_
+_Última actualización: 2026-10-26_
 
 ## Preparacion
 
-1. Aplicar migraciones:
+Este documento describe verificaciones por ejecutar, no resultados de QA ya
+aprobados. El estado de ejecución y límites está en
+[mobile-current-state.md](./mobile-current-state.md#verificaciones-realizadas-y-límites).
+
+1. Consultar el historial del Supabase correcto y revisar/aplicar las migraciones
+   necesarias, incluida `202610260001_reject_visit_completion_with_reason.sql`.
+   Ver [login y vinculación](./supabase-workflow.md).
 
    ```bash
    pnpm exec supabase migration up --linked
    ```
 
-2. Cargar dataset operativo:
+2. Usar cuentas y datos existentes. Solo para una base de pruebas descartable que
+   se quiera reinicializar, cargar el dataset operativo (el seed resetea datos de
+   ese escenario; no ejecutarlo automáticamente para retomar):
 
    ```bash
    pnpm seed:scenario -- --scenario orders-operations-realistic
@@ -68,6 +76,22 @@ _Ultima actualizacion: 2026-09-22_
    - no se puede crear una segunda review para la misma operation
    - el rating del tecnico cambia en busqueda publica o perfil admin
 
+## Rechazo de finalización con motivo
+
+1. Usar otra visita `completed_tech` y entrar como su cliente en mobile o web.
+2. Pulsar “El trabajo no está terminado”/Rechazar finalización. Debe abrir un
+   diálogo con explicación obligatoria y confirmación explícita del envío al chat.
+3. Comprobar que un motivo vacío o de solo espacios no se envía. Pulsar Atrás:
+   no cambia el estado ni aparece un mensaje en el chat.
+4. Escribir un motivo y confirmar. Verificar `completion_rejected` en visita y
+   pedido; motivo/fecha en la visita, sin modificar la descripción técnica.
+5. Abrir el chat con cliente y técnico: debe haber un solo evento
+   `operation.reject_completed`, con el cliente como autor y el motivo completo.
+   Reintentar la misma solicitud no debe duplicarlo.
+6. Revisar el detalle para ambos roles y la auditoría
+   `operation.completion_rejected_by_client`. En cliente, el texto debe hablarle
+   directamente (“Rechazaste…”). Ante un fallo, el diálogo debe permitir reintentar.
+
 ## Chat del pedido
 
 1. Con cliente y técnico en sesiones separadas, abrir el chat desde el pedido.
@@ -118,6 +142,31 @@ _Ultima actualizacion: 2026-09-22_
    - cada día muestra como máximo tres tarjetas y `+N más` abre la agenda diaria
      scrollable
 
+6. En el detalle administrativo de pedido y visita, cambiar el selector superior
+   y guardar. Comprobar badge, listas, feedback de éxito/error y auditoría
+   `admin.order_updated` / `admin.operation_updated`. El selector comparte el
+   formulario de edición: se conservan validaciones de datos y fechas. Revisar cada
+   entidad cuando se necesite corregir los dos estados; no se sincronizan solos.
+7. Probar “Finalización rechazada” junto a un título largo: el texto debe quedar
+   dentro del contorno del badge, sin comprimirse.
+
+## Mobile en navegador y Android
+
+1. En navegador, abrir Inicio del cliente, VISITAS y HOY con cards que tengan
+   acciones de OK/confirmar/opinar. No debe aparecer el error de `<button>` anidado.
+   Probar por separado abrir el detalle, completar/opinar y abrir dirección en mapas.
+2. En el detalle de visita, verificar la card de cierre al principio y los botones
+   inferiores Pedido | Técnico (cliente) o Pedido | Cliente (técnico), más Chat solo
+   con icono. Abrir ambas fichas y regresar al origen.
+3. Comprobar detalle de pedido/visita con nota completa y listados con nota de dos
+   líneas; horarios mobile `13:00hs`. Enviar mensajes con el botón de solo icono,
+   también con navegador angosto y teclado abierto.
+4. Revisar el [primer build de EAS](https://expo.dev/accounts/reivajj/projects/servicienta/builds/a71e8e83-1f38-4e76-b92f-3c9aa328770d).
+   Cuando termine, instalar la APK siguiendo [la guía](../apps/mobile/docs/android-apk.md).
+   Con datos móviles, probar login, persistencia de sesión, pedidos, visitas, cierre,
+   rechazo con motivo, opinión, chat y mapas. Cerrar Expo/Metro en la computadora:
+   el APK debe seguir usando el gateway público.
+
 ## Validaciones negativas
 
 1. Intentar crear order logueado como admin o tecnico: debe bloquearse.
@@ -126,3 +175,7 @@ _Ultima actualizacion: 2026-09-22_
 4. Intentar review sobre operation `pending`, `scheduled` o `completed_tech`:
    debe devolver error.
 5. Registrar usuario enviando metadata `role=admin`: debe quedar `client`.
+6. Intentar usar `PATCH /api/admin/orders/:orderId` y
+   `PATCH /api/admin/operations/:operationId` como cliente/técnico: debe bloquearse.
+7. Rechazar una visita ajena, no completada por técnico o sin motivo: debe
+   bloquearse sin cambiar estados ni crear mensajes.

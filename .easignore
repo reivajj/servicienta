@@ -75,3 +75,10 @@ yarn-error.log*
 
 # Mobile documentation stays in Git, outside the EAS upload.
 /apps/mobile/docs/
+
+# Local signing credentials and build artifacts
+/apps/mobile/credentials.json
+*.jks
+*.keystore
+*.apk
+*.aab

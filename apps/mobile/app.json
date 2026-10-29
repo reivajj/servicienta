@@ -22,6 +22,21 @@
     "ios": {
       "bundleIdentifier": "com.servicienta.mobile",
       "supportsTablet": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "owner": "reivajj",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "10a32402-845a-4b94-8238-1920ba43bed5"
+      }
     }
   }
 }

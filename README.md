@@ -26,6 +26,7 @@ La referencia principal del proyecto está en:
 
 - [docs/source-of-truth.md](./docs/source-of-truth.md)
 - [docs/mobile-current-state.md](./docs/mobile-current-state.md): estado de mobile y guía para retomar
+- [apps/mobile/docs/android-apk.md](./apps/mobile/docs/android-apk.md): generar, instalar y compartir el APK interno con EAS
 - [docs/supabase-rpcs.md](./docs/supabase-rpcs.md)
 - [docs/supabase-workflow.md](./docs/supabase-workflow.md)
 
@@ -112,6 +113,7 @@ pnpm dev
 pnpm build
 pnpm lint
 pnpm check-types
+pnpm mobile:apk # Generar APK Android con el perfil preview de EAS
 ```
 
 También podés usar filtros con `turbo`:

@@ -1,6 +1,6 @@
 # Servicienta — Fuente de verdad provisional
 
-_Última actualización: 2026-10-22_
+_Última actualización: 2026-10-26_
 
 ## Propósito de este documento
 
@@ -687,6 +687,13 @@ Implementado hoy:
 - `ActivityEvent` real en Supabase con endpoint admin y registro de eventos principales del flujo operativo
 - `ChatConversation`, participantes y mensajes reales, con conversaciones por pedido,
   listado por rol, Realtime de lectura y escrituras mediante API Gateway
+- mobile con Expo 58 para técnico y cliente: Inicio del cliente con visita destacada,
+  búsqueda, historiales de pedidos/visitas, cierre técnico y confirmación/opinión
+- rechazo de finalización del cliente con motivo obligatorio y confirmación explícita;
+  motivo/fecha propios de la visita, evento de chat con el cliente como autor y
+  auditoría en una transacción (requiere la migración del 2026-10-26)
+- perfil EAS `preview` configurado para APK interno con API remota; primer build
+  enviado el 2026-10-26, en cola en la última consulta. Ver [distribución Android](../apps/mobile/docs/android-apk.md)
 - onboarding público inicial para clientes desde búsqueda de técnicos, con registro/login inline antes de crear `Order`
 - creación de `TechnicianReview` desde UI de cliente sobre `Operation` completada o cancelada
 - escenario de seed `orders-operations-realistic` que resetea dataset seeded y reconstruye `users`, `client_profiles`, `technician_profiles`, `orders`, `operations` y `technician_reviews` con integridad válida

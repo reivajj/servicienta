@@ -176,9 +176,11 @@ El archivo [`.easignore`](../../../.easignore) de la raíz excluye esta carpeta
 del archivo que se carga a EAS Build y conserva las reglas de los `.gitignore`
 actuales. Mantenerlo actualizado si cambian esas exclusiones.
 
-Todavía no hay `eas.json` ni perfiles de distribución configurados. Los comandos
-de esta guía sirven para desarrollo; no publican la app ni generan builds de
-producción.
+Ya existe el perfil `preview` en `apps/mobile/eas.json` para generar APKs de
+distribución interna. Desde la raíz: `pnpm mobile:apk`. La guía completa de
+cuenta Expo, variables remotas, firma, instalación y distribución está en
+[android-apk.md](./android-apk.md). Los comandos de inicio de esta guía siguen
+siendo para desarrollo con Metro.
 
 Referencias oficiales:
 

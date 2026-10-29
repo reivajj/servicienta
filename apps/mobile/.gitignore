@@ -9,3 +9,9 @@ web-build/
 
 expo-env.d.ts
 # @end expo-cli
+# Local signing credentials and build artifacts
+credentials.json
+*.jks
+*.keystore
+*.apk
+*.aab

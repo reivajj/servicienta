@@ -1,14 +1,22 @@
 # Pasos iniciales para crear la app móvil de Servicienta
 
-_Última actualización: 2026-10-22_
+_Última actualización: 2026-10-26_
 
 ## Estado de implementación
 
 La app ya existe y tiene flujos operativos implementados. Para retomar, leer
 primero [Mobile: estado actual y cómo retomar](./mobile-current-state.md): incluye
 los pendientes de migración, reglas de las bandejas, validaciones y QA restante.
-Las fases de este documento conservan el plan original; no deben interpretarse
-como un listado de funcionalidades todavía sin implementar.
+Al 2026-10-26 también están implementados Inicio/Visitas/Pedidos del cliente,
+historiales, confirmación y opinión, y rechazo con motivo obligatorio enviado al
+chat. El runtime pasó a Expo 58. Hay un perfil EAS `preview` para APK firmado,
+variables remotas y un primer build enviado a la cola de Expo. La configuración
+y los pasos de instalación están en [la guía de APK](../apps/mobile/docs/android-apk.md).
+
+Las fases siguientes conservan el plan original; no son una lista del trabajo
+que falta hoy. La instalación/QA del primer APK, el historial remoto de migraciones,
+EAS Update, push, offline completo y distribución iOS continúan pendientes de
+validación o implementación según [el estado actual](./mobile-current-state.md).
 
 ## Objetivo
 
@@ -375,10 +383,13 @@ Validación de fechas y contadores: `node --import tsx scripts/tests/list-filter
 ### Accesos técnicos a Completar visita
 
 El técnico puede iniciar el mismo pop-up de confirmación desde el OK del chat,
-la card de HOY, la card explicativa del detalle o el botón fijo del detalle.
-El estado encabeza la barra de acciones del chat; calendario y OK tienen el
-mismo tamaño, y el OK solo aparece para visitas agendadas. En el detalle,
-Chat y Pedido comparten la primera fila fija, con Completar visita debajo.
+el OK de HOY/VISITAS y la card explicativa al comienzo del detalle. En VISITAS,
+el OK se muestra cuando ya pasó el horario; HOY permite completar las agendadas
+de esa jornada. El estado encabeza la barra de acciones del chat; calendario,
+OK y X tienen el mismo tamaño. El OK del chat requiere una visita agendada.
+En el detalle, el pie muestra Pedido | Cliente para el técnico o Pedido | Técnico
+para el cliente, y debajo Chat solo con icono. Completar visita queda en la card
+superior, sin repetirse en el pie.
 El pop-up explica que el cliente podrá confirmar el trabajo y dejar una reseña,
 permite volver atrás y evita reenvíos mientras se guarda. En HOY, tocar el OK
 abre la confirmación directamente sin navegar al detalle. Al confirmar, se

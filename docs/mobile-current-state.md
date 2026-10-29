@@ -1,6 +1,6 @@
 # Mobile: estado actual y cómo retomar
 
-_Última actualización: 2026-10-26. Inicio del cliente y visitas pendientes de confirmación/opinión._
+_Última actualización: 2026-10-26. Flujo cliente/técnico, rechazo con motivo, ajustes web y configuración del APK interno._
 
 Este documento describe el código implementado en `apps/mobile` y los cambios
 compartidos que necesita. Es el punto de entrada para retomar el trabajo;
@@ -11,17 +11,18 @@ implementación. El dominio general sigue en [source-of-truth.md](./source-of-tr
 
 La última verificación del historial remoto se intentó el **2026-10-26**.
 
-**El código está preparado, pero la nueva agenda de PEDIDOS requiere aplicar
-la migración `202610220002_add_order_worklist_fields.sql`. No fue aplicada por
-el agente.** El último intento de consultar el historial remoto falló con
-`Access token not provided`, por lo que el estado remoto no quedó verificado.
+**Antes de retomar, verificar que el Supabase usado por el gateway tenga las
+migraciones de búsqueda, agenda de pedidos y rechazo con motivo.** El agente no
+las aplicó al remoto. La consulta del historial falló con `Access token not provided`;
+no se constató si fueron aplicadas por otra vía. La respuesta de `/health` del
+gateway no comprueba el schema ni los flujos autenticados.
 
 Revisar estas migraciones, en orden:
 
 | Migración | Para qué se usa | Estado conocido al cierre |
 | --- | --- | --- |
 | [202610220001_add_order_operation_search_fields.sql](../supabase/migrations/202610220001_add_order_operation_search_fields.sql) | Búsqueda por notas, cliente, zona y artefacto. | Existe en el repo; aplicación remota sin verificar en esta sesión. |
-| [202610220002_add_order_worklist_fields.sql](../supabase/migrations/202610220002_add_order_worklist_fields.sql) | Clasificación operativa de pedidos y orden por visita asociada. | Preparada en esta sesión; no aplicada por el agente. |
+| [202610220002_add_order_worklist_fields.sql](../supabase/migrations/202610220002_add_order_worklist_fields.sql) | Clasificación operativa de pedidos y orden por visita asociada. | Existe en el repo; aplicación remota sin verificar por el agente. |
 | [202610260001_reject_visit_completion_with_reason.sql](../supabase/migrations/202610260001_reject_visit_completion_with_reason.sql) | Motivo de rechazo de visita y evento del chat en una transacción. | Probada localmente; no aplicada al remoto por el agente. |
 
 Las dos primeras agregan funciones calculadas PostgREST, sin tablas ni columnas nuevas.
@@ -59,9 +60,9 @@ obligatorio (máximo 2000 caracteres) y pulsa “Confirmar rechazo y enviar mens
 para ambos roles y en el chat como evento escrito por el cliente. Web utiliza el
 mismo contrato y también solicita motivo y confirmación.
 
-**Antes de ejecutar este código contra Supabase, aplicar también
+**Verificar que esté aplicada
 [202610260001_reject_visit_completion_with_reason.sql](../supabase/migrations/202610260001_reject_visit_completion_with_reason.sql).
-Preparada y probada en PostgreSQL descartable; no aplicada por el agente al remoto.**
+Se probó en PostgreSQL descartable; no fue aplicada ni verificada por el agente en remoto.**
 Las consultas de visitas ahora incluyen los nuevos campos, por lo que necesitan
 esta migración, incluso para listar. No se verificó el historial remoto por falta
 de token de acceso del CLI en esta sesión.
@@ -86,10 +87,29 @@ Expo CLI agregó plugins para DateTimePicker, StatusBar y fuentes. Se declararon
 El lockfile forma parte de esta actualización.
 
 Validaciones: Expo Doctor 20/20, tipos mobile/query-hooks, build web y exportación
-de bundles Android/iOS/web. No es una compilación APK/IPA ni una prueba en el
-celular. Para retomar, detener el Expo previo y ejecutar `pnpm mobile:start:clear`;
+de bundles Android/iOS/web. Esas exportaciones no compilan una APK/IPA ni prueban
+la interacción en el celular; el build nativo de EAS se registra por separado abajo. Para retomar, detener el Expo previo y ejecutar `pnpm mobile:start:clear`;
 Expo Go del teléfono debe admitir SDK 58. Detalles y versiones de Node en
 [la guía de Expo](../apps/mobile/docs/expo-development.md#sdk-actual-expo-58).
+
+## APK Android para pruebas internas
+
+Proyecto EAS vinculado: [@reivajj/servicienta](https://expo.dev/accounts/reivajj/projects/servicienta).
+El perfil `preview` genera APKs firmadas de distribución interna; usa las variables
+del entorno EAS `preview` y la API pública `https://servicienta-api.vercel.app`.
+Se configuraron validación de variables y compilación de `@servicienta/types`
+en los hooks de EAS. No depende de Metro ni del `.env` con la IP de desarrollo.
+
+Desde la raíz: `pnpm mobile:apk`. Ver [la guía de APK](../apps/mobile/docs/android-apk.md)
+para firma, descarga, instalación y próximas compilaciones. El estado de un build
+se consulta en Expo; esta configuración no publica en Google Play.
+
+Primer build: [a71e8e83-1f38-4e76-b92f-3c9aa328770d](https://expo.dev/accounts/reivajj/projects/servicienta/builds/a71e8e83-1f38-4e76-b92f-3c9aa328770d).
+Última consulta el **2026-10-26**: `IN_QUEUE`, sin artefacto disponible aún.
+Se creó el keystore en EAS y se inicializó la versión nativa remota (versionCode 2).
+Las tres variables públicas están cargadas en `preview`; el `.env` de desarrollo
+conserva su configuración local. Falta que finalice el build e instalar/probar la
+APK en Android fuera de la red local. No se configuró EAS Update ni distribución iOS.
 
 ## Base de la app
 
@@ -292,21 +312,23 @@ OK (solo `scheduled`) y X. Los botones tienen el mismo tamaño; la X conserva
 contorno rojo. Agendar/reprogramar mantiene calendario y selector de horario.
 
 Todos los accesos técnicos a Completar visita comparten
-`CompleteVisitProvider`: OK del chat, OK de HOY/VISITAS, card explicativa y botón
-fijo del detalle. El pop-up tiene título e icono OK en la misma fila (icono a la
+`CompleteVisitProvider`: OK del chat, OK de HOY/VISITAS y card explicativa del
+detalle. El pop-up tiene título e icono OK en la misma fila (icono a la
 derecha), explicación, confirmar y Atrás. Evita doble envío, muestra errores
 y mantiene el modal abierto si falla la mutación.
 
 El detalle muestra la card explicativa de cierre al principio del contenido.
 Completar visita ya no aparece en la botonera fija. Abajo quedan fijos **Pedido |
-Técnico**, con texto e iconos y tonos ámbar/azul. La segunda fila abre el chat con
-un icono de chat sin texto, en verde. Técnico abre `/technicians/[publicSlug]`, una ficha con
+Técnico/Cliente**, según el rol, con texto e iconos y tonos ámbar/azul. La segunda
+fila abre el chat con un icono sin texto, en verde. Técnico abre
+`/technicians/[publicSlug]`, una ficha con
 nombre, bio, valoración, verificación, disponibilidad y antigüedad pública, con
 botón Atrás para regresar. Usa `usePublicTechnicianProfile`; no consulta el perfil
 administrativo ni muestra dirección/contacto privados. Si no hay slug, el enlace
-queda deshabilitado. Tras el cierre técnico,
-el cliente confirma o rechaza. Al confirmar puede enviar una reseña de 1 a 5
-estrellas con comentario opcional; luego queda visible y no se ofrece reenviar.
+queda deshabilitado. Para el técnico, el segundo acceso es Cliente y abre la ficha
+vinculada al pedido. Tras el cierre técnico, el cliente confirma o rechaza mediante
+el diálogo con motivo obligatorio descrito arriba. Al confirmar puede enviar una
+reseña de 1 a 5 estrellas con comentario opcional; luego queda visible y no se ofrece reenviar.
 
 La dirección abre mapas en cards, detalles y cabecera del chat: `geo:` en
 Android, `maps:` en iOS y Google Maps web como alternativa. El nombre del cliente
@@ -314,6 +336,68 @@ en la cabecera del chat técnico es pulsable, 20% mayor y sin subrayado. Abre
 `/orders/[orderId]/client`, una ficha con los datos de contacto/domicilio de ese
 pedido, reutilizando `useCurrentOrder`. **No es el perfil administrativo global
 del cliente** ni abre acceso a sus otros pedidos o direcciones.
+
+### Ficha pública del técnico desde el detalle de visita
+
+Ruta: `apps/mobile/app/technicians/[publicSlug].tsx`. UI:
+`apps/mobile/src/features/profile/PublicTechnicianScreen.tsx`.
+Reutiliza el endpoint público y hook existentes; no requiere migración ni nuevos
+contratos de backend. Contempla carga, error/reintento y regreso al origen.
+Validación de este cambio: tipos de mobile y exportación web de Expo.
+
+### Iconos de acciones en mobile
+
+`apps/mobile/src/components/ActionLabel.tsx` unifica texto e icono al final del
+botón, respetando su color y tipografía. Se usa para accesos de Pedido (clipboard),
+visitas (calendario), chat, confirmar/completar (check), opinión (estrella),
+volver (flecha), reintentar, buscar, guardar, enviar e iniciar/cerrar sesión.
+Los accesos de Técnico/Cliente mantienen persona; los filtros e historial
+conservan sus iconos existentes. Los botones que ya eran solo icono (p. ej. Chat
+en el footer de la visita, calendario/OK/X del chat) conservan ese formato.
+Los iconos decorativos no agregan lecturas duplicadas de accesibilidad. Este
+cambio no modifica destinos, permisos ni lógica de las acciones.
+
+### Presentación del detalle de visita
+
+La card principal reutiliza `CardSchedule` del dashboard: nombre y badge de
+estado en la primera fila, fecha y horario en dos mitades de la misma fila,
+equipo con icono de herramienta y nota completa con icono/separador. Dirección,
+zona, indicaciones y teléfono también tienen iconos. El identificador completo
+de visita se conserva en los datos de referencia inferiores. La card de cierre
+continúa al principio y se mantienen los accesos fijos Pedido | Técnico/Cliente
+y Chat. No se recorta la descripción al abrir el detalle.
+
+El detalle de Pedido sigue el mismo diseño: nombre y estado juntos, fecha/hora
+con `CardSchedule`, equipo con herramienta, descripción completa con separador
+e iconos en ubicación/zona/indicaciones/teléfono. La fecha identifica creación
+(o visita si la consulta aporta `next_visit_at`), sin inventar una cita desde
+la fecha de creación. El UUID se conserva en los datos de referencia inferiores;
+se mantienen las reglas y botones de aceptación/apertura de chat.
+
+### Compatibilidad de las cards con mobile web
+
+`OperationCard` usa un contenedor `View`; los accesos al detalle, el OK técnico,
+la acción de confirmar/opinar y la dirección están separados. Así se evita el
+error HTML `<button> cannot contain a nested <button>`. Esta card se reutiliza en
+HOY, Inicio del cliente y VISITAS. Mantener esa separación al agregar acciones;
+no envolver toda la card con otro `Pressable` de rol botón.
+
+El envío del chat muestra solo el icono, con etiqueta accesible “Enviar mensaje”,
+para conservar espacio para el texto también en navegador.
+
+### Ajustes del detalle y estados administrativos en web
+
+En el detalle de pedidos y visitas del admin, “Cambiar estado” y “Guardar cambios”
+aparecen al comienzo. El selector está asociado al mismo formulario de edición;
+el guardado conserva las validaciones de datos/fechas y la auditoría existentes.
+Es una mejora de acceso a permisos ya existentes, sin endpoints ni migraciones
+nuevos. No sincroniza automáticamente los estados de pedido y visita al hacer
+una corrección administrativa: revisar cada entidad si se necesita corregir ambas.
+
+El estilo compartido `status-badge` usa `flex-shrink: 0` para que etiquetas largas
+como “Finalización rechazada” conserven el texto dentro del contorno. La edición
+sigue limitada al admin por el gateway; cliente y técnico conservan sus acciones
+de negocio.
 
 ## Archivos para retomar
 
@@ -329,19 +413,32 @@ del cliente** ni abre acceso a sus otros pedidos o direcciones.
 | UI común | `apps/mobile/src/components/AddressLink.tsx`, `CardSchedule.tsx`, `StatusChip.tsx`, `src/lib/format.ts` |
 | Consultas y contratos | `packages/query-hooks/src/{orders,operations}`, `packages/api-client/src/{orders,operations}`, `packages/types/src/{orders,operations}` |
 | Filtros del servidor | `apps/api-gateway/src/operations/helpers/attention.ts`, `orders/helpers/worklist.ts`, `core/date-filters.ts`, `core/text-search.ts` |
-| API y SQL | `apps/api-gateway/docs/openapi.yaml`, las dos migraciones citadas arriba; [funciones SQL](./supabase-rpcs.md) |
+| APK interno | `apps/mobile/eas.json`, `app.json`, `scripts/check-apk-env.mjs`, [guía de distribución](../apps/mobile/docs/android-apk.md) |
+| UI web/admin | `apps/web/src/features/{orders,operations}/components/*DetailDialog.tsx`, `apps/web/src/styles/global.css` |
+| API y SQL | `apps/api-gateway/docs/openapi.yaml`, las tres migraciones citadas arriba; [funciones SQL](./supabase-rpcs.md) |
 
 ## Verificaciones realizadas y límites
 
-Durante esta sesión pasaron los typechecks de mobile, gateway, api-client y
+En las verificaciones acumuladas de estos cambios pasaron los typechecks de mobile, gateway, api-client y
 query-hooks; se reconstruyó `@servicienta/types` al modificar contratos. También
 pasaron lint del gateway y exportaciones web de Expo con las últimas pantallas.
 La exportación valida bundling; no genera un APK ni prueba interacción nativa.
 
 Las pruebas automáticas añadidas/evolucionadas cubren fechas, búsqueda,
 composición de filtros, pertenencia, orden de listados y contadores con un
-adaptador de consultas en memoria. **No equivalen a ejecutar las funciones SQL
-nuevas ni a verificar PostgREST contra el proyecto remoto.**
+adaptador de consultas en memoria; esas pruebas no ejecutan las funciones de
+búsqueda/agenda de PostgREST contra el proyecto remoto.
+
+Para el rechazo con motivo pasaron cuatro pruebas de contrato/gateway y seis de
+la migración real en PostgreSQL embebido (PGlite): estados, autor y motivo del chat,
+idempotencia, pertenencia/permisos y rollback ante errores de chat/auditoría.
+Esa base es descartable; no valida el despliegue remoto ni reemplaza QA en celular.
+El comando de SQL y su dependencia temporal están en [supabase-rpcs.md](./supabase-rpcs.md#reject_operation_completion).
+
+También pasaron el build de web, tipos de mobile y exportación mobile web después
+de separar los botones de las cards; validación de variables del APK (valores
+correctos, variables ausentes y rechazo de IP local), compilación del package de
+tipos y lectura de la configuración por EAS. El build nativo todavía está en cola.
 
 Para repetir desde la raíz:
 
@@ -355,13 +452,13 @@ node --import tsx scripts/tests/order-worklist.test.mts
 node --import tsx scripts/tests/client-home-visits.test.mts
 node --import tsx scripts/tests/client-visit-attention.test.mts
 node --import tsx scripts/tests/client-order-history.test.mts
+node --import tsx scripts/tests/reject-completion.test.mts
+pnpm --filter web build
 pnpm --filter @servicienta/mobile exec expo export --platform web --output-dir /tmp/servicienta-mobile-review
 ```
 
-Los archivos de filtros, atención técnica, pedidos, inicio del cliente y atención
-del cliente contienen 7, 2, 3, 3 y 5 pruebas respectivamente. Se ejecutan como
-scripts con `node --import tsx`, sin cambiar la configuración de módulos del
-monorepo. El comando `mobile lint` sigue siendo un placeholder; no tomarlo como
+Las pruebas se ejecutan como scripts con `node --import tsx`, sin cambiar la
+configuración de módulos del monorepo. El comando `mobile lint` sigue siendo un placeholder; no tomarlo como
 validación real de ESLint.
 
 ## Recorrido pendiente en dispositivo y base real
@@ -376,9 +473,17 @@ validación real de ESLint.
 5. Probar todos los accesos al pop-up, Atrás, error de red y doble toque. El OK de
    VISITAS debe ocultarse para horas futuras; HOY conserva su comportamiento propio.
 6. Completar con técnico y confirmar/rechazar con cliente; comprobar reseña,
-   refresco de agenda/listas/chat y persistencia al volver a abrir la app.
+   refresco de agenda/listas/chat y persistencia al volver a abrir la app. En rechazo,
+   probar motivo vacío, Atrás, envío confirmado y doble toque: una sola acción en
+   el chat con el cliente como autor, motivo visible para ambos y estado persistido.
 7. Probar teclado y aplicación de búsqueda con un toque, cards en teléfono pequeño,
-   navegación al cliente y apertura de mapas en Android/iOS.
+   navegación al cliente y apertura de mapas en Android/iOS. En navegador, abrir las
+   cards con OK/opinión y verificar que no se repite el error de botones anidados.
+8. Como admin web, guardar estados de pedido y visita desde el selector superior,
+   comprobar badges, feedback y auditoría; corregir fechas inconsistentes cuando
+   lo exija la validación. Revisar que otros roles no puedan usar estos endpoints.
+9. Consultar el build de EAS; cuando termine, instalarlo desde su enlace en Android
+   y probar login, agenda, cierre/rechazo, chat y mapas usando datos móviles.
 
 Los [datos de prueba de Tomi](../apps/mobile/docs/test-data.md) tienen fechas fijas
 de octubre/noviembre de 2026: el día de referencia del seed es **2026-10-20**.
@@ -389,68 +494,15 @@ no resetear ni recrear datos automáticamente para retomar.
 
 - Continuidad desde `completion_rejected`: se muestra la indicación de coordinar
   por chat, pero el flujo de reagendado/resolución posterior sigue por definir.
-- Validación end-to-end con base real y dispositivo; no se declaró terminado el
-  MVP ni se publicó/distribuyó una nueva build nativa en esta sesión.
-- Distribución con EAS/development build sigue siendo parte del roadmap; no hay
-  `eas.json` en `apps/mobile` al cierre. El identificador de app sí está en `app.json`.
+- Validación end-to-end con base real y dispositivo: no se declaró terminado el MVP.
+- Primer APK interno enviado a EAS, en cola en la última consulta del 2026-10-26.
+  Verificar resultado, instalación y funcionamiento antes de distribuirlo. No se
+  publicó en Google Play. EAS Update, iOS y notificaciones siguen pendientes.
 - Rendimiento de búsqueda y campos calculados por fila con grandes volúmenes:
   medir antes de decidir índices o materialización. No se añadió ese trabajo.
 - Pagos, rendiciones, reclamos, adjuntos, push y offline completo no se implementaron
   como parte de este tramo.
 
 El checkout conserva cambios compartidos y archivos nuevos de estas funciones;
-revisar `git status`/`git diff` antes de continuar. En este cierre solo se actualiza
-documentación; no se aplican migraciones, seeds ni despliegues.
-
-
-### Ficha pública del técnico desde el detalle de visita
-
-Ruta: `apps/mobile/app/technicians/[publicSlug].tsx`. UI:
-`apps/mobile/src/features/profile/PublicTechnicianScreen.tsx`.
-Reutiliza el endpoint público y hook existentes; no requiere migración ni nuevos
-contratos de backend. Contempla carga, error/reintento y regreso al origen.
-Validación de este cambio: tipos de mobile y exportación web de Expo.
-
-
-Ajuste del detalle de visita (2026-10-26): la card de cierre/confirmación/opinión
-se ubica al principio del contenido; el botón técnico de Completar visita se
-elimina del footer. Los botones fijos quedan Pedido | Técnico y, debajo, Chat
-solo con icono. El cierre sigue disponible en la card y conserva su pop-up.
-
-
-El segundo botón fijo del detalle de visita depende del rol: el técnico ve
-Cliente y abre `/orders/[orderId]/client` (ficha con los datos del cliente de
-ese pedido, también accesible desde el chat). El cliente ve Técnico y abre
-su perfil público. Se mantiene el icono de persona y la navegación de regreso.
-
-
-### Iconos de acciones en mobile
-
-`apps/mobile/src/components/ActionLabel.tsx` unifica texto e icono al final del
-botón, respetando su color y tipografía. Se usa para accesos de Pedido (clipboard),
-visitas (calendario), chat, confirmar/completar (check), opinión (estrella),
-volver (flecha), reintentar, buscar, guardar, enviar e iniciar/cerrar sesión.
-Los accesos de Técnico/Cliente mantienen persona; los filtros e historial
-conservan sus iconos existentes. Los botones que ya eran solo icono (p. ej. Chat
-en el footer de la visita, calendario/OK/X del chat) conservan ese formato.
-Los iconos decorativos no agregan lecturas duplicadas de accesibilidad. Este
-cambio no modifica destinos, permisos ni lógica de las acciones.
-
-
-### Presentación del detalle de visita
-
-La card principal reutiliza `CardSchedule` del dashboard: nombre y badge de
-estado en la primera fila, fecha y horario en dos mitades de la misma fila,
-equipo con icono de herramienta y nota completa con icono/separador. Dirección,
-zona, indicaciones y teléfono también tienen iconos. El identificador completo
-de visita se conserva en los datos de referencia inferiores. La card de cierre
-continúa al principio y se mantienen los accesos fijos Pedido | Técnico/Cliente
-y Chat. No se recorta la descripción al abrir el detalle.
-
-
-El detalle de Pedido sigue el mismo diseño: nombre y estado juntos, fecha/hora
-con `CardSchedule`, equipo con herramienta, descripción completa con separador
-e iconos en ubicación/zona/indicaciones/teléfono. La fecha identifica creación
-(o visita si la consulta aporta `next_visit_at`), sin inventar una cita desde
-la fecha de creación. El UUID se conserva en los datos de referencia inferiores;
-se mantienen las reglas y botones de aceptación/apertura de chat.
+revisar `git status`/`git diff` antes de continuar. En este cierre se actualiza documentación y se consulta el estado del build ya
+iniciado; no se aplican migraciones, seeds ni despliegues adicionales.
